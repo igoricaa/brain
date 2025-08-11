@@ -1,5 +1,5 @@
 {% load static %}
-{% load compress %}
+{% load vite %}
 
 <!DOCTYPE html>
 
@@ -24,9 +24,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <link href="{% static 'favicon.ico' %}" rel="icon" type="image/x-icon" />
 
-        {% compress css %}
-            <link href="{% static 'main.css' %}" rel="stylesheet">
-        {% endcompress %}
+        {# Vite will inject CSS for entries in production via manifest; in dev, HMR handles styles #}
 
         {% block extra_head %}{% endblock %}
 
@@ -42,19 +40,8 @@
         {% endblock body %}
 
         {% block js %}
-            {% compress js %}
-                <script src="{% static 'main.js' %}"></script>
-
-                {% url 'deals:deals-dashboard-data' as deals_dash_data_url %}
-                {% url 'dual-use:summary-data' as du_summary_data_url %}
-                <script type="text/javascript">
-                    window.settings = {
-                        DEALS_DASHBOARD_DATA_URL: "{{ deals_dash_data_url }}",
-                        DU_REPORT_DATA_URL: "{{ du_summary_data_url }}",
-                    };
-                </script>
-
-            {% endcompress %}
+            {# Load Vite dev client + main entry in DEBUG; manifest-resolved in production #}
+            {% vite_entry 'src/main.tsx' %}
         {% endblock %}
         {% block extra_js %}{% endblock %}
     </body>

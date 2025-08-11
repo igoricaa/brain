@@ -1,0 +1,15 @@
+{% extends 'companies/base.html' %}
+
+{% load i18n %}
+
+{% block page_title %}{% blocktrans %}Delete patent application: {{ patent_application.invention_title }}{% endblocktrans %}{% endblock %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <p>{% trans 'Are you sure you want to delete this patent application?' %}</p>
+  <button class="btn btn-danger" type="submit">{% trans 'Delete' %}</button>
+  <a class="btn btn-secondary" href="{{ object.company.get_absolute_url|default:'/' }}">{% trans 'Cancel' %}</a>
+</form>
+{% endblock %}
+

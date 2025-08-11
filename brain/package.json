@@ -1,0 +1,38 @@
+{
+  "name": "brain-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "vite --config ./assets/vite.config.ts",
+    "build": "vite build --config ./assets/vite.config.ts",
+    "preview": "vite preview --config ./assets/vite.config.ts",
+    "lint": "eslint --ext .ts,.tsx ./assets/src",
+    "lint:fix": "eslint --fix --ext .ts,.tsx ./assets/src",
+    "format": "prettier --write \"assets/**/*.{ts,tsx,js,jsx,css,scss,md}\"",
+    "format:check": "prettier --check \"assets/**/*.{ts,tsx,js,jsx,css,scss,md}\""
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "prettier": "^3.3.3",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.1"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

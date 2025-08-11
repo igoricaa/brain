@@ -12,7 +12,10 @@ This monorepo hosts: (1) `aindex/` a standalone Python backend (do not modify), 
 - Services: `docker compose -f docker-compose-dev.yaml up -d`
 - Brain backend: `cd brain && python -m venv .venv && . .venv/bin/activate && pip install -r requirements-dev.txt && python manage.py migrate && python manage.py runserver`
 - API docs: visit `/api/docs/` (Redoc) or `/api/swagger-ui/` when running.
-- Frontend (hybrid): Vite + React in `brain/assets` with `build.outDir` to `assets/dist` (served via Django staticfiles). Use `vite dev` during development and `vite build` for production.
+- Frontend (hybrid, React 19 + Vite 7):
+  - Dev: `cd brain && npm install && npm run dev`
+  - Build: `cd brain && npm run build` (outputs to `assets/dist` + `manifest.json`)
+  - Entries live under `brain/assets/src`; Vite config at `brain/assets/vite.config.ts`.
 
 ## Coding Style & Naming Conventions
 - Python: `black` (119 cols in brain), `isort` (black profile), `flake8` (`setup.cfg`/`pyproject.toml`).
@@ -36,9 +39,22 @@ This monorepo hosts: (1) `aindex/` a standalone Python backend (do not modify), 
 - Assets: add `brain/assets` + Vite (entries for `main`, `deals_dashboard`, `deal_detail`, `company_detail`, `du_dashboard`) building to `brain/assets/dist` (already in `STATICFILES_DIRS`).
 
 ## React & Vite (Hybrid → Standalone)
-- Dev: `cd brain && npm create vite@latest ./assets -- --template react-ts` then set `build.outDir` to `assets/dist`, `base` to `/static/`, and enable `manifest: true`.
-- Include assets: in DEBUG use Vite dev server; in production load hashed files via `manifest.json` under `assets/dist`.
+- Versions: React 19, Vite 7.1.1.
+- Dev: `npm run dev` (Vite server at 5173). Prod: `npm run build` (hashed assets + manifest).
+- Django integration: `{% load vite %}{% vite_entry 'src/main.tsx' %}` in base, and page-specific `{% vite_entry 'src/pages/<entry>.tsx' %}` where needed (e.g., company_detail).
 - Migration: start with islands in Django templates, then graduate to a standalone React app consuming `/api/*`.
 
 ## Security & Configuration
 - Create envs from examples (`brain/.env.example`, `aindex-web/.env.dev.example`) and never commit secrets. Use Docker DB/RabbitMQ per URIs in `docker-compose-dev.yaml`.
+
+## Further Reading
+- Brain overview: `brain/AGENTS.md`
+- Companies: `brain/apps/companies/AGENTS.md`
+- Common app (template tags): `brain/apps/common/AGENTS.md`
+- Deals: `brain/apps/deals/AGENTS.md`
+- Dual-use: `brain/apps/dual_use/AGENTS.md`
+- Library: `brain/apps/library/AGENTS.md`
+- Socialgraph: `brain/apps/socialgraph/AGENTS.md`
+- Frontend assets: `brain/assets/AGENTS.md`
+- Legacy UI reference: `aindex-web/AGENTS.md`
+- Migration checklists: `docs/FRONTEND_MIGRATION_CHECKLIST.md`

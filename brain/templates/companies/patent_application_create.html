@@ -1,0 +1,16 @@
+{% extends 'companies/base.html' %}
+
+{% load i18n %}
+
+{% block page_title %}{% trans 'Add patent application' %}{% endblock %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <input type="hidden" name="next" value="{{ request.GET.next }}">
+  <button class="btn btn-primary" type="submit">{% trans 'Save' %}</button>
+  <a class="btn btn-secondary" href="{{ object.get_absolute_url|default:request.META.HTTP_REFERER }}">{% trans 'Cancel' %}</a>
+</form>
+{% endblock %}
+

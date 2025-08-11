@@ -1,0 +1,147 @@
+{% load i18n %}
+
+
+{% if patent_applications  %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light fw-bold">
+                <tr>
+                    <td></td>
+                    <td scope="col" class="">{% trans 'Invention title' %}</td>
+                    <td scope="col" class="">{% trans 'Applicants & Inventors' %}</td>
+                    <td scope="col" class="">{% trans 'Type' %}</td>
+                    <td scope="col" class="">{% trans 'Status' %}</td>
+                    <td scope="col" class="">{% trans 'Date' %}</td>
+                    <td scope="col" class="">{% trans 'Identification' %}</td>
+                    <td></td>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for patent in patent_applications %}
+                    <tr>
+                        <td>
+                            <input
+                                class="form-check-input"
+                                name="patent_applications_selected"
+                                type="checkbox"
+                                value="{{ patent.id }}"
+                                v-model="selectedPatentApplications">
+                        </td>
+                        <td>
+                            <a class="text-decoration-none">
+                                {{ patent.invention_title }}
+                            </a>
+                        </td>
+
+                        <td>
+                            {% if patent.first_applicant_name %}
+                                <div>
+                                    <span class="fw-bold">{% trans 'First applicant' %}</span>: {{ patent.first_applicant_name }}
+                                </div>
+                            {% endif %}
+
+                            {% if patent.first_inventor_name %}
+                                <div>
+                                    <span class="fw-bold">{% trans 'First inventor' %}</span>: {{ patent.first_inventor_name }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ patent.type_label }}
+                            {% if patent.type_category %}
+                                <div class="text-secondary small">({{ patent.type_category }})</div>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ patent.status_description }}
+                            {% if patent.status_date %}
+                                <div class="text-secondary small">({{ patent.status_date }})</div>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if patent.filing_date %}
+                                <div>
+                                    <span class="fw-bold">{% trans 'Filed' %}</span>: {{ patent.filing_date }}
+                                </div>
+                            {% endif %}
+
+                            {% if patent.earliest_publication_date %}
+                                <div>
+                                    <span class="fw-bold">{% trans 'Earliest publication' %}</span>: {{ patent.earliest_publication_date }}
+                                </div>
+                            {% endif %}
+
+                            {% if patent.grant_date %}
+                                <div>
+                                    <span class="fw-bold">{% trans 'Granted' %}</span>: {{ patent.grant_date }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if patent.number %}
+                                <div>
+                                    <span class="fw-bold">{% trans 'Application number' %}</span>: {{ patent.number }}
+                                </div>
+                            {% endif %}
+
+                            {% if patent.patent_number %}
+                                <div>
+                                    <span class="fw-bold">{% trans 'Patent number' %}</span>: {{ patent.patent_number }}
+                                </div>
+                            {% endif %}
+
+                            {% if patent.earliest_publication_number %}
+                                <div>
+                                    <span class="fw-bold">{% trans 'Earliest publication number' %}</span>: {{ patent.earliest_publication_number }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <a href="{% url 'companies:patent-application-update' patent.uuid %}{% if next %}?next={{ next|urlencode }}{% endif %}"
+                               class="mx-1"
+                               data-bs-toggle="tooltip"
+                               data-bs-title="{% trans 'Edit' %}">
+                                <i class="fas fa-pencil text-muted text-opacity-50"></i>
+                            </a>
+
+                            <a href="{% url 'companies:patent-application-delete' patent.uuid %}{% if next %}?next={{ next|urlencode }}{% endif %}"
+                               class="mx-1"
+                               data-bs-toggle="tooltip"
+                               data-bs-title="{% trans 'Delete' %}">
+                                <i class="far fa-circle-xmark text-danger text-opacity-75"></i>
+                            </a>
+                        </td>
+
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="text-secondary">{% trans 'No patent application information found.' %}</div>
+{% endif %}
+
+
+<div style="display:none">
+    <form id="_pa-bulk-delete-form"
+          method="POST"
+          action="{% url 'companies:company-delete-patent-applications' company.uuid %}">
+        {% csrf_token %}
+
+        <input type="hidden" name="next" value="{{ request.path|urlencode }}">
+        <input type="hidden" name="confirmed" value="0">
+
+        <input type="checkbox"
+               name="patent_applications"
+               checked
+               v-for="patent in selectedPatentApplications"
+               :value="patent">
+
+    </form>
+</div>
+

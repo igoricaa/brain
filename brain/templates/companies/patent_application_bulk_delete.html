@@ -1,0 +1,17 @@
+{% extends 'companies/base.html' %}
+
+{% load i18n %}
+
+{% block page_title %}{% trans 'Delete patent applications' %}{% endblock %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="confirmed" value="1">
+  <input type="hidden" name="next" value="{{ request.GET.next }}">
+  <p>{% trans 'Are you sure you want to delete selected patent applications?' %}</p>
+  <button class="btn btn-danger" type="submit">{% trans 'Delete Selected' %}</button>
+  <a class="btn btn-secondary" href="{{ object.get_absolute_url|default:'/' }}">{% trans 'Cancel' %}</a>
+</form>
+{% endblock %}
+
