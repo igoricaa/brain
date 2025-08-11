@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -o errexit
+set -o nounset
+
+NEXT_WAIT_TIME=0
+until [ $NEXT_WAIT_TIME -eq 10 ] || celery -A aindexweb inspect ping; do
+    sleep $(( NEXT_WAIT_TIME++ ))
+done
+[ $NEXT_WAIT_TIME -lt 10 ]
+
+echo 'Starting flower'
+
+exec celery -A aindexweb flower

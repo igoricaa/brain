@@ -1,0 +1,527 @@
+{% extends 'deals/base.html' %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+{% load deals %}
+
+{% load markdownify %}
+
+{% block body_id %}_deal-detail{% endblock %}
+
+
+{% block page_subtitle %}
+    <div>
+        {% if deal.website %}
+            <div class="pt-2">
+                <a href="{{ deal.website }}" class="fw-bold text-decoration-none" target="_blank">
+                    {{ deal.website|url_display }}
+                </a>
+
+                <button type="button"
+                        class="btn btn-sm btn-light"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deal-update-form-modal"
+                        {% if not deal.is_ready %}disabled{% endif %}>
+                    <i class="fas fa-pencil text-muted"></i>
+                </button>
+            </div>
+        {% endif %}
+
+        {{ deal.description }}
+        {% if not deal.is_ready %}
+            <div class="mt-3 text-warning"
+                 id="deal-processing-indicator"
+                 data-progress-url="{% url 'deals:deal-processing-status' deal.uuid %}">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <span class="fw-bold ms-2">processing …</span>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+
+    <div class="deal-toolbar text-end">
+
+        {% if deal.sent_to_affinity is not None %}
+            <span class="btn {% if deal.sent_to_affinity %}btn-outline-success{% else %}btn-outline-danger{% endif %} m-2 disabled">
+                {% if deal.sent_to_affinity %}
+                    <span class="fw-bold">{% trans 'Sent to Affinity' %}</span>
+                {% else %}
+                    <span class="fw-bold">{% trans 'Not Sent to Affinity' %}</span>
+                {% endif %}
+            </span>
+        {% endif %}
+
+        <div class="dropdown d-inline-block m-2">
+            <a class="btn btn-outline-secondary dropdown-toggle"
+               href="#" role="button"
+               data-bs-toggle="dropdown"
+               aria-expanded="false">
+                <i class="fas fa-cloud-arrow-down"></i>
+                {% trans 'Download Deck' %}
+            </a>
+
+            <ul class="dropdown-menu">
+                {% for deck in decks %}
+                    <li><a class="dropdown-item" href="{{ deck.file.url }}" target="_blank">{{ deck.display_name }}</a></li>
+                {% empty %}
+                    <li><a class="dropdown-item disabled">{% trans 'No deck available' %}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <form method="POST" action="{% url 'deals:deal-refresh' deal.uuid %}" class="d-inline">
+            {% csrf_token %}
+
+            <button type="submit" class="btn btn-info me-2" {% if not deal.is_ready %}disabled{% endif %}>
+                <i class="fas fa-refresh"></i> {% trans 'Refresh data' %}
+            </button>
+        </form>
+
+        <a href="{% url 'deals:deal-delete' deal.uuid %}" class="btn btn-danger me-2">
+            {% trans 'Delete' %}
+        </a>
+
+    </div>
+
+    <div class="row deal-details-row my-3">
+        <div class="col-sm-4 details-col d-flex">
+            <div class="deal-details flex-grow-1">
+                <h5 class="details-title">
+                    {% trans 'Basic Data' %}
+
+                    <!-- Button trigger modal -->
+                    <button type="button"
+                            class="btn btn-outline-secondary float-end"
+                            data-bs-toggle="modal"
+                            data-bs-target="#deal-update-form-modal"
+                            {% if not deal.is_ready %}disabled{% endif %}>
+                        <i class="fas fa-pencil"></i>
+                    </button>
+                </h5>
+
+                <div class="details-content">
+                    <div class="field">
+                        <div class="label">{% trans 'Uploaded' %}</div>
+                        <div class="value">{{ deal.created_at|date }}</div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Location' %}</div>
+                        <div class="value">
+                            {% if company %}
+                                {{ company.hq_location|default:'-' }}
+                            {% else %}
+                                {{ deal.state|default:'-' }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Funding round' %}</div>
+                        <div class="value">
+                            {{ deal.get_stage_display|default:'-' }}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Raising' %}</div>
+                        <div class="value">
+                            {{ deal.funding_target|intword_usd|default:'-' }}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Raised to date' %}</div>
+                        <div class="value">
+                            {{ deal.funding_raised|intword_usd|default:'-' }}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Investors' %}</div>
+                        <div class="value">
+                            {{ deal.investors_names|join:', '|default:'-' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4 details-col d-flex">
+            <div class="deal-details flex-grow-1">
+                <h5 class="details-title">
+                    {% trans 'Industries' %}
+                </h5>
+
+                <div class="details-content">
+                    <div class="field">
+                        <div class="label">{% trans 'AIN Core' %}</div>
+                        <div class="value">
+                            {% if core_industries %}
+                                {% include 'deals/includes/industries_tags.html' with industries=core_industries %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Other' %}</div>
+                        <div class="value">
+                            {% if other_industries %}
+                                {% include 'deals/includes/industries_tags.html' with industries=other_industries %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                    </div>
+
+
+                    <div class="field">
+                        <div class="label">{% trans 'Veteran-led?' %}</div>
+                        <div class="value">
+                            <a class="tag {{ deal.has_veteran_founder|yesno:'text-bg-success,text-bg-warning,' }}">
+                                {{ deal.has_veteran_founder|yesno:"yes,no,-" }}
+                            </a>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4 details-col d-flex">
+            <div class="deal-details flex-grow-1">
+                <h5 class="details-title">
+                    {% trans 'Dual-use signals' %}
+                </h5>
+
+                <div class="details-content">
+                    <div class="row">
+                        {% for group in signals_categories %}
+                            <div class="g-3 col-lg-6">
+                                <div class="p-3"
+                                     style="{% include 'deals/includes/object_style.html' with object=group.category %}">
+                                    <strong>{{ group.category|default:'Other' }}</strong>
+
+                                    <div class="ps-2">
+                                        {% for signal in group.signals %}
+                                            <div>{{ signal.name }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="my-5">
+
+        <div class="d-flex">
+            <div class="flex-grow-1">
+                <h3 class="fw-bold">{% trans 'Founders' %}</h3>
+            </div>
+            <div>
+                {% if company %}
+                    <a href="{% url 'talents:founder-create' company.uuid %}?next={{ request.path|urlencode }}"
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> {% trans 'Add founder' %}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr class="my-3">
+
+        <div class="row deal-row deal-th d-none d-sm-flex">
+            <div class="col-sm-2 deal-col">{% trans 'Name' %}</div>
+            <div class="col-sm-1 deal-col">{% trans 'Title' %}</div>
+            <div class="col-sm-4 deal-col">{% trans 'Experience' %}</div>
+            <div class="col-sm-4 deal-col">{% trans 'Education' %}</div>
+            <div class="col-sm-1 deal-col"></div>
+        </div>
+
+        {% for founder in founders %}
+            <div class="row deal-row deal-founder bg-white">
+                <div class="col-sm-2 deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Name' %}:</strong>
+                    {{ founder.name }}
+                </div>
+
+                <div class="col-sm-1 deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Title' %}:</strong>
+                    {{ founder.title|default:'-' }}
+                </div>
+
+                <div class="col-sm-4 deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Experience' %}:</strong>
+                    <div class="v-scrollable">
+                        {% for experience in founder.experiences.all %}
+                            {% if experience.company_name or experience.title %}
+                                <div class="pb-3">
+                                    {% if experience.company_name %}
+                                        <div class="fw-bold">{{ experience.company_name }}</div>
+                                    {% endif %}
+
+                                    {% if experience.title %}
+                                        <div>{{ experience.title }}</div>
+                                    {% endif %}
+
+                                    {% if experience.duration %}
+                                        {% if experience.date_from %}
+                                            {{ experience.date_from }}
+                                            {% if experience.date_to %}
+                                            - {{ experience.date_to }}
+                                            {% endif %}
+                                        {% elif experience.date_to  %}
+                                            Until {{ experience.date_to }}
+                                        {% endif %}
+                                        ({{ experience.duration.days }} days)
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="col-sm-4 deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Education' %}:</strong>
+                    <div class="v-scrollable">
+                        {% for education in founder.educations.all %}
+                            <div class="pb-3">
+                                <div class="fw-bold">
+                                    {% if education.date_from and education.date_to %}
+                                        {{ education.date_from }} - {{ education.date_to }} :
+                                    {% elif education.date_from %}
+                                        {% blocktrans  with date_from=education.date_from trimmed%}
+                                            From {{ date_from }}
+                                        {% endblocktrans %} :
+                                    {% elif education.date_to %}
+                                        {% blocktrans  with date_to=education.date_to trimmed %}
+                                            To {{ date_to }}
+                                        {% endblocktrans %} :
+                                    {% endif %}
+                                    {{ education.institution_name }}
+                                </div>
+                                {{ education.program_name }}
+                            </div>
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="col-sm-1 deal-col justify-content-end">
+
+                    {% if founder.linkedin_url %}
+                        <a href="{{ founder.linkedin_url }}"
+                           class="mx-1"
+                           data-bs-toggle="tooltip"
+                           data-bs-title="{% trans 'LinkedIn' %}"
+                            target="_blank">
+                            <i class="fas fa-link text-info text-opacity-75"></i>
+                        </a>
+                    {% endif %}
+
+                    <a href="{% url 'talents:founder-update' founder.uuid %}?next={{ request.path|urlencode }}"
+                       class="mx-1"
+                       data-bs-toggle="tooltip"
+                       data-bs-title="{% trans 'Edit' %}">
+                        <i class="fas fa-pencil text-muted text-opacity-50"></i>
+                    </a>
+
+                    <a href="{% url 'talents:founder-delete' founder.uuid %}?next={{ request.path|urlencode }}"
+                       class="mx-1"
+                       data-bs-toggle="tooltip"
+                       data-bs-title="{% trans 'Delete' %}">
+                        <i class="far fa-circle-xmark text-danger text-opacity-75"></i>
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-secondary">{% trans 'Nothing found' %}</div>
+        {% endfor %}
+    </div>
+
+    <div class="my-5">
+        <div class="d-md-flex">
+            <h3 class="fw-bold flex-fill">{% trans 'Grants' %}</h3>
+            {% if company.sbir_url %}
+                <div class="small align-self-end">
+                    <strong class="text-secondary">{%  trans 'SBIR URL' %}</strong>:
+                    <a href="{{ company.sbir_url }}" target="_blank">{{ company.sbir_url|url_display }}</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <hr class="my-3">
+
+        <div class="row deal-row deal-th d-none d-sm-flex">
+            <div class="col-sm-2 deal-col">{% trans 'Name' %}</div>
+            <div class="col-sm deal-col">{% trans 'Date' %}</div>
+            <div class="col-sm deal-col">{% trans 'Granting Agency' %}</div>
+            <div class="col-sm deal-col">{% trans 'Obligated amount' %}</div>
+            <div class="col-sm deal-col">{% trans 'Potential amount' %}</div>
+            <div class="col-sm deal-col"></div>
+        </div>
+
+        {% for grant in grants %}
+            <div class="row deal-row bg-white">
+                <div class="col-sm-2 deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Name' %}:</strong>
+                    {{ grant.name|default:'-' }}
+                </div>
+
+                <div class="col-sm deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Date' %}:</strong>
+                    {{ grant.award_date_display|default:'-' }}
+                </div>
+
+                <div class="col-sm deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Granting agency' %}:</strong>
+                    {{ grant.granting_agency|default:'-' }}
+                </div>
+
+                <div class="col-sm deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Obligated amount' %}:</strong>
+                    {{ grant.obligated_amount|intword_usd|default_if_none:'-' }}
+                </div>
+
+                <div class="col-sm deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Potential amount' %}:</strong>
+                    {{ grant.potential_amount|intword_usd|default_if_none:'-' }}
+                </div>
+                <div class="col-sm deal-col">
+                    {% if grant.award_url %}
+                        <a href="{{ grant.award_url }}" class="text-info" target="_blank">{% trans 'link' %}</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-secondary">{% trans 'No grants found. This usually indicates that the company has not received grants, but it also happens if company name does not match SBIR records.' %}</div>
+        {% endfor %}
+    </div>
+
+    <div class="my-5 deal-section">
+        <h3 class="fw-bold">{% trans 'Clinical Trials' %}</h3>
+        <hr class="my-3">
+
+        <div class="row deal-row deal-th d-none d-sm-flex">
+            <div class="col-sm-2 deal-col">{% trans 'Title' %}</div>
+            <div class="col-sm deal-col">{% trans 'Status' %}</div>
+            <div class="col-sm deal-col">{% trans 'Start date' %}</div>
+            <div class="col-sm deal-col">{% trans 'Completion date' %}</div>
+            <div class="col-sm deal-col">{% trans 'Details' %}</div>
+        </div>
+
+        <div class="deal-rows v-scrollable">
+        {% for study in clinical_studies %}
+            <div class="row deal-row bg-white">
+                <div class="col-sm-2 deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Title' %}:</strong>
+                    {{ study.title|default:'-' }}
+                </div>
+
+                <div class="col-sm deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Status' %}:</strong>
+                    {{ study.get_status_display|default:'-' }}
+                </div>
+
+                <div class="col-sm deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Start date' %}:</strong>
+                    {{ study.start_date_str|default:'-' }}
+                </div>
+
+                <div class="col-sm deal-col">
+                    <strong class="d-sm-none me-2">{% trans 'Completion date' %}:</strong>
+                    {{ study.completion_date_str|default:'-' }}
+                </div>
+
+                <div class="col-sm deal-col">
+                    {% if study.ctg_url %}
+                        <a href="{{ study.ctg_url }}" class="text-info" target="_blank">{% trans 'link' %}</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-secondary">{% trans 'No clinical trials found on clinicaltrails.gov.' %}</div>
+        {% endfor %}
+        </div>
+    </div>
+
+    {% if company %}
+        <div class="my-5 py-5">
+            <div class="d-flex align-items-end">
+                <div class="flex-grow-1">
+                    <h3 class="fw-bold">{% trans 'Patent Applications' %}</h3>
+                </div>
+
+                <div>
+                    {% if company.patent_applications.all %}
+                        <button type="button"
+                                class="btn btn-danger mx-1"
+                                @click="deleteSelectedPatentApplications()"
+                                :disabled="!selectedPatentApplications.length">
+                            <i class="fas fa-plus"></i> {% trans 'Delete selected patent applications' %}
+                        </button>
+                    {% endif %}
+
+                    <a href="{% url 'companies:company-create-patent-application' company.uuid %}?next={{ request.path|urlencode }}"
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> {% trans 'Add patent application' %}
+                    </a>
+                </div>
+            </div>
+
+            <hr class="my-3">
+
+            {% include 'companies/includes/company_patent_application_list.html' with patent_applications=company.patent_applications.all next=request.path company=company %}
+        </div>
+    {% endif %}
+
+    <div class="deal-details-assessment my-5">
+        {% if not deal.sent_to_affinity %}
+            {% include 'deals/includes/deal_assessment_form.html' %}
+        {% else %}
+            {% include 'deals/includes/deal_assessment.html' %}
+        {% endif %}
+    </div>
+
+
+    <!-- Deal Update Modal -->
+    <div class="modal fade"
+         id="deal-update-form-modal"
+         data-bs-backdrop="static"
+         data-bs-keyboard="false"
+         tabindex="-1">
+
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5 text-primary">{% trans 'Edit Deal' %}</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    {% include 'deals/includes/deal_update_form.html' with modal_target='#deal-update-form-modal' %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+
+{% block extra_js %}
+    <script src="{% static 'deal_detail.js' %}" type="text/javascript"></script>
+{% endblock extra_js %}

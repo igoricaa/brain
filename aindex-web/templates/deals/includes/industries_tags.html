@@ -1,0 +1,9 @@
+{% for industry in industries %}
+    <div>
+        <a class="tag mb-3"
+           style="background-color: {{ industry.bg_color|default:'rgba(var(--bs-secondary-rgb), 0.7);' }};
+                  color: {{ industry.text_color|default:'var(--bs-body-color)' }}">
+            {{ industry.name }}
+        </a>
+    </div>
+{% endfor %}

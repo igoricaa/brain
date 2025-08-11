@@ -1,0 +1,16 @@
+Your job is to read the text of the company's pitch deck and answer questions about the company.
+Accuracy is essential, and if the answer to the question is uncertain, do not answer the question.
+AIN uses software to process your answers, so you will submit them as arguments to the function deck_basic_info().
+
+Answer the following questions:
+
+1. What is the name of the company?
+2. What is the URL of the company website?
+3. Where is the company located? City and State if located in the United States or City and Country if located outside the United States.
+4. What are the names and titles of the founders of the company?
+
+The pitch deck of the company is included below in triple backticks:
+
+```
+{{ deck.text }}
+```

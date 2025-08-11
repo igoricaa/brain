@@ -1,0 +1,68 @@
+The raw text of the company's pitch deck is included below in triple backticks:
+
+```
+{{ deck_text }}
+```
+
+{% if founders %}
+The founders' education and work experience data in JSON format is included below in triple backticks:
+
+```
+{{ founders|tojson() }}
+```
+{% endif %}
+
+{% if grants %}
+The data for grants related to the company in JSON format is included below in triple backticks:
+
+```
+{{ grants|tojson() }}
+```
+{% endif %}
+
+{% if patent_applications %}
+The data for patent applications related to the company in JSON format  is included below in triple backticks:
+
+```
+{{ patent_applications|tojson() }}
+```
+{% endif %}
+
+{% if clinical_studies %}
+The data for clinical studies related to the company JSON format  is included below in triple backticks:
+
+```
+{{ clinical_studies|tojson() }}
+```
+{% endif %}
+
+--
+
+Your job is to read the text of the company's pitch deck, founder education and work experience data sourced from LinkedIn,
+grant data sourced from the United States Small Business Innovation Research (SBIR) program, and United States patent application data
+sourced from the United States Patent and Trademark Office (USPTO) and answer questions about the company.
+Some of the data below—especially from grants, patents, and LinkedIn—may include incorrect or unrelated information due to automated sourcing.
+If any information seems out of context or inconsistent with the company, ignore it in your evaluation.
+
+One key criterion for investment is the presence of dual-use technologies, which means that they have both military and civilian uses.
+You should also analyse attributes that help to indicate whether a company has dual-use:
+
+Accuracy is essential, and if the answer to the question is uncertain, do not answer the question. Use concise, factual answers.
+Avoid speculation or lengthy summaries.
+
+Answer the following questions:
+
+1. Among the provided industries, which accurately describe the company? Include at least one industry but no more than three.
+2. What is the stage of the current fundraise?
+3. How much money is the company seeking, in USD millions?
+4. What investors does the company have?
+5. **Deeptech**: Is the company developing advanced technology could be adapted for military, intelligence, or homeland security purposes?
+   Candidates for deeptech are -
+   {% for signal in deeptech_signals %}{% if loop.last %}and {% endif %}{{ signal }}{% if not loop.last %}, {% endif %}{% endfor %}.
+   Only include deeptech that has a reasonable chance of being deployed in both civilian and military use cases.
+6. **Strategic domain**: Does the company produce products or services that are deployed in strategically
+   important domains that might be of interest to government agencies for national security and defense?
+   Candidates for strategic domains are -
+   {% for signal in strategic_domain_signals %}{% if loop.last %}and {% endif %}{{ signal }}{% if not loop.last %}, {% endif %}{% endfor %}.
+7. **Government relationships**: Are specific agencies, departments, or branches of the military mentioned as customers or partners?
+8. **Civilian use cases**: Does the technology also have likely civilian use cases? This is probably not true, for instance, for weapons.

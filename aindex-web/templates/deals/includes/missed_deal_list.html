@@ -1,0 +1,83 @@
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+{% load deals %}
+
+{% load el_pagination_tags %}
+
+
+{% lazy_paginate missed_deal_list %}
+
+
+{% for deal in missed_deal_list %}
+
+    <div class="row list-row bg-white">
+
+        {# Start: Render report logo and name #}
+        <div class="col-3 list-col d-flex">
+            <div class="text-center list-index">
+                <a {% if deal.company %}href="{{ deal.company.get_absolute_url }}"{% endif %}>
+                    {% if deal.image_xxs %}
+                        <img src="{{ deal.image_xxs.url }}" class="img-fluid">
+                    {% else %}
+                        <img src="{% static 'images/logo.svg' %}">
+                    {% endif %}
+                </a>
+            </div>
+            <div>
+                <a class="fw-bold text-muted"
+                   {% if deal.company %}href="{{ deal.company.get_absolute_url }}"{% endif %}>
+                    {{deal.name}}
+                </a>
+                <div class="small text-secondary">{{ deal.hq_location }}</div>
+                <div class="small text-info">{{ deal.funding_stage.name }}</div>
+            </div>
+        </div>
+        {# End: Render report logo and name #}
+
+        <div class="col-3 list-col">
+            <div class="small">{{ deal.summary|truncatechars:200 }}</div>
+        </div>
+
+        <div class="col-3 list-col">
+            <div class="">
+                {% if deal.company.technology_type %}
+                    <a class="tag text-bg-dark">{{ deal.company.technology_type }}</a>
+                {% endif %}
+                {% include 'includes/mapped_tags.html' with tags=deal.company.industries.all %}
+            </div>
+        </div>
+
+        <div class="col-1 list-col">
+            <div class="">
+                <div>{{ deal.last_funding_amount|intword_usd|default:'' }}</div>
+                <div class="small text-muted">{{ deal.last_funding_date|date:'M Y'|default:'' }}</div>
+            </div>
+        </div>
+
+        <div class="col-1 list-col">
+            <div>
+                <div>
+                    {{ deal.total_funding_amount|intword_usd|default:'' }}
+                </div>
+                <div class="small text-muted">
+                    {% if deal.funding_rounds_count %}
+                        {% blocktrans with funding_rounds_count=deal.funding_rounds_count count counter=deal.funding_rounds_count %}
+                            {{ funding_rounds_count }} funding round
+                        {% plural %}
+                            {{ funding_rounds_count }} funding rounds
+                        {% endblocktrans %}
+                    {% endif  %}
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+{% endfor %}
+
+
+{% show_more %}
+

@@ -1,0 +1,10 @@
+You are an investment analyst preparing materials for underwriting.
+This is a startup pitch deck that was transcribed into text using OCR. We will be using it in several LLM prompts and wish to clean and minimize the number of tokens.
+Please clean up the content of this pitch deck faithfully, but drop all gibberish, formatting, and unnecessary wasteful characters that are artifacts of the OCR process. The goal is to faithfully reproduce all of the content from the pitch deck but in an organized and clean fashion while minimizing tokens.
+Do not summarize, restate, overly compress, delete, or otherwise change the content of the text.
+
+The raw text is included below in triple backticks.
+
+```
+{{ raw_text }}
+```

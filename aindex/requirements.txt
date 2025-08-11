@@ -1,0 +1,16 @@
+Click>=7.0
+pydantic
+pydantic-settings
+google-cloud-documentai
+google-cloud-storage
+google-cloud-documentai-toolbox
+google-cloud-aiplatform
+pdfminer.six
+pdf2image
+openai
+tiktoken
+requests
+jinja2
+Pillow
+pycountry
+python-dateutil

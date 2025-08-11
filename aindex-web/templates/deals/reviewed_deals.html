@@ -1,0 +1,71 @@
+{% extends 'deals/base.html' %}
+
+{% load i18n %}
+{% load static %}
+
+{% load compress %}
+
+{% load deals %}
+
+
+{% block page_header %}
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="page-header">
+                {% block page_title %}<h1 class="page-title {% block page_title_class %}{% endblock %}">{{ page_title }}</h1>{% endblock %}
+            </div>
+            <div>
+                New deals submitted but not yet sorted.
+            </div>
+        </div>
+
+        <div class="col-sm-4">
+            <form class="form pt-5 pb-3">
+                <div class="input-group mb-3">
+                    <input type="text"
+                           name="q"
+                           class="form-control"
+                           placeholder="{% trans 'Search by company name…' %}">
+                    <button class="btn btn-dark border-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+{% endblock page_header %}
+
+{% block content %}
+    <div class="overflow-x-auto">
+        <div class="deal-listing-container">
+            <div class="row deal-row deal-th">
+                <div class="col-3 deal-col">
+                    <div class="deal-index"></div>
+                    {% trans 'Company' %}
+                </div>
+                <div class="col deal-col">{% trans 'Fundraise' %}</div>
+                <div class="col deal-col">{% trans 'Industries' %}</div>
+                <div class="col deal-col">{% trans 'Dual-use signal' %}</div>
+                <div class="col deal-col">{% trans 'Grants' %}</div>
+                <div class="col deal-col justify-content-center">{% trans 'Assessment' %}</div>
+            </div>
+
+            {% include 'deals/includes/reviewed_deals.html' %}
+        </div>
+    </div>
+{% endblock content %}
+
+{% block extra_js %}
+    {{ block.super }}
+
+    {% compress js %}
+    <script src="{% static 'el-pagination/js/el-pagination.js' %}"></script>
+    <script>
+        $.endlessPaginate({
+            paginateOnScroll: true,
+            paginateOnScrollMargin: 100
+        });
+    </script>
+    {% endcompress %}
+{% endblock %}

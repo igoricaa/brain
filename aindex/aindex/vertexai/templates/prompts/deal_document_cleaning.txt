@@ -1,0 +1,10 @@
+You are an investment analyst preparing materials for underwriting.
+This is a {{ document_type }} that was transcribed into text using OCR. We will be using it in several LLM prompts and wish to clean and minimize the number of tokens.
+Please provide a detailed summary of the content of this file. Do not neglect important details; the point is to compress the substance of the file while minimizing the number of tokens used.
+
+
+The raw text is included below in triple backticks.
+
+```
+{{ raw_text }}
+```

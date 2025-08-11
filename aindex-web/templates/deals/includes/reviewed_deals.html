@@ -1,0 +1,100 @@
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+{% load el_pagination_tags %}
+
+{% load deals %}
+
+{% lazy_paginate deal_list %}
+{% for deal in deal_list %}
+    <div class="row deal-row bg-white">
+
+        <div class="col-3 deal-col d-flex">
+            <div class="text-center deal-index">
+                <a href="{{ deal.get_absolute_url }}">
+                    {% if deal.has_processing_deck %}
+                        <i class="fas fa-spinner fa-spin fa-2x text-warning"></i>
+                    {% else %}
+                        <img src="{% static 'images/document.svg' %}">
+                    {% endif %}
+                </a>
+                <div class="text-muted fw-light">
+                    <small>{{ deal.created_at|date }}</small>
+                </div>
+            </div>
+            <div class="">
+                <a href="{{ deal.get_absolute_url }}">
+                    {{ deal.display_name }}
+                </a>
+            </div>
+        </div>
+
+        <div class="col deal-col">
+            <div>
+                <a href="{{ deal.get_absolute_url }}">
+                    {{ deal.funding_target|intword_usd|default:'' }} {{ deal.get_stage_display }}
+                </a>
+            </div>
+        </div>
+
+        <div class="col deal-col">
+            <div>
+                {% include 'deals/includes/industries_tags.html' with industries=deal.industries.all %}
+            </div>
+        </div>
+
+        <div class="col deal-col">
+            <div>
+                {% for signal in deal.dual_use_categories %}
+                    <div>
+                        <a class="tag mb-3"
+                           style="{% if signal.bg_color %}background-color: {{ signal.bg_color }};{% endif %}
+                                  {% if signal.text_color %}color: {{ signal.text_color }}{% endif %}">
+                            {{ signal.name }}
+                        </a>
+                    </div>
+                {% endfor %}
+
+                {% if deal.has_uncategorized_dual_use_signals %}
+                    <div>
+                        <a class="tag mb-3"
+                           style="background-color: rgba(var(--bs-secondary-rgb), 0.5); color: var(--bs-body-color)">
+                            {% trans 'other' %}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col deal-col">
+            {% if deal.grants_count %}
+                <div>
+                    {% blocktranslate count grants_count=deal.grants_count %}
+                        {{ grants_count }} grant
+                    {% plural %}
+                        {{ grants_count }} grants
+                    {% endblocktranslate %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col deal-col justify-content-center flex-column">
+            {% if deal.recommendation == deal.PREP_TO_CALL %}
+                <div class="text-success text-center fs-5">{% trans 'call' %}</div>
+            {% elif deal.recommendation == deal.PREP_TO_PASS %}
+                <div class="text-danger text-center fs-5">{% trans 'pass' %}</div>
+            {% else %}
+                <div class="text-muted text-center fs-5">{{ deal.recommendation }}</div>
+            {% endif %}
+
+            {% if deal.sent_to_affinity is False %}
+                <div class="text-center">
+                    <span class="badge text-bg-warning">{% trans 'Not sent to Affinity' %}</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}
+
+{% show_more %}

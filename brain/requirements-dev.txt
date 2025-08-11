@@ -1,0 +1,6 @@
+-r ./requirements.txt
+
+ipython
+flake8
+isort
+black

@@ -1,0 +1,41 @@
+# docker compose >= 2.17.0 is required
+
+version: '3'
+
+services:
+  app: &app
+    network_mode: host
+    restart: always
+    build:
+      context: .
+      additional_contexts:
+          aindex: ../aindex
+      dockerfile: ./docker/production/django/Dockerfile
+      args:
+        GOOGLE_APPLICATION_CREDENTIALS_SRC: "${GOOGLE_APPLICATION_CREDENTIALS_SRC}"
+        GOOGLE_APPLICATION_CREDENTIALS: "${GOOGLE_APPLICATION_CREDENTIALS}"
+    image: aindexweb_app
+    command: /start
+    env_file:
+      - ./.env
+
+  celeryworker:
+    <<: *app
+    image: aindexweb_celery_worker
+    command: /start-celery-worker
+    depends_on:
+      - app
+
+  celerybeat:
+    <<: *app
+    image: aindexweb_celery_beat
+    command: /start-celery-beat
+    depends_on:
+      - celeryworker
+
+  flower:
+    <<: *app
+    image: aindexweb_flower
+    command: /start-flower
+    depends_on:
+      - celeryworker

@@ -1,0 +1,51 @@
+{% extends 'dual_use/base.html' %}
+
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% load compress %}
+
+{% block content_class %}container{% endblock %}
+{% block page_title_class %}text-center{% endblock %}
+
+{# Start: Page content #}
+{% block content %}
+    {# Start: Edit form #}
+    <form method="POST"
+          action="{% url 'dual-use:report-update' report.uuid %}"
+          class="{{ form.helper.form_class }} form-default"
+          enctype="multipart/form-data">
+
+        {% crispy form %}
+
+        <div class="text-center mt-4 mb-4">
+            <button type="submit" class="btn btn-primary">{% trans 'Save' %}</button>
+            <a href="{{ report.get_absolute_url }}" class="btn btn-light">{% trans 'Cancel' %}</a>
+        </div>
+
+    </form>
+    {# End: Edit form #}
+{% endblock content %}
+{# End: Page content #}
+
+{# Start: Extra JavaScripts #}
+{% block extra_js %}
+    {{ block.super }}
+
+    {% compress js %}
+    <script>
+        $(document).ready(function() {
+            // Use select2
+            $("select:visible[name='industries']").select2({
+                theme: "bootstrap-5"
+            });
+
+            $("select:visible[name='hq_country']").select2({
+                theme: "bootstrap-5"
+            });
+        });
+    </script>
+    {% endcompress %}
+{% endblock %}
+{# End: Extra JavaScripts #}

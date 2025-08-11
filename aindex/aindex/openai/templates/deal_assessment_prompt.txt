@@ -1,0 +1,165 @@
+Consider the following ...
+
+The raw text of the company's pitch deck is included below in triple backticks:
+
+```
+{{ deck.text }}
+```
+
+The founders' education and work experience data in JSON format is included below in triple backticks:
+
+```
+{{ founders|tojson() }}
+```
+
+{% if grants %}
+The data for grants related to the company in JSON format is included below in triple backticks:
+
+```
+{{ grants|tojson() }}
+```
+{% endif %}
+
+{% if patent_applications %}
+The data for patent applications related to the company in JSON format  is included below in triple backticks:
+
+```
+{{ patent_applications|tojson() }}
+```
+{% endif %}
+
+{% if clinical_studies %}
+The data for clinical studies related to the company JSON format  is included below in triple backticks:
+
+```
+{{ clinical_studies|tojson() }}
+```
+{% endif %}
+
+---
+
+Your job is to assess a startup using multiple structured and unstructured data sources: the company’s pitch deck, founder education
+and work experience data sourced from LinkedIn, grant data from the United States SBIR program, and patent application data from the USPTO.
+Please note: these data were collected via automated APIs and may contain unrelated or inaccurate entries. If any information does not
+logically fit the company, disregard it in your analysis. Accuracy is essential—if you are uncertain about a value, do not guess.
+AIN uses software to process your answers, so you will submit them as arguments to the function deal_assessment().
+
+---
+
+### Step 1: Analyze Pros and Cons (Qualitative Assessment)
+1. Create a list of reasons why this would be a good investment ('pros'). Focus on:
+   - Distinctive ideas with a competitive advantage.
+   - Large addressable markets.
+   - Strong founding teams.
+   - Demonstrated customer traction.
+   - Alignment with the VC thesis
+   - Unique offering / low competition / high margins
+
+2. Create a list of reasons why this investment may be risky ('cons'). Focus on:
+   - Weak alignment with AIN's thesis.
+   - Limited traction or product-market fit.
+   - Unclear business models or small markets.
+   - Commodity product
+   - Inexperienced team
+
+Each list should contain 3-6 succinct bullet points summarizing the key factors. Prefix each bullet with a 2-6 word summary of its meaning.
+
+---
+
+### Step 2: Incorporate Non-Numeric Assessment
+Based on your analysis of the pros and cons, assign a qualitative score to the startup:
+- **Excellent**: Represents a strong investment opportunity.
+- **Good**: Represents a moderate investment opportunity.
+- **Average**: Represents a standard opportunity with some notable risks.
+- **Below Average**: Represents a high-risk opportunity with limited upside.
+
+---
+
+### Step 3: Calculate the Numeric Score (Quantitative Assessment)
+
+Use the logistic regression model to calculate a probability score indicating the likelihood of the company reaching the $5M funding threshold:
+
+#### **Model Formula**
+\[
+P(Funding ≥ \$5M) = \frac{1}{1 + e^{-z}}
+\]
+where:
+\[
+z = \beta_0 + \beta_1x_1 + \beta_2x_2 + ... + \beta_nx_n
+\]
+
+#### **Model Variables and Coefficients**
+Include the following variables and their coefficients in the calculation:
+
+##### **Key Variables**
+- **Intercept (\( \beta_0 \))**: **1.1418**
+- **Years Since Founding**: \( \beta = 0.0305 \)
+- **Number of Funding Rounds**: \( \beta = 0.4110 \)
+- **Number of Investors**: \( \beta = 0.9192 \)
+- **Number of Lead Investors**: \( \beta = 0.3812 \)
+- **Patents Granted**: \( \beta = 0.3927 \)
+- **Trademarks Registered**: \( \beta = 0.0361 \)
+- **Number of Articles**: \( \beta = 0.4717 \)
+- **Number of Founders**: \( \beta = 0.0332 \)
+- **Operating Status: Closed**: \( \beta = -3.7413 \)
+- **Company Type: Non-Profit**: \( \beta = -0.1607 \)
+- **Company Type: Unknown**: \( \beta = 1.1290 \)
+
+##### **Last Funding Type**
+- **Convertible Note**: \( \beta = -0.1701 \)
+- **Grant**: \( \beta = -0.9355 \)
+- **Series A**: \( \beta = 1.3367 \)
+- **Series B**: \( \beta = 2.6136 \)
+- **Series C**: \( \beta = 2.3096 \)
+- **Series D**: \( \beta = 1.4512 \)
+- **Series E**: \( \beta = 0.8633 \)
+- **Series F**: \( \beta = 0.0227 \)
+- **Series G**: \( \beta = 0.1501 \)
+- **Series H**: \( \beta = 0.4490 \)
+- **Undisclosed**: \( \beta = 0.6867 \)
+- **Venture - Series Unknown**: \( \beta = 0.9965 \)
+
+##### **Investment Stage**
+- **Early Stage Venture, Seed**: \( \beta = 0.1106 \)
+- **Early Stage Venture, Seed, Venture**: \( \beta = 0.2253 \)
+
+##### **Diversity Spotlight Coefficients**
+Incorporate the following diversity-related coefficients:
+- **Black Founded, East Asian Founded, Native Hawaiian / Pacific Islander Founded, Women Founded**: \( \beta = -0.7049 \)
+- **Black Founded, Women Founded**: \( \beta = 7.3193 \times 10^{-6} \)
+- **Black Founded, Women Founded, Women Led**: \( \beta = 0.8826 \)
+- **Black Led**: \( \beta = -0.3070 \)
+- **East Asian Founded, East Asian Led, Women Founded, Women Led**: \( \beta = -0.3156 \)
+- **Hispanic / Latine Founded**: \( \beta = 0.5918 \)
+- **Women Founded**: \( \beta = -0.3698 \)
+- **Women Founded, Women Led**: \( \beta = -0.3076 \)
+- **Women Led**: \( \beta = 0.6016 \)
+
+---
+
+#### **Handling Missing Data**
+If data is missing for any variable:
+1. **Treat as Zero**: If no specific value is available, assume the variable's contribution is neutral (\( x = 0 \)).
+2. **Impute Mean Values**: Where possible, replace missing data with the average for that variable from similar companies.
+3. **Adjust Confidence**: Flag predictions as **low confidence** if more than half of the variables were originally missing before counting as zero or imputing (e.g., "Number of Investors," "Number of Funding Rounds," or diversity-related features).
+
+---
+
+### Step 4: Determine Degree of Thesis Fit
+Based on your analysis of the company and your understanding of AIN's investment thesis, you will determine a thesis fit score. This score should be a continuous number between 0 and 1, where 1 indicates perfect investment thesis fit and 0 indicates no investment thesis fit.
+- A **1** score would indicate the company is pre-seed or seed-stage, makes dual-use technology, ie. those with both government and civilian applications, has veterans on the founding team, and is focused on one or more of the following areas: space, AI/ML dev tools, defense tech, and sustainability.
+- A **0** score would indicate the company is not pre-seed or seed-stage, does not make dual-use technology, ie. those with both government and civilian applications, has no veterans on the founding team, and is not focused on one of following areas: space, AI/ML dev tools, defense tech, and sustainability.
+
+---
+
+### Step 5: Assign Final Quality Ranking
+Combine the qualitative and numeric scores to produce a weighted final quality ranking based on the following weights:
+- **Thesis Fit**: For companies with a thesis fit score greater than 0.5, weight the **non-numeric qualitative score** at **75%**; weight the **numeric score** at **25%**.
+- **Non-Thesis* Fit**: For companies with a thesis fit score less than or equal to 0.5, weight the **non-numeric qualitative score** at **90%**; weight the **numeric score** at **10%**.
+
+Assign one of the following overall rankings based on the combined qualitative and quantitative score:
+- **Top 1%**: Exceptional opportunity, rare in quality and potential.
+- **Top 5%**: Excellent opportunity with high conviction.
+- **Top 10%**: Very strong opportunity.
+- **Top 20%**: Above average opportunity.
+- **Top 50%**: Standard or average opportunity.

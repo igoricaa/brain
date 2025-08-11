@@ -1,0 +1,4 @@
+{% spaceless %}
+background-color: {{ object.bg_color|default:'rgba(var(--bs-secondary-rgb), 0.7);' }};
+color: {{ object.text_color|default:'var(--bs-body-color)' }}
+{% endspaceless %}

@@ -1,0 +1,33 @@
+{% load i18n %}
+
+{% load crispy_forms_tags %}
+
+
+<form id="deal-update-form"
+      class="form deal-form"
+      method="POST"
+      action="{% url 'deals:deal-update' object.uuid %}"
+      {% if not deal.is_ready %}inert{% endif %}>
+
+    {% csrf_token %}
+
+    <fieldset {% if not deal.is_ready %}disabled{% endif %}>
+        {{ update_form|crispy }}
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">{% trans 'Save' %}</button>
+
+            {% if modal_target %}
+                <button type="button"
+                        class="btn btn-light"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deal-update-form-modal">
+                    {% trans 'Cancel' %}
+                </button>
+            {% else %}
+                <a href="{{ object.get_absolute_url }}" class="btn btn-light">{% trans 'Cancel' %}</a>
+            {% endif %}
+        </div>
+    </fieldset>
+
+</form>

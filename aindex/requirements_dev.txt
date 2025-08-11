@@ -1,0 +1,12 @@
+pip
+
+pytest
+flake8
+isort
+bump2version
+
+tox
+coverage
+
+Sphinx
+Click

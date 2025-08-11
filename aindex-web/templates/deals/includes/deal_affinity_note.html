@@ -1,0 +1,71 @@
+{% load markdownify %}
+
+<p>
+    <strong><u>Recommendation</u></strong>
+    <p>{{ deal.get_quality_percentile_display|default:'-' }}</p>
+</p>
+
+<p>
+    <strong>Rationale</strong>
+    {{ deal.investment_rationale|markdownify|default:'-' }}
+</p>
+
+<p>
+    <strong>Pros</strong>
+    {{ deal.pros|markdownify|default:'-' }}
+</p>
+
+<p>
+    <strong>Cons</strong>
+    {{ deal.cons|markdownify|default:'-' }}
+</p>
+
+{% if deal.problem %}
+    <strong>Problem</strong>
+    {{ deal.problem|markdownify }}
+{% endif %}
+
+{% if deal.solution %}
+    <strong>Solution</strong>
+    {{ deal.solution|markdownify }}
+{% endif %}
+
+{% if deal.thesis_fit %}
+    <strong>Thesis Fit</strong>
+    {{ deal.thesis_fit|markdownify }}
+{% endif %}
+
+{% if deal.traction %}
+    <strong>Traction</strong>
+    {{ deal.traction|markdownify }}
+{% endif %}
+
+{% if deal.intellectual_property %}
+    <strong>Intellectual Property</strong>
+    {{ deal.intellectual_property|markdownify }}
+{% endif %}
+
+{% if deal.business_model %}
+    <strong>Business Model</strong>
+    {{ deal.business_model|markdownify }}
+{% endif %}
+
+{% if deal.market_sizing %}
+    <strong>Market Sizing</strong>
+    {{ deal.market_sizing|markdownify }}
+{% endif %}
+
+{% if deal.competition %}
+    <strong>Competition</strong>
+    {{ deal.competition|markdownify }}
+{% endif %}
+
+{% if deal.state %}
+    <strong>State</strong>
+    {{ deal.state }}
+{% endif %}
+
+<hr>
+<p>
+    <strong>AINdex link:  </strong> <a href="{{ deal_url }}">{{ deal_url }}</a>
+</p>

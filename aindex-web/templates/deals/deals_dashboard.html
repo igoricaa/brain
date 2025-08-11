@@ -1,0 +1,214 @@
+{% extends 'deals/base.html' %}
+
+{% load i18n %}
+{% load static %}
+
+{% load deals %}
+
+{% block body_id %}_deals-dashboard{% endblock %}
+{% block content_class %}container{% endblock %}
+
+{% block content %}
+    <div>
+
+        <div class="row my-4">
+
+            <div class="col-sm-3">
+                <div class="details-container me-2 h-100">
+                    <div class="text-center">
+                        <h1 class="display-6 text-primary opacity-50">{% trans 'Today' %}</h1>
+                        <div class="h1 display-2" v-text="results.today_count"></div>
+                        <div class="text-secondary">
+                            <span>{% trans 'Yesterday' %}</span>:
+                            <span v-text="results.yesterday_count"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-3">
+                <div class="details-container me-2 h-100">
+                    <div class="text-center">
+                        <h1 class="display-6 text-primary opacity-50">{% trans 'This Week' %}</h1>
+                        <div class="h1 display-2" v-text="results.current_week_count"></div>
+
+                        <div class="text-secondary">
+                            <span>{% trans 'Last Week' %}</span>:
+                            <span v-text="results.previous_week_count"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-3">
+                <div class="details-container me-2 h-100">
+                    <div class="text-center">
+                        <h1 class="display-6 text-primary opacity-50">{% trans 'This Month' %}</h1>
+                        <div class="h1 display-2" v-text="results.current_month_count"></div>
+
+                        <div class="text-secondary">
+                            <span>{% trans 'Last Month' %}</span>:
+                            <span v-text="results.previous_month_count"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-3">
+                <div class="details-container me-2 h-100">
+                    <div class="text-center">
+                        <h1 class="display-6 text-primary opacity-50">{% trans 'Total Deals' %}</h1>
+                        <div class="h1 display-2" v-text="results.total_count"></div>
+
+                        <div class="text-secondary">
+                            <span>{% trans 'This Year' %}</span>:
+                            <span v-text="results.current_year_count"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="details-container my-4">
+            <div>
+                <h2>{% trans 'Trend' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <canvas id="date-count-trend-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="details-container my-4">
+            <div>
+                <h2>{% trans 'Funding Stages' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Pie id="funding-stage-count-chart"
+                         v-if="charts.fundingStageCount"
+                         :options="charts.fundingStageCount.options"
+                         :data="charts.fundingStageCount.data"/>
+                </div>
+                <div class="col-sm-3 d-flex align-items-center">
+                    <div id="funding-stage-count-chart-legend" class="chart-legend legend-column-sm"></div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="details-container my-4">
+            <div>
+                <h2>{% trans 'Industries' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Bar id="industry-count-chart"
+                         v-if="charts.industryCount"
+                         :options="charts.industryCount.options"
+                         :data="charts.industryCount.data"/>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="details-container my-4">
+            <div>
+                <h2>{% trans 'Dual Use Signals' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Pie id="du-signal-count-chart"
+                         v-if="charts.duSignalCount"
+                         :options="charts.duSignalCount.options"
+                         :data="charts.duSignalCount.data"/>
+                </div>
+                <div class="col-sm-3 d-flex align-items-center">
+                    <div id="du-signal-count-chart-legend" class="chart-legend legend-column-sm"></div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row my-4">
+
+            <div class="col-sm-6">
+                <div class="details-container me-2 h-100">
+                    <div class="text-center">
+                        <h2 class="">{% trans 'Grants' %}</h2>
+                        <hr>
+                        <div class="text-primary opacity-50">{% trans 'Deals with grants' %}</div>
+                        <div class="h1 display-2" v-text="results.deals_with_grant_count"></div>
+                        <div class="text-secondary">
+                            <span class="opacity-50" v-text="`${asPercent(results.deals_with_grant_count, results.total_count)} %`"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6">
+                <div class="details-container me-2 h-100">
+                    <div class="text-center">
+                        <h2 class="">{% trans 'Clinical Studies' %}</h2>
+                        <hr>
+                        <div class="text-primary opacity-50">{% trans 'Deals with clinical studies' %}</div>
+                        <div class="h1 display-2" v-text="results.deals_with_clinical_study_count"></div>
+
+                        <div class="text-secondary">
+                            <span class="opacity-50" v-text="`${asPercent(results.deals_with_clinical_study_count, results.total_count)} %`"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="">
+            <h2>Deals assessment</h2>
+            <hr>
+        </div>
+
+        <div class="my-4 d-flex flex-row">
+
+            <div v-for="quality in results.quality_percentile_count" class="flex-fill mx-2">
+                <div class="details-container h-100 me-2">
+                    <div class="text-center">
+                        <div class="lead text-primary" v-text="qualityPercentileChoices[quality.score]"></div>
+                        <div class="h1 display-6 me-2" v-text="quality.count"></div>
+                        <span class="text-muted opacity-50" v-text="`${asPercent(quality.count, results.total_count)} %`"></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="details-container my-4">
+            <div>
+                <h2>{% trans 'Deals Sent to affinity' %}</h2>
+                <hr>
+            </div>
+            <div class="d-flex flex-row">
+                <div v-for="group in results.sent_to_affinity_count" class="flex-fill mx-2">
+                        <div class="text-center">
+                            <div class="lead text-primary" v-text="humanizeBool(group.sent_to_affinity, 'Sent', 'Not Sent', 'Pending')"></div>
+                            <div class="h1 display-6 me-2" v-text="group.count"></div>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block js %}
+    {{ block.super }}
+    <script src="{% static 'deals_dashboard.js' %}" type="application/javascript"></script>
+{% endblock js %}

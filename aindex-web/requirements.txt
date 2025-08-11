@@ -1,0 +1,62 @@
+Django[argon2]>=5.1.8,<5.2.0
+psycopg
+django-environ
+Pillow
+pgvector
+
+django-allauth>=0.60.0
+django-countries[pyuca]
+django-import-export[all]
+django-storages[google]
+
+django-imagekit
+# waiting for pilkit>3.0.0
+# https://github.com/matthewwithanm/pilkit/issues/72
+git+https://github.com/matthewwithanm/pilkit@master
+
+django-compressor>=4.5
+beautifulsoup4
+lxml
+
+django-crispy-forms
+crispy-bootstrap5
+django-widget-tweaks
+
+django-admin-rangefilter
+django-filter
+
+django-el-pagination
+
+markdown
+django-markdownify
+
+requests
+
+pycountry
+pytimeparse2
+
+celery
+flower
+django-celery-results
+django-celery-beat
+
+django-mailbox
+python-social-auth
+social-auth-app-django
+
+djangorestframework
+markdown
+django-filter
+django-oauth-toolkit
+drf-spectacular[sidecar]
+drf-extra-fields
+
+# Waiting for semanticscholar > 0.10.0 to be released
+# https://github.com/danielnsilva/semanticscholar/issues/111
+semanticscholar @ git+https://github.com/danielnsilva/semanticscholar/@master
+
+arxiv
+
+# Debug toolbar >= 5.0 is causing issues with collect static on GCS.
+# https://github.com/django-commons/django-debug-toolbar/issues/2068
+django-debug-toolbar>=4.2.0,<5.0.0

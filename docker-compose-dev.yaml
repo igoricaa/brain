@@ -1,0 +1,80 @@
+# docker-compose-dev.yaml
+
+# To avoid conflicts with already existing services on the host,
+# exposed ports are incremented by 1 on their leftmost digit.
+#
+# To start: docker compose -f docker-compose-dev.yaml up
+# To stop: docker compose -f docker-compose-dev.yaml down
+# To stop and clean: docker compose -f docker-compose-dev.yaml down -v --remove-orphans
+
+version: "3.8"
+
+services:
+  # Development Postgres Database with PostGIS
+  # localhost uri: postgresql+psycopg://aindex:aindex@localhost:6432/aindex
+  # docker uri: postgresql+psycopg://aindex:aindex@aindex-dev-pg:5432/aindex
+  aindex-dev-db:
+    image: postgis/postgis:16-3.4
+    container_name: aindex-dev-db
+    environment:
+      POSTGRES_USER: ${DEV_DB_USER:-aindex}
+      POSTGRES_PASSWORD: ${DEV_DB_PASSWORD:-aindex}
+      POSTGRES_DB: ${DEV_DB_NAME:-aindex}
+    volumes:
+      - ./docker/postgis/docker-entrypoint-initdb.d/initdb-postgis.sh:/docker-entrypoint-initdb.d/10_postgis.sh
+      - aindex-dev-db-data:/var/lib/postgresql/data
+    ports:
+      - "6432:5432"
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DEV_DB_USER:-aindex}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Test Postgres Database with PostGIS
+  # localhost uri: postgresql+psycopg://test_aindex:test_aindex@localhost:7432/test_aindex
+  # docker uri: postgresql+psycopg://test_aindex:test_aindex@aindex-test-pg:5432/test_aindex
+  aindex-test-db:
+    image: postgis/postgis:16-3.4
+    container_name: aindex-test-db
+    environment:
+      POSTGRES_USER: ${TEST_DB_USER:-test_aindex}
+      POSTGRES_PASSWORD: ${TEST_DB_PASSWORD:-test_aindex}
+      POSTGRES_DB: ${TEST_DB_NAME:-test_aindex}
+    volumes:
+      - ./docker/postgis/docker-entrypoint-initdb.d/initdb-postgis.sh:/docker-entrypoint-initdb.d/10_postgis.sh
+      - aindex-test-db-data:/var/lib/postgresql/data
+    ports:
+      - "7432:5432"
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TEST_DB_USER:-test_aindex}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ for development
+  # localhost uri: amqp://aindex:aindex@localhost:6672//
+  # docker uri: amqp://aindex:aindex@aindex-dev-rabbitmq:5672//
+  aindex-dev-rabbitmq:
+    image: rabbitmq:3.13.7-management
+    container_name: aindex-dev-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${DEV_RABBITMQ_USER:-aindex}
+      RABBITMQ_DEFAULT_PASS: ${DEV_RABBITMQ_PASSWORD:-aindex}
+    ports:
+      - "6672:5672"
+      - "26672:15672"
+    restart: always
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  aindex-dev-db-data:
+    driver: local
+  aindex-test-db-data:
+    driver: local

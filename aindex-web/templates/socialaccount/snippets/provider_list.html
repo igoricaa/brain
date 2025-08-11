@@ -1,0 +1,42 @@
+{% load socialaccount %}
+
+{% get_providers as socialaccount_providers %}
+
+<div class="d-grid gap-2 col-sm-6 mx-auto">
+    {% for provider in socialaccount_providers %}
+         {% if provider.id == "openid" %}
+              {% for brand in provider.get_brands %}
+                <a title="{{brand.name}}"
+                    class="socialaccount_provider {{provider.id}} {{brand.id}}"
+                    href="{% provider_login_url provider.id openid=brand.openid_url process=process %}"
+                    >{{brand.name}}</a>
+              {% endfor %}
+         {% endif %}
+
+
+        {% if provider.id|lower == 'google' %}
+
+            <form id="google-login-form" method="POST" action="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">
+                {% csrf_token %}
+
+                <div class="text-center">
+                    <button type="submit"
+                       class="socialaccount_provider mx-auto border-0 rounded-pill bg-light">
+                        {% include 'socialaccount/snippets/google-si.svg' %}
+                    </button>
+                </div>
+
+            </form>
+        {% else %}
+            <a title="{{provider.name}}"
+               class="socialaccount_provider btn btn-lg btn-outline-secondary
+                      {{provider.id}} bg-{{ provider.id|lower }} my-4"
+               href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">
+
+                Sign In using {{provider.name}}
+            </a>
+        {% endif %}
+
+    {% endfor %}
+</div>
+

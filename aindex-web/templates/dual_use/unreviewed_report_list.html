@@ -1,0 +1,94 @@
+{% extends 'dual_use/base.html' %}
+
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% load compress %}
+
+{% block page_header %}
+    <div class="page-header">
+        <div class="row">
+            <div class="col-sm-4">
+                {% block page_title %}
+                <h1 class="page-title {% block page_title_class %}{% endblock %}">
+                    {{ page_title }}
+                </h1>
+                {% endblock %}
+
+                {% block page_subtitle %}
+                <h6 class="page-subtitle">
+                    {% trans 'Dual-use database.' %}
+                </h6>
+                {% endblock %}
+            </div>
+            <div class="col-sm">
+                {% include 'dual_use/includes/report_filters.html' %}
+            </div>
+        </div>
+    </div>
+{% endblock page_header %}
+
+
+{# Start: Page content #}
+{% block content %}
+    <div class="page-content">
+        {# Start: List container #}
+        <div class="list-container overflow-x-auto">
+
+            {# Start: Companies list table header #}
+            <div class="row list-row list-th">
+                <div class="col-3 list-col">
+                    <div class="list-index"></div>
+                    {% trans 'Name' %}
+                </div>
+                <div class="col-3 list-col" title="{% trans 'Organization short description' %}">{% trans 'Summary' %}</div>
+                <div class="col-2 list-col" title="{% trans 'Where the organization is headquartered' %}">{% trans 'Headquarters' %}</div>
+                <div class="col-2 list-col" title="{% trans '' %}">{% trans 'Industries' %}</div>
+                <div class="col-1 list-col text-nowrap" title="{% trans '' %}">{% trans 'Thesis fit' %}</div>
+                <div class="col list-col"></div>
+            </div>
+            {# End: Companies list table header #}
+
+            {# Start: Companies list table content #}
+            {% include 'dual_use/includes/report_list.html' %}
+            {# End: Companies list table content #}
+
+        </div>
+        {# End: List container #}
+    </div>
+{% endblock content %}
+{# End: Page content #}
+
+
+{# Start: Extra JavaScripts #}
+{% block extra_js %}
+    {{ block.super }}
+
+    {% compress js %}
+    <script src="{% static 'el-pagination/js/el-pagination.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            // Use pagination
+            $.endlessPaginate({
+                paginateOnScroll: true,
+                paginateOnScrollMargin: 100
+            });
+
+            // Use select2
+            $("select:visible[name='year_evaluated']").select2({
+                theme: "bootstrap-5"
+            });
+
+            $("select:visible[name='industries']").select2({
+                theme: "bootstrap-5"
+            });
+
+            $("select:visible[name='hq_country']").select2({
+                theme: "bootstrap-5"
+            });
+        });
+    </script>
+    {% endcompress %}
+{% endblock %}
+{# End: Extra JavaScripts #}

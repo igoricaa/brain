@@ -1,0 +1,65 @@
+{% load i18n %}
+
+{% load markdownify %}
+
+
+<div class="row my-2 deal-auto-assessment">
+    <div class="col-sm-1">
+        <div class="text-center">
+            <i class="fas fa-desktop fa-3x my-2"></i>
+
+            <div class="fw-bold">
+                {% trans 'AI (Initial) Assessment' %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-11">
+        <div class="row">
+            <div class="col-sm-4 d-flex flex-column">
+
+                <div class="d-sm-none fw-bold my-2">{% trans 'Investment Recommendation' %}:</div>
+                <div class="text-sm-center pb-4">
+                    {% if deal.auto_quality_percentile %}
+                        <span class="badge rounded-pill deal-percentile {{ deal.auto_quality_percentile|slugify }} p-2">
+                            {{ deal.get_auto_quality_percentile_display }}
+                        </span>
+                    {% endif %}
+
+                    <div>
+                        {% if deal.auto_numeric_score %}
+
+                            <span class="badge rounded-pill text-bg-light p-2 mt-1">
+                                <span class="text-secondary">{% trans 'score' %}:</span> {{ deal.auto_numeric_score }} ({{ deal.auto_non_numeric_score }}),
+                                <span class="text-secondary">{% trans 'score confidence' %}:</span> {{ deal.auto_confidence }}
+                            </span>
+
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="rationale-text flex-grow-1">
+                    <div class="d-sm-none fw-bold my-2">{% trans 'Rationale' %}:</div>
+                    {{ deal.auto_investment_rationale|markdownify|default:'-' }}
+                </div>
+
+            </div>
+
+            <div class="col-sm-4 d-flex">
+                <div class="rationale-text flex-grow-1">
+                    <div class="d-sm-none fw-bold my-2">{% trans 'Pros' %}:</div>
+                    {{ deal.auto_pros|markdownify|default:'-' }}
+                </div>
+            </div>
+
+            <div class="col-sm-4 d-flex">
+                <div class="rationale-text flex-grow-1">
+                    <div class="d-sm-none fw-bold my-2">{% trans 'Cons' %}:</div>
+                    {{ deal.auto_cons|markdownify|default:'-' }}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>

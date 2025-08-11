@@ -1,0 +1,151 @@
+{% load i18n %}
+
+{% load markdownify %}
+
+
+<div>
+    <h3 class="fw-bold">{% trans 'Investment Facts' %}</h3>
+
+    <hr class="my-3">
+
+    <div class="row my-5">
+        <div class="col-sm-6 d-flex flex-column pb-4">
+            <div class="fw-bold">{% trans 'Problem' %}</div>
+            <div class="rationale-text flex-grow-1">
+                {{ deal.problem|markdownify|default:'-' }}
+            </div>
+        </div>
+
+        <div class="col-sm-6 d-flex d-flex flex-column pb-4">
+            <div class="fw-bold">{% trans 'Solution/Product' %}</div>
+            <div class="rationale-text flex-grow-1">
+                {{ deal.solution|markdownify|default:'-' }}
+            </div>
+        </div>
+
+        <div class="col-sm-6 d-flex flex-column pb-4">
+            <div class="fw-bold">{% trans 'Traction' %}</div>
+            <div class="rationale-text flex-grow-1">
+                {{ deal.traction|markdownify|default:'-' }}
+            </div>
+        </div>
+
+        <div class="col-sm-6 d-flex flex-column pb-4">
+            <div class="fw-bold">{% trans 'Business Model' %}</div>
+            <div class="rationale-text flex-grow-1">
+                {{ deal.business_model|markdownify|default:'-' }}
+            </div>
+        </div>
+
+        <div class="col-sm-6 d-flex flex-column pb-4">
+            <div class="fw-bold">{% trans 'Intellectual Property' %}</div>
+            <div class="rationale-text flex-grow-1">
+                {{ deal.intellectual_property|markdownify|default:'-' }}
+            </div>
+        </div>
+
+        <div class="col-sm-6 d-flex flex-column pb-4">
+            <div class="fw-bold">{% trans 'Market Sizing' %}</div>
+            <div class="rationale-text flex-grow-1">
+                {{ deal.market_sizing|markdownify|default:'-' }}
+            </div>
+        </div>
+
+        <div class="col-sm-6 d-flex flex-column pb-4">
+            <div class="fw-bold">{% trans 'Competition' %}</div>
+            <div class="rationale-text flex-grow-1">
+                {{ deal.competition|markdownify|default:'-' }}
+            </div>
+        </div>
+
+        <div class="col-sm-6 d-flex flex-column pb-4">
+            <div class="fw-bold">{% trans 'Thesis Fit' %}</div>
+            <div class="rationale-text flex-grow-1">
+                {{ deal.thesis_fit|markdownify|default:'-' }}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<h3 class="fw-bold">{% trans 'Investment Assessment' %}</h3>
+
+<hr class="my-3">
+
+<div class="row mt-5 mb-2">
+    <div class="col-sm-1">
+    </div>
+
+    <div class="col-sm-11">
+        <div class="row d-none d-sm-flex text-center">
+            <div class="col-sm-4 fw-bold">{% trans 'Investment Recommendation' %}</div>
+            <div class="col-sm-4 fw-bold">{% trans 'Pros' %}</div>
+            <div class="col-sm-4 fw-bold">{% trans 'Cons' %}</div>
+        </div>
+    </div>
+</div>
+
+{% include 'deals/includes/deal_assessment_auto.html' %}
+
+<hr class="my-3 d-sm-none">
+
+<div class="row mt-4">
+
+    <div class="col-sm-1">
+        <div class="text-center">
+            <i class="fas fa-user fa-3x my-2"></i>
+
+            <div class="fw-bold">
+                {% trans 'Analyst (Final) Assessment' %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-11">
+        <div class="row">
+            <div class="col-sm-4 d-flex flex-column">
+
+                <div class="d-sm-none fw-bold my-2">{% trans 'Investment Recommendation' %}:</div>
+
+                <div class="text-sm-center pb-4">
+                    {% if deal.auto_quality_percentile %}
+                        <span class="badge rounded-pill deal-percentile {{ deal.quality_percentile|slugify }} p-2">
+                            {{ deal.get_quality_percentile_display }}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="rationale-text flex-grow-1">
+                    <div class="d-sm-none fw-bold my-2">{% trans 'Rationale' %}:</div>
+                    {{ deal.investment_rationale|markdownify|default:'-' }}
+                </div>
+            </div>
+
+            <div class="col-sm-4 d-flex">
+                <div class="rationale-text bg-white flex-grow-1">
+                    <div class="d-sm-none fw-bold my-2">{% trans 'Pros' %}:</div>
+                    {{ deal.pros|markdownify|default:'-' }}
+                </div>
+            </div>
+
+            <div class="col-sm-4 d-flex">
+                <div class="rationale-text bg-white flex-grow-1">
+                    <div class="d-sm-none fw-bold my-2">{% trans 'Cons' %}:</div>
+                    {{ deal.cons|markdownify|default:'-' }}
+                </div>
+
+            </div>
+        </div>
+
+        <div class="text-center g-2 my-4">
+            <span class="btn {% if deal.sent_to_affinity %}btn-outline-success{% else %}btn-outline-danger{% endif %} disabled">
+                {% if deal.sent_to_affinity %}
+                    <span class="fw-bold">{% trans 'Sent to Affinity' %}</span>
+                {% else %}
+                    <span class="fw-bold">{% trans 'Not Sent to Affinity' %}</span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+

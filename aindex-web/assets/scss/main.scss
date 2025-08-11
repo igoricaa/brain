@@ -1,0 +1,26 @@
+@import "variables";
+
+@import "~@fortawesome/fontawesome-free/scss/fontawesome.scss";
+@import "~@fortawesome/fontawesome-free/scss/regular.scss";
+@import "~@fortawesome/fontawesome-free/scss/solid.scss";
+@import "~@fortawesome/fontawesome-free/scss/brands.scss";
+
+@import "bootstrap/scss/bootstrap";
+@import "dropzone/src/dropzone.scss";
+
+@import "~select2/src/scss/core.scss";
+// FIX: @import "~select2-bootstrap-5-theme/src/include-all.scss";
+@import "~select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.css";
+
+// @import "~@tarekraafat/autocomplete.js/dist/css/autoComplete.02.css";
+
+@import "layout";
+@import "components";
+@import "content";
+@import "charts";
+@import "import_export";
+
+@include media-breakpoint-down(sm) {
+    @import "layout_sm";
+    @import "components_sm";
+}

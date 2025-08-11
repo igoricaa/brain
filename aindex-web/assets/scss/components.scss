@@ -1,0 +1,271 @@
+#main-nav {
+    height: $navbar-main-height;
+    z-index: 3;
+
+    .navbar-brand {
+        font-weight: 600;
+    }
+
+    .nav-link {
+        &.active {
+            font-weight: 700;
+        }
+    }
+}
+
+.deal-listing-container {
+    min-width: 1024px;
+}
+
+.deal-row {
+    margin: .5rem 0;
+
+    .deal-col {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+
+        a {
+            text-decoration: none;
+            color: var(--bs-body-color);
+        }
+
+        .v-scrollable {
+            max-height: 300px;
+            overflow-y: auto;
+            width: 100%;
+        }
+    }
+
+    .deal-index {
+        width: 8rem;
+        padding-right: 1.5rem;
+        display: inline-block;
+
+        img {
+            margin-left: .5rem;
+            margin-right: .5rem;
+            margin-bottom: .5rem;
+            width: 2.7rem;
+       }
+    }
+
+    &.deal-founder {
+        .deal-col {
+            align-items: start;
+        }
+    }
+}
+
+.tag {
+    display: inline-block;
+    white-space: nowrap;
+    text-decoration: none;
+    padding: .25rem .5rem;
+    background-color: rgba(var(--bs-secondary-rgb), 1.0);
+    color: $white;
+    font-weight: 500
+}
+
+.deal-th {
+    background: $darker-light;
+
+    .deal-col {
+        // text-align: center;
+    }
+}
+
+.deal-details-row {
+    .details-col {
+
+        .deal-details {
+
+            padding: 1.5rem;
+            margin-right: 1.5rem;
+            background-color: rgba(var(--bs-white-rgb), var(--bs-bg-opacity));
+
+            .details-title {
+                font-weight: 700;
+            }
+
+            .details-content {
+
+                .field {
+                    padding: 1rem;
+
+                    .label {
+                        font-weight: 600;
+                    }
+                }
+            }
+        }
+
+    }
+}
+
+.deal-details-assessment {
+
+    .rationale-text {
+        background-color: $white;
+        padding: 1.5rem;
+        border: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color);
+        border-radius: var(--bs-border-radius);
+    }
+
+    .deal-auto-assessment {
+        .rationale-text {
+            background-color: $darker-light;
+       }
+    }
+}
+
+.deal-form,
+.form-default {
+
+    .form-label {
+        font-weight: bold;
+    }
+
+    legend {
+        font-weight: bold;
+        color: $info
+    }
+
+}
+
+.badge {
+
+    &.deal-percentile {
+        color: $dark;
+
+        &.top-1 {
+            background-color: #D4E1FC;
+        }
+
+        &.top-5 {
+            background-color: #CCEBFD;
+        }
+
+        &.top-10 {
+            background-color: #D6F4D4;
+        }
+
+        &.top-20 {
+            background-color: #FAE1CF;
+        }
+
+        &.top-50 {
+            background-color: #F8D6E0;
+        }
+
+        &.top-80 {
+            background-color: #FAC6D0;
+        }
+    }
+}
+
+.deal-rows {
+    &.v-scrollable {
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+}
+
+// Start: Listing
+.list-container {
+    min-width: 1024px;
+}
+
+.list-row {
+    margin: .5rem 0;
+
+    .list-col {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+
+        a {
+            text-decoration: none;
+            color: var(--bs-body-color);
+        }
+
+        .v-scrollable {
+            max-height: 300px;
+            overflow-y: auto;
+            width: 100%;
+        }
+    }
+
+    .list-index {
+        width: 8rem;
+        padding-right: 1.5rem;
+        display: inline-block;
+
+        img {
+            margin-left: .5rem;
+            margin-right: .5rem;
+            margin-bottom: .5rem;
+            width: 2.7rem;
+       }
+    }
+}
+
+.list-th {
+    background: $darker-light;
+
+    .list-col {
+        // text-align: center;
+    }
+}
+// End: Listing
+
+
+.details-container {
+    padding: 2rem;
+    background-color: $white;
+    overflow-x: auto;
+
+    .details-title {
+        --bs-text-opacity: 1;
+        font-weight: 700;
+    }
+
+    .field {
+        padding: 1rem 0;
+
+        .label {
+            font-weight: 600;
+            padding-right: 1rem;
+        }
+
+        a.value {
+            text-decoration: none;
+        }
+    }
+}
+
+@include media-breakpoint-up(sm) {
+    .deal-details-assessment {
+        .assessment-form-pcr {
+            .form-label {
+                display: none;
+            }
+        }
+    }
+
+    #div_id_recommendation {
+        text-align: center;
+    }
+
+    #div_id_pros,
+    #div_id_cons {
+        min-height: 100%;
+        display: flex;
+        align-items: stretch;
+    }
+
+    #id_recommendation {
+        display: inline-block;
+        width: auto;
+    }
+}

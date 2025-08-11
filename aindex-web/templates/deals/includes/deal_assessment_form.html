@@ -1,0 +1,124 @@
+{% load i18n %}
+
+{% load crispy_forms_tags %}
+{% load markdownify %}
+
+
+<form id="deal-assessment-form"
+      class="form assessment-form deal-form"
+      method="POST"
+      action="{% url 'deals:deal-assessment' object.uuid %}"
+      {% if not deal.is_ready %}inert{% endif %}>
+
+    <fieldset {% if not deal.is_ready %}disabled{% endif %}>
+        <h3 class="fw-bold">{% trans 'Investment Facts' %}</h3>
+        <div class="text-muted small">
+            {% blocktrans %}
+            Investment facts are suggested by AI and editable by you.
+            All fields that are left not-blank will be sent to Affinity with your Investment Assessment (see below).
+            {% endblocktrans %}url
+        </div>
+
+        <hr class="my-3">
+
+        <div class="row my-5">
+            <div class="col-sm-6">
+                {{ assessment_form.problem|as_crispy_field }}
+            </div>
+
+            <div class="col-sm-6">
+                {{ assessment_form.solution|as_crispy_field }}
+            </div>
+
+            <div class="col-sm-6">
+                {{ assessment_form.traction|as_crispy_field }}
+            </div>
+
+            <div class="col-sm-6">
+                {{ assessment_form.business_model|as_crispy_field }}
+            </div>
+
+            <div class="col-sm-6">
+                {{ assessment_form.intellectual_property|as_crispy_field }}
+            </div>
+
+            <div class="col-sm-6">
+                {{ assessment_form.market_sizing|as_crispy_field }}
+            </div>
+
+            <div class="col-sm-6">
+                {{ assessment_form.competition|as_crispy_field }}
+            </div>
+
+            <div class="col-sm-6">
+                {{ assessment_form.thesis_fit|as_crispy_field }}
+            </div>
+
+        </div>
+    </fieldset>
+
+    <h3 class="fw-bold">{% trans 'Investment Assessment' %}</h3>
+    <div class="text-muted small">
+        {% blocktrans %}
+        This final assessment of the company is required to send to Affinity.
+        Use the AI’s recommendations as you see fit
+        {% endblocktrans %}
+    </div>
+
+    <hr class="my-3">
+
+    <div class="row mt-5 mb-2">
+        <div class="col-sm-1">
+        </div>
+
+        <div class="col-sm-11">
+            <div class="row d-none d-sm-flex text-center">
+                <div class="col-sm-4 fw-bold">{% trans 'Investment Recommendation' %}</div>
+                <div class="col-sm-4 fw-bold">{% trans 'Pros' %}</div>
+                <div class="col-sm-4 fw-bold">{% trans 'Cons' %}</div>
+            </div>
+        </div>
+    </div>
+    {% include 'deals/includes/deal_assessment_auto.html' %}
+
+    <hr class="my-3 d-sm-none">
+
+    <div class="row mt-4">
+
+        <div class="col-sm-1">
+            <div class="text-center">
+                <i class="fas fa-user fa-3x my-2"></i>
+
+                <div class="fw-bold">
+                    {% trans 'Analyst (Final) Assessment' %}
+                </div>
+            </div>
+        </div>
+
+        <fieldset class="col-sm-11" {% if not deal.is_ready %}disabled{% endif %}>
+            <div class="row my-2 assessment-form-pcr">
+                <div class="col-sm-4">
+                    {{ assessment_form.quality_percentile|as_crispy_field }}
+                    {{ assessment_form.investment_rationale|as_crispy_field }}
+                </div>
+
+                <div class="col-sm-4">
+                    {{ assessment_form.pros|as_crispy_field }}
+                </div>
+
+                <div class="col-sm-4">
+                    {{ assessment_form.cons|as_crispy_field }}
+                </div>
+            </div>
+
+            {{ assessment_form.send_to_affinity }}
+
+            <div class="text-center g-2 my-4">
+                {% csrf_token %}
+                <button type="submit" id="save-assessment-btn" class="btn btn-outline-secondary">{% trans 'Save' %}</button>
+                <button type="submit" id="send-to-affinity-btn" class="btn btn-success">{% trans 'send to affinity' %}</button>
+            </div>
+        </fieldset>
+    </div>
+
+</form>

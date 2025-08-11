@@ -1,0 +1,180 @@
+{% load i18n %}
+
+{% load static %}
+
+<nav id="main-nav" class="navbar navbar-expand-lg bg-white border-bottom">
+    <div class="container-fluid container-main bg-white navbar-container">
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <img src="{% static 'images/logo.svg' %}" class="me-4">{{ SITE_NAME }}
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        {% url 'deals:deal-list-fresh' as fresh_deals_url %}
+                        <a class="nav-link
+                                  {% if request.path == fresh_deals_url %}active{% endif %}"
+                           href="{{ fresh_deals_url }}">
+                            {% trans 'Fresh Deals' %}
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        {% url 'deals:deal-list-reviewed' as reviewed_deals_url %}
+                        <a class="nav-link
+                                  {% if request.path == reviewed_deals_url %}active{% endif %}"
+                           href="{{ reviewed_deals_url }}">
+                            {% trans 'Past Deals' %}
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="btn btn-primary text-uppercase text-nowrap navbar-btn mx-lg-5" href="{% url 'deals:deck-create' %}">
+                            + {% trans 'Upload New Deal' %}
+                        </a>
+                    </li>
+
+
+                    <li class="nav-item dropdown">
+                        {% url 'deals:missed-deal-list' as missed_deals_url %}
+                        {% url 'deals:deals-dashboard' as deals_dashboard_url %}
+
+                        <a href="#"
+                           class="nav-link dropdown-toggle
+                                  {% if request.path == missed_deals_url or request.path == deals_dashboard_url %}active{% endif %}"
+                           id="dropdown-deals"
+                           data-bs-toggle="dropdown"
+                           aria-expanded="false">
+                            <span>{% trans 'Deals' %}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="dropdown-deals">
+                            <li>
+                                <a class="dropdown-item {% if request.path == deals_dashboard_url %}active{% endif %}"
+                                   href="{{ deals_dashboard_url }}">
+                                    <i class="fas fa-chart-line me-3"></i>
+                                    {% trans 'Dashboard' %}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if request.path == missed_deals_url %}active{% endif %}"
+                                   href="{{ missed_deals_url }}">
+                                    <i class="fas fa-list me-3"></i>
+                                    {% trans 'Missed Deals' %}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+
+                    <li class="nav-item dropdown">
+                        {% url 'dual-use:dashboard' as du_dash_url %}
+                        {% url 'dual-use:report-list' as report_list_url %}
+                        {% url 'dual-use:unreviewed-report-list' as unreviewed_report_list_url %}
+                        {% url 'dual-use:report-create' as report_create_url %}
+                        {% url 'dual-use:report-import' as report_import_url %}
+
+                        <a href="#"
+                           class="nav-link dropdown-toggle {% if 'dual-use' in request.resolver_match.app_name %}active{% endif %}"
+                           id="dropdown-dual-use"
+                           data-bs-toggle="dropdown"
+                           aria-expanded="false">
+                            <span>{% trans 'Dual-use' %}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="dropdown-dual-use">
+                            <li>
+                                <a class="dropdown-item {% if request.path == du_dash_url %}active{% endif %}"
+                                   href="{{ du_dash_url }}">
+                                    <i class="fas fa-chart-line me-3"></i>
+                                    {% trans 'Dashboard' %}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if request.path == report_list_url %}active{% endif %}"
+                                   href="{{ report_list_url }}">
+                                    <i class="fas fa-list me-3"></i>
+                                    {% trans 'Companies' %}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if request.path == report_import_url %}active{% endif %}"
+                                   href="{{ report_import_url }}">
+                                    <i class="fas fa-file-arrow-up me-3"></i>
+                                    {% trans 'Import Companies' %}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if request.path == report_create_url %}active{% endif %}"
+                                   href="{{ report_create_url }}">
+                                    <i class="fas fa-plus me-3"></i>
+                                    {% trans 'Add Company' %}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item {% if request.path == unreviewed_report_list_url %}active{% endif %}"
+                                   href="{{ unreviewed_report_list_url }}">
+                                    <i class="fas fa-list me-3"></i>
+                                    {% trans 'Unreviewed Companies' %}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
+            </ul>
+
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link link-dark dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="me-2">{{ user.display_name }}</span>
+                            {# TODO: display real image #}
+                            {% if user.avatar %}
+                                <img src="{{ user.avatar }}" alt="mdo" width="32" height="32" class="rounded-circle">
+                            {% else %}
+                                <span class="btn btn-dark rounded-circle">{{ user.display_name|upper|slice:1 }}</span>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end mb-5" aria-labelledby="dropdownUser1" style="">
+                            {% if user.is_staff %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'admin:index' %}" target="_blank">{% trans 'Administration' %}</a>
+                                </li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'account_logout' %}">
+                                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                    {% trans 'Sign out' %}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item"
+                                   href="https://www.notion.so/How-to-use-the-AINdex-12106afb979f49fdbf8ec0603eb8aa8b"
+                                   target="_blank">
+                                    {% trans 'How to Use' %}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a href="{% url 'account_login' %}"
+                           class="btn btn-primary">
+                            {% translate 'Login' %}
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

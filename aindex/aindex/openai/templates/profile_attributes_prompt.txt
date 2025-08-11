@@ -1,0 +1,34 @@
+{{ profile.name }} is a person/candidate of interest, and we would like to know more about his/her professional profile.
+
+Your job is to read the provided information about the person, and answer questions about the person.
+Accuracy is essential, and if the answer to the question is uncertain, do not answer the question.
+AIN uses software to process your answers, so you will submit them as arguments to the function profile_attributes().
+
+Use empty strings for N/A or unknown string argument values instead of values like 'unknows', 'none', 'null', 'Unspecified', e.t.c.
+
+Answer the following questions:
+1. What year did the person finish bachelor's degree.
+2. What type of bachelors degree did the person get.
+3. What is the name of a school, college  or university where the candidate finished the bachelor's degree.
+4. What type of graduate degree did the person get.
+5. What is the name of a school, college  or university where the person finished the graduate degree.
+6. If the person has a PhD, what is the name of a school which the person got a PhD from.
+7. Does the person have a government or military agency background.
+8. If the person has government or military background, What are the names of government or military agencies,
+   branches or departments the does the candidate have experience with.
+
+Below is some relevant professional profile information about the person:
+
+{% if education %}
+Education background (institution name: program: from date: to date: description)
+{% for ed in education %}{{ ed.institution_name }}: {{ ed.program_name }}: {{ ed.date_from }}: {{ ed.date_to }}: {{ ed.description }}{% endfor %}
+{% else %}
+* No specific information about education.
+{% endif %}
+
+{% if experience %}
+Previous professional experience (title: company name: description)
+{% for exp in experience %}{{ exp.title }}: {{ exp.company_name }}: {{ exp.description }}{% endfor %}
+{% else %}
+* No specific information about professional experience.
+{% endif %}

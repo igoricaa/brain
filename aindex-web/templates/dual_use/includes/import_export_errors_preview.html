@@ -1,0 +1,100 @@
+{% load i18n %}
+
+{% if result.has_errors %}
+    {% block errors %}
+        <h4 class="text-danger">{% translate "Errors" %}</h4>
+
+        <ul class="">
+            {% for error in result.base_errors  %}
+                <li class="text-bg-danger mb-3 p-3 rounded">
+                    {{ error.error }}
+                    <div class="traceback">{{ error.traceback|linebreaks }}</div>
+                </li>
+            {% endfor %}
+
+            {% block import_error_list %}
+                {% for line, errors in result.row_errors %}
+                    {% for error in errors %}
+                        {% block import_error_list_item %}
+                            <li class="import-error-li text-bg-danger mb-3 p-3 rounded">
+                                <div class="import-error-display-message">
+                                    {% translate "Line number" %}: {{ line }} - {{ error.error }}
+                                </div>
+
+                                {% comment %}
+                                <div class="import-error-display-traceback">{{ error.traceback|linebreaks }}</div>
+                                {% endcomment %}
+
+                            </li>
+                        {% endblock %}
+                    {% endfor %}
+                {% endfor %}
+            {% endblock %}
+        </ul>
+    {% endblock %}
+
+{% elif result.has_validation_errors %}
+
+    {% block validation_errors %}
+        <h4 class="text-danger">{% translate "Some rows failed to validate" %}</h4>
+
+        <div class="text-bg-danger mb-3 p-3 rounded">
+            {% translate "Please correct these errors in your data where possible, then reupload it using the form above." %}
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm import-preview">
+                <thead>
+                    <tr>
+                        <th>{% translate "Row" %}</th>
+                        <th>{% translate "Errors" %}</th>
+                        {% for field in result.diff_headers %}
+                            <th>{{ field }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for row in result.invalid_rows %}
+                        <tr>
+                            <td>{{ row.number }} </td>
+                            <td class="errors">
+                                <span class="validation-error-count">{{ row.error_count }}</span>
+                                <div class="validation-error-container">
+                                    <ul class="validation-error-list">
+                                        {% for field_name, error_list in row.field_specific_errors.items %}
+                                            <li>
+                                                <span class="validation-error-field-label">{{ field_name }}</span>
+                                                <ul>
+                                                    {% for error in error_list %}
+                                                        <li>{{ error }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </li>
+                                        {% endfor %}
+
+                                        {% if row.non_field_specific_errors %}
+                                            <li>
+                                                <span class="validation-error-field-label">{% translate "Non field specific" %}</span>
+                                                <ul>
+                                                    {% for error in row.non_field_specific_errors %}
+                                                        <li>{{ error }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+
+                            {% for field in row.values %}
+                                <td>{{ field }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endblock %}
+
+{% endif %}

@@ -1,0 +1,5 @@
+{% for tag in tags %}
+    {% include 'includes/mapped_tag.html' %}
+{% empty %}
+    -
+{% endfor %}

@@ -1,0 +1,302 @@
+{% extends 'dual_use/base.html' %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load widget_tweaks %}
+
+{% load deals %}
+
+{% block body_id %}_du-dashboard{% endblock %}
+{% block content_class %}container{% endblock %}
+
+{% block content %}
+
+    <div class="mb-5">
+        <form class="row row-cols-sm-5 g-3 align-items-center" method="GET" action="">
+            <div class="col-12">
+                <label class="visually-hidden" for="id_year_evaluated">{% trans 'Evaluation year'}</label>
+                {{ filter_form.year_evaluated|add_class:'form-select'|attr:'v-model:lookup.year_evaluated'|attr:'@change:update' }}
+            </div>
+
+            <div class="col-12">
+                <label class="visually-hidden" for="id_indudtries">{% trans 'Industry' %}</label>
+                {{ filter_form.industries|add_class:'form-select'|attr:'v-model:lookup.industries'|attr:'@change:update' }}
+            </div>
+
+            <div class="col-12">
+                <label class="visually-hidden" for="id_country">{% trans 'Country' %}</label>
+                {{ filter_form.hq_country|add_class:'form-select'|attr:'v-model:lookup.hq_country'|attr:'@change:update' }}
+            </div>
+
+            <div class="col-12">
+                <div class="input-group">
+                    <span class="input-group-text">{% trans 'Thesis fit' %}</span>
+                    {{ filter_form.thesis_fit|add_class:'form-select'|attr:'v-model:lookup.thesis_fit'|attr:'@change:update' }}
+
+                </div>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+
+                <a href="{% url 'dual-use:dashboard' %}" class="btn btn-link ms-3">
+                    <i class="fas fa-arrows-rotate"></i> Clear filters
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div>
+        <div class="details-container">
+            <div>
+                <h2>{% trans 'Top HQ countries' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Pie id="hq-country-company-count"
+                         v-if="charts.hqCountryCompanyCount"
+                         :options="charts.hqCountryCompanyCount.options"
+                         :data="charts.hqCountryCompanyCount.data"/>
+                </div>
+                <div class="col-sm-3 d-flex align-items-center">
+                    <div id="hq-country-company-count-legend" class="chart-legend legend-column-sm"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Top HQ states' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Pie id="hq-state-company-count"
+                         v-if="charts.hqStateCompanyCount"
+                         :options="charts.hqStateCompanyCount.options"
+                         :data="charts.hqStateCompanyCount.data"/>
+                </div>
+                <div class="col-sm-3 d-flex align-items-center">
+                    <div id="hq-state-company-count-legend" class="chart-legend legend-column-sm"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Top HQ cities' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Pie id="hq-city-company-count"
+                         v-if="charts.hqCityCompanyCount"
+                         :options="charts.hqCityCompanyCount.options"
+                         :data="charts.hqCityCompanyCount.data"/>
+                </div>
+                <div class="col-sm-3 d-flex align-items-center">
+                    <div id="hq-city-company-count-legend" class="chart-legend legend-column-sm"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Technology Type' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Bar id="tech-type-company-count-trend"
+                         v-if="charts.techTypeCompanyCountTrend"
+                         :options="charts.techTypeCompanyCountTrend.options"
+                         :data="charts.techTypeCompanyCountTrend.data"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Industries' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Bar id="industries-company-count-trend"
+                         v-if="charts.industriesCompanyCountTrend"
+                         :options="charts.industriesCompanyCountTrend.options"
+                         :data="charts.industriesCompanyCountTrend.data"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Companies founded by year' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Bar id="year-founded-company-count-trend"
+                         v-if="charts.yearFoundedCompanyCountTrend"
+                         :options="charts.yearFoundedCompanyCountTrend.options"
+                         :data="charts.yearFoundedCompanyCountTrend.data"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Number of founders' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Bar id="founders-count-company-count-trend"
+                         v-if="charts.foundersCountCompanyCountTrend"
+                         :options="charts.foundersCountCompanyCountTrend.options"
+                         :data="charts.foundersCountCompanyCountTrend.data"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Previous Employers' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Bar id="founders-past-employment-company-count-trend"
+                         v-if="charts.foundersPastEmploymentCompanyCountTrend"
+                         :options="charts.foundersPastEmploymentCompanyCountTrend.options"
+                         :data="charts.foundersPastEmploymentCompanyCountTrend.data"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Founder Government Experience' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Bar id="founders-mog-bg-count-trend"
+                         v-if="charts.foundersMogBgCountTrend"
+                         :options="charts.foundersMogBgCountTrend.options"
+                         :data="charts.foundersMogBgCountTrend.data"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Founders Diversity' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <canvas id="founders-diversity-count-trend"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Top undergraduate schools' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Bar id="founders-barchelor-school-count"
+                         v-if="charts.foundersBachelorSchoolCount"
+                         :options="charts.foundersBachelorSchoolCount.options"
+                         :data="charts.foundersBachelorSchoolCount.data"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Top graduate schools' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Bar id="founders-graduate-school-count"
+                         v-if="charts.foundersGraduateSchoolCount"
+                         :options="charts.foundersGraduateSchoolCount.options"
+                         :data="charts.foundersGraduateSchoolCount.data"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Founders Graduate Degree Types' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center chart-container-md">
+                    <Pie id="founders-graduate-degree-type-count"
+                         v-if="charts.foundersGraduateDegreeTypeCount"
+                         :options="charts.foundersGraduateDegreeTypeCount.options"
+                         :data="charts.foundersGraduateDegreeTypeCount.data"/>
+                </div>
+                <div class="col-sm-3 d-flex align-items-center">
+                    <div id="founders-graduate-degree-type-count-legend" class="chart-legend legend-column-sm"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4">
+            <div>
+                <h2>{% trans 'Top Investors' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center">
+                    <Bar id="investors-company-count-trend"
+                         v-if="charts.investorsCompanyCountTrend"
+                         :options="charts.investorsCompanyCountTrend.options"
+                         :data="charts.investorsCompanyCountTrend.data"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-container mt-4 mb-5">
+            <div>
+                <h2>{% trans 'Top Accelerators' %}</h2>
+                <hr>
+            </div>
+            <div class="row d-flex my-4">
+                <div class="col-sm d-flex justify-content-center align-self-center">
+                    <Bar id="accelerators-company-count-trend"
+                         v-if="charts.acceleratorsCompanyCountTrend"
+                         :options="charts.acceleratorsCompanyCountTrend.options"
+                         :data="charts.acceleratorsCompanyCountTrend.data"/>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% endblock content %}
+
+
+{% block js %}
+    {{ block.super }}
+
+    {% url 'dual-use:summary-data' as du_summary_data_url %}
+    <script type="text/javascript">
+        window.settings = {
+            DU_REPORT_DATA_URL: "{{ du_summary_data_url }}",
+        };
+    </script>
+    <script src="{% static 'du_dashboard.js' %}" type="application/javascript"></script>
+{% endblock js %}

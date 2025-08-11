@@ -1,0 +1,40 @@
+
+#main-nav {
+
+    .navbar-container:has(>.navbar-collapse.show) {
+        border-bottom: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color);
+        box-shadow: var(--bs-box-shadow);
+    }
+
+    .nav-item {
+        text-align: right;
+    }
+
+    .navbar-btn {
+        margin: calc(var(--bs-nav-link-padding-y) * 2) var(--bs-nav-link-padding-x);
+    }
+
+    .nav-link {
+        padding: calc(var(--bs-nav-link-padding-y) * 2) var(--bs-nav-link-padding-x);
+    }
+}
+
+.deal-details-row {
+
+    .details-col {
+
+        .deal-details {
+            margin-right: 0;
+            margin-bottom: 1.5rem;
+       }
+
+    }
+
+}
+
+.deal-details-assessment {
+
+    .rationale-text {
+        margin: 0.5rem;
+    }
+}

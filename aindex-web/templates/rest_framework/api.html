@@ -1,0 +1,11 @@
+{% extends "rest_framework/base.html" %}
+{% load static %}
+
+{% block title %}{% if name %}{{ name }} – {% endif %}{{ SITE_API_NAME }}{% endblock %}
+
+{% block branding %}
+    {% url 'api:api-root' as api_root_url %}
+    <a class='navbar-brand' href='{% if SITE_API_URL %}{{ SITE_API_URL }}{% else %}{{ api_root_url }}{% endif %}'>
+        <strong style="display: inline-block">{{ SITE_API_NAME }}</strong>
+    </a>
+{% endblock %}

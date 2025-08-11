@@ -1,0 +1,66 @@
+The raw text of the company's pitch deck is included below in triple backticks:
+
+```
+{{ deck.text }}
+```
+
+The founders' education and work experience data in JSON format is included below in triple backticks:
+
+```
+{{ founders|tojson() }}
+```
+
+{% if grants %}
+The data for grants related to the company in JSON format is included below in triple backticks:
+
+```
+{{ grants|tojson() }}
+```
+{% endif %}
+
+{% if patent_applications %}
+The data for patent applications related to the company in JSON format  is included below in triple backticks:
+
+```
+{{ patent_applications|tojson() }}
+```
+{% endif %}
+
+{% if clinical_studies %}
+The data for clinical studies related to the company JSON format  is included below in triple backticks:
+
+```
+{{ clinical_studies|tojson() }}
+```
+{% endif %}
+
+--
+
+Your job is to read the text of the company's pitch deck, founder education and work experience data sourced from LinkedIn,
+grant data sourced from the United States Small Business Innovation Research (SBIR) program, and United States patent application data
+sourced from the United States Patent and Trademark Office (USPTO) and answer questions about the company.
+Some of the data below—especially from grants, patents, and LinkedIn—may include incorrect or unrelated information due to automated sourcing. 
+If any information seems out of context or inconsistent with the company, ignore it in your evaluation.
+Accuracy is essential, and if the answer to the question is uncertain, do not answer the question. Use concise, factual answers. 
+Avoid speculation or lengthy summaries. AIN uses software to process your answers, so you will submit them as arguments 
+to the function deal_attributes().
+
+Answer the following questions:
+
+1. Among the provided industries, which accurately describe the company? Include at least one industry but no more than three.
+2. What is the stage of the current fundraise?
+3. How much money is the company seeking, in USD millions?
+4. Is there any evidence that any of the founders is a veteran, that is, has experience in any branch of the US Military?
+5. What investors does the company have?
+6. What problem is the company solving for its customers?
+7. What product does the company offer, and how does it solve this problem?
+8. What customer traction has the company received, if any?
+9. What, if any, intellectual property protection has the company secured?
+10. What is the company's business model?
+11. What is the company's estimate of its TAM or total market size?
+12. How does the company position itself versus competitors?
+    What does the company view as its competitive advantage? What competitors, if any, are named?
+13. How well does this company align with AIN's core focus/thesis?
+    AIN looks for startups of the following kind: pre-seed and seed-stage, dual-use technology,
+    ie. those with both government and civilian applications, veteran-led startups,
+    and startups in the specific areas of space, AI/ML dev tools, defense tech, and sustainability.

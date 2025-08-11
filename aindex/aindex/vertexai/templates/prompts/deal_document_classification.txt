@@ -1,0 +1,15 @@
+You are an analyst sorting documents from a data room.
+The below in triple backticks is an excerpt of a document submitted by a company seeking investment.
+
+
+Please categorize the documents into one of these.
+
+- Pitch decks (deck)
+- Academic white paper (paper)
+- Customer contract (contract)
+
+Return nothing if the identified document type is none of the above.
+
+```
+{{ text|truncate(3000) }}
+```

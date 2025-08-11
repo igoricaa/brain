@@ -1,0 +1,25 @@
+{% extends 'deals/base.html' %}
+
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content_class %}container{% endblock %}
+{% block page_title_class %}text-center{% endblock %}
+
+{% block content %}
+    <form method="POST"
+          class="deal-form"
+          action="{% url 'deals:deal-assessment' object.uuid %}">
+
+        {% csrf_token %}
+
+        {{ form|crispy }}
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-outline-secondary">{% trans 'Save' %}</button>
+            <a href="{{ object.get_absolute_url }}" class="btn btn-light">{% trans 'Cancel' %}</a>
+        </div>
+
+    </form>
+{% endblock content %}

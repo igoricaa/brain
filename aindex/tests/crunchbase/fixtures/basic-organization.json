@@ -1,0 +1,80 @@
+{
+    "uuid": "468bef9f-2f50-590e-6e78-62e3adb05aa1",
+    "properties":
+    {
+        "permalink": "citigroup",
+        "facet_ids": ["company", "investor", "rank"],
+        "identifier":
+        {
+            "permalink": "citigroup",
+            "image_id": "decenjjhhpewtdjkvaro",
+            "uuid": "468bef9f-2f50-590e-6e78-62e3adb05aa1",
+            "entity_def_id": "organization",
+            "value": "Citi"
+        },
+        "image_id": "decenjjhhpewtdjkvaro",
+        "short_description": "Citigroup is a financial services holding company that provides various financial products and services.",
+        "stock_exchange_symbol": "nyse",
+        "rank_org": 1,
+        "facebook":
+        {
+            "value": "https://www.facebook.com/citi"
+        },
+        "twitter":
+        {
+            "value": "https://twitter.com/citi"
+        },
+        "entity_def_id": "organization",
+        "rank_delta_d7": 0.0,
+        "rank_delta_d30": 0.0,
+        "image_url": "https://images.crunchbase.com/image/upload/t_cb-default-original/decenjjhhpewtdjkvaro",
+        "name": "Citi",
+        "rank_principal": 1,
+        "diversity_spotlights": [
+        {
+            "entity_def_id": "diversity_spotlight",
+            "permalink": "women-led",
+            "uuid": "5b651b5d-f338-4204-90b3-0c18aff46b9f",
+            "value": "Women Led"
+        }],
+        "linkedin":
+        {
+            "value": "https://www.linkedin.com/company/citi"
+        },
+        "uuid": "468bef9f-2f50-590e-6e78-62e3adb05aa1",
+        "created_at": "2007-07-31T19:52:13Z",
+        "location_identifiers": [
+        {
+            "permalink": "new-york-new-york",
+            "uuid": "d64b7615-985c-fbf4-4aff-aa89d70c4050",
+            "location_type": "city",
+            "entity_def_id": "location",
+            "value": "New York"
+        },
+        {
+            "permalink": "new-york-united-states",
+            "uuid": "83ead471-332b-d02e-67b7-67279aed075b",
+            "location_type": "region",
+            "entity_def_id": "location",
+            "value": "New York"
+        },
+        {
+            "permalink": "united-states",
+            "uuid": "f110fca2-1055-99f6-996d-011c198b3928",
+            "location_type": "country",
+            "entity_def_id": "location",
+            "value": "United States"
+        },
+        {
+            "permalink": "north-america",
+            "uuid": "b25caef9-a1b8-3a5d-6232-93b2dfb6a1d1",
+            "location_type": "continent",
+            "entity_def_id": "location",
+            "value": "North America"
+        }],
+        "rank_delta_d90": 1.2,
+        "listed_stock_symbol": "NYSE:C",
+        "website_url": "https://www.citigroup.com",
+        "updated_at": "2024-07-12T10:39:21Z"
+    }
+}

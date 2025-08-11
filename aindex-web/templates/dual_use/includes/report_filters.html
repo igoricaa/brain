@@ -1,0 +1,68 @@
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+
+<div class="page-filters mt-4">
+
+    {# Start: Page filters toolbar #}
+    <div class="d-flex justify-content-end">
+
+        <div class="pe-4 text-muted d-flex align-items-center">
+            {% blocktrans count report_count=report_list|length %}
+            {{ report_count }} company found
+            {% plural %}
+            {{ report_count }} companies found
+            {% endblocktrans %}
+        </div>
+
+        <div class="">
+            <div class="ps-sm-4">
+
+                <a href="#offcanvas-company-page-filters"
+                   class="btn btn-primary"
+                   role="button"
+                   data-bs-toggle="offcanvas"
+                   aria-controls="offcanvas-company-page-filters"
+                   title="{% trans 'Apply filters' %}">
+                    <i class="fa-solid fa-filter"></i> {% trans 'Filter' %}
+                </a>
+
+                <a href="{% url 'dual-use:report-list' %}" class="btn btn-link" title="{% trans 'Reset filters' %}">
+                    <i class="fa-solid fa-filter-circle-xmark"></i> {% trans 'Clear filters' %}
+                </a>
+            </div>
+        </div>
+
+    </div>
+    {# End: Page filters toolbar #}
+
+
+    {# Start: Page filters offcanvas #}
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvas-company-page-filters" aria-labelledby="offcanvas-company-page-filters-label">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvas-company-page-filters-label">
+                {% trans 'Filter companies' %}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            {# Start: Search form #}
+            <div id="company-list-search-filters" class="page-search-filters mt-4">
+                <form method="GET">
+                    {{ filter.form|crispy }}
+                    <div class="mb-4 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            {% trans 'Apply filters' %}
+                        </button>
+                        <a href="{% url 'dual-use:report-list' %}" class="btn btn-secondary">
+                            {% trans 'Reset filters' %}
+                        </a>
+                    </div>
+                </form>
+            </div>
+            {# End: Search form #}
+        </div>
+    </div>
+    {# End: Page filters offcanvas #}
+</div>
+

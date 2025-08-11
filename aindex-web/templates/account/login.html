@@ -1,0 +1,52 @@
+{% extends 'account/base.html' %}
+
+
+{% load i18n %}
+{% load account %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}{% trans "Sign In" %}{% endblock %}
+
+{% block page_title %}
+    <h1 class="text-center page-title">
+      {% translate "Sign In" %}
+    </h1>
+{% endblock page_title %}
+
+{% block content %}
+
+    <div class="">
+
+        {% if SOCIALACCOUNT_ENABLED %}
+            <div class="socialaccount_providers col-sm-6 mx-auto">
+                {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+            </div>
+        {% endif %}
+
+        {% comment %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="card-title">
+                        <h5 class="text-center text-primary">{% trans 'OR' %}</h5>
+                    </div>
+
+                    <form class="login" method="POST" action="{% url 'account_login' %}">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        {% if redirect_field_value %}
+                            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                        {% endif %}
+
+                        <div class="">
+                            <button class="btn btn-primary" type="submit">{% trans "Sign In" %}</button>
+                            <span class="float-right">
+                                <a class="small" href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a>
+                            </span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endcomment %}
+    </div>
+
+{% endblock %}

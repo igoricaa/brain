@@ -1,0 +1,32 @@
+Your job is to read the text of the company's pitch deck and answer questions about the company.
+Accuracy is essential, and if the answer to the question is uncertain, do not answer the question.
+AIN uses software to process your answers, so you will submit them as arguments to the function deck_attributes().
+
+Answer the following questions:
+
+1. What is the name of the company?
+2. What is the URL of the company website?
+3. Among the following industries, which accurately describe the company? Include at least one industry but no more than three.
+4. What is the stage of the current fundraise?
+5. How much money is the company seeking, in USD millions?
+6. What are the names and titles of the founders of the company?
+7. Is there any evidence that any of the founders is a veteran, that is, has experience in any branch of the US Military?
+8. What investors does the company have?
+9. What problem is the company solving for its customers?
+10. What product does the company offer, and how does it solve this problem?
+11. What customer traction has the company received, if any?
+12. What, if any, intellectual property protection has the company secured?
+13. What is the company's business model?
+14. What is the company's estimate of its TAM or total market size?
+15. How does the company position itself versus competitors?
+    What does the company view as its competitive advantage? What competitors, if any, are named?
+16. How well does this company align with AIN's core focus/thesis?
+    AIN looks for startups of the following kind: pre-seed and seed-stage, dual-use technology,
+    ie. those with both government and civilian applications, veteran-led startups,
+    and startups in the specific areas of space, AI/ML dev tools, defense tech, and sustainability.
+
+The pitch deck of the company is included below in triple backticks:
+
+```
+{{ deck.text }}
+```

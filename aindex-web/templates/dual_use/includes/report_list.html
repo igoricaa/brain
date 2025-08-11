@@ -1,0 +1,69 @@
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+{% load el_pagination_tags %}
+
+
+{# Start: Render companies list table #}
+{% lazy_paginate report_list %}
+{% for report in report_list %}
+
+    {# Start: Render a report #}
+    <div class="row list-row bg-white">
+
+        {# Start: Render report logo and name #}
+        <div class="col-3 list-col d-flex">
+            <div class="text-center list-index">
+                <a href="{{ report.get_absolute_url }}">
+                    {% if report.image_xxs %}
+                        <img src="{{ report.image_xxs.url }}" class="img-fluid">
+                    {% else %}
+                        <img src="{% static 'images/logo.svg' %}">
+                    {% endif %}
+                </a>
+            </div>
+            <div>
+                <a href="{{ report.get_absolute_url }}" class="fw-bold text-muted">
+                    {{report.name}}
+                </a>
+            </div>
+        </div>
+        {# End: Render report logo and name #}
+
+        {# Start: Render report summary #}
+        <div class="col-3 list-col">
+            <div class="small">{{ report.summary|truncatechars:200 }}</div>
+        </div>
+        {# End: Render report summary #}
+
+        {# Start: Render report headquarter location #}
+        <div class="col-2 list-col">
+            <div class="">{{ report.display_hq_location }}</div>
+        </div>
+        {# End: Render report headquarter location #}
+
+        <div class="col-2 list-col">
+            <div class="">
+                {% include 'dual_use/includes/mapped_tags.html' with tags=report.industries.all %}
+            </div>
+        </div>
+
+        <div class="col-1 list-col">
+            <div class="">
+                    {% if report.thesis_fit is True %}
+                        <i class="fas fa-circle-check fa-lg text-success"></i> {% trans 'Yes' %}
+                    {% elif report.thesis_fit is False %}
+                        <i class="fas fa-circle-xmark fa-lg text-warning"></i> {% trans 'No' %}
+                    {% else %}
+                        <i class="far fa-circle-question fa-lg text-muted"></i>
+                    {% endif %}
+            </div>
+        </div>
+    </div>
+    {# End: Render a report #}
+
+{% endfor %}
+{% show_more %}
+{# End: Render companies list table #}
+

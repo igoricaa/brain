@@ -1,0 +1,45 @@
+{% extends 'deals/base.html' %}
+
+{% load i18n %}
+{% load static %}
+
+{% load compress %}
+
+
+{% block page_subtitle %}
+<div>New deals submitted but not yet sorted.</div>
+{% endblock %}
+
+{% block content %}
+    <div class="overflow-x-auto">
+        <div class="deal-listing-container">
+            <div class="row deal-row deal-th">
+                <div class="col-3 deal-col">
+                    <div class="deal-index"></div>
+                    {% trans 'Company' %}
+                </div>
+                <div class="col deal-col">{% trans 'Fundraise' %}</div>
+                <div class="col deal-col">{% trans 'Industries' %}</div>
+                <div class="col deal-col">{% trans 'Dual-use signal' %}</div>
+                <div class="col deal-col">{% trans 'Grants' %}</div>
+            </div>
+
+            {% include 'deals/includes/fresh_deals.html' %}
+        </div>
+    </div>
+{% endblock content %}
+
+
+{% block extra_js %}
+    {{ block.super }}
+
+    {% compress js %}
+    <script src="{% static 'el-pagination/js/el-pagination.js' %}"></script>
+    <script>
+        $.endlessPaginate({
+            paginateOnScroll: true,
+            paginateOnScrollMargin: 100
+        });
+    </script>
+    {% endcompress %}
+{% endblock %}

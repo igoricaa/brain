@@ -1,0 +1,33 @@
+{% extends 'deals/base.html' %}
+
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content_class %}container{% endblock %}
+{% block page_title_class %}text-center{% endblock %}
+
+
+{% block content %}
+
+    <div class="text-center mb-4 fw-bold">
+        {% blocktrans with staff_name=object.staff.name trimmed %}
+        Are you sure you want to delete the founder "{{ staff_name }}"?
+        {% endblocktrans %}
+    </div>
+
+    <form method="POST"
+          action="{% url 'deals:enrolment-delete' enrolment.uuid %}">
+
+        {% csrf_token %}
+
+        {{ form|crispy }}
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-danger">{% trans 'Delete' %}</button>
+            <a href="{{ enrolment.deal.get_absolute_url }}" class="btn btn-light">{% trans 'Cancel' %}</a>
+        </div>
+    </form>
+
+{% endblock content %}
+

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+
+{% block body %}
+
+    {% block site_messages %}
+        {% include 'includes/site_messages.html' %}
+    {% endblock %}
+
+    {% block main_nav %}
+        {% include 'includes/main_nav.html' %}
+    {% endblock main_nav %}
+
+    {% block content_wrapper %}
+        <div class="container-main {% block content_class %}container-fluid{% endblock %}" id="content-wrapper">
+
+            {% block page_header %}
+                <div class="page-header">
+                    {% block page_title %}<h1 class="page-title {% block page_title_class %}{% endblock %}">{{ page_title }}</h1>{% endblock %}
+                    {% block page_subtitle %}{% endblock %}
+                </div>
+            {% endblock page_header %}
+
+            <div class="content">
+                {% block content %}
+                {% endblock content %}
+            </div>
+
+        </div>
+    {% endblock content_wrapper %}
+
+    {% block footer %}
+    {% endblock %}
+{% endblock body %}

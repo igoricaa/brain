@@ -1,0 +1,17 @@
+Your job is to read the provided company's information and answer questions about the company.
+Accuracy is essential, and if the answer to the question is uncertain, do not answer the question.
+AIN uses software to process your answers, so you will submit them as arguments to the function company_attributes().
+
+Answer the following questions:
+1. Among the specified choices, which industry does the company belong to?
+   Choices are {% for industry in industries %}{{ industry.name }}, {% endfor %}.
+   Include at least one industry but no more than three.
+2. What is the technology type is the company involved in? Where choices are: {% for tech_type in technology_types %}{{ tech_type.name }}, {% endfor %}.
+   Where "Hybrid" technology type involves both hardware and software.
+
+Some company information is included below:
+
+- **company name**: {{ company.name }}
+{% if company.summary %}- **company summary description**: {{ company.summary }}{% endif %}
+{% if company.description %}- **company general description**: {{ company.description }}{% endif %}
+{% if company.cb_industries_names %}- **company industry according to Crunchbase**: {{ company.cb_industries_names| join(', ')  }}{% endif %}

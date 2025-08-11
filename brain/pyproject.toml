@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=62.6"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brain"
+version = "0.1.0"
+description = ""
+readme = "README.rst"
+authors = [
+  {name = "AINVentures", email = "it@ainventures.com"}
+]
+maintainers = [
+  {name = "AINVentures", email = "it@ainventures.com"}
+]
+classifiers = [
+
+]
+license = {text = "Not open source"}
+dynamic = ["dependencies", "optional-dependencies"]
+
+
+[project.urls]
+bugs = "https://github.com/monorepo/issues"
+changelog = "https://github.com/AIN-ventures/monorepo/blob/master/changelog.md"
+homepage = "https://github.com/AIN-ventures/monorepor"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+optional-dependencies = {dev = { file = ["requirements-dev.txt"] }}
+
+[tool.setuptools.package-data]
+"*" = ["*.*"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["brain*", "app*"]
+
+
+[tool.black]
+line-length = 119
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+  | node_modules
+  | static
+  | media_root
+  | static_root
+)/
+'''
+skip-string-normalization = true

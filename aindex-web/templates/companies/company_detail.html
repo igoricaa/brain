@@ -1,0 +1,393 @@
+{% extends 'dual_use/base.html' %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+{% load deals %}
+
+{% block content_class %}container-fluid{% endblock %}
+
+{% block body_id %}_company-detail{% endblock %}
+
+{% block page_title %}
+    <div class="d-sm-flex">
+        <div class="me-sm-5">
+            {% if company.image_sm %}
+                <img src="{{ company.image_sm.url }}" class="img-fluid">
+            {% else %}
+                <img src="{% static 'images/logo.svg' %}">
+            {% endif %}
+        </div>
+        <div class="flex-grow-1 d-flex align-items-center">
+            <h1 class="page-title align-middle py-3 py-sm-0">{{ page_title }}</h1>
+        </div>
+
+        <div class="d-flex align-items-end justify-content-sm-end">
+            <div>
+                <a href="" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-pencil"></i>
+                    {% trans 'Edit' %}
+                </a>
+
+
+            </div>
+        </div>
+    </div>
+{% endblock page_title %}
+
+{% block content %}
+    <div class="">
+        <div class="row">
+
+            {# basic info #}
+            <div class="col-sm-6 d-flex mt-4">
+                <div class="details-container flex-grow-1">
+                    <div class="">{{ company.summary|linebreaks }}</div>
+
+                    <div>
+                        <div class="field">
+                            <span class="label"><i class="fas fa-earth-americas"></i> {% trans 'Website' %}</span>
+                            {% if company.website %}
+                                <a class="value" href="{{ company.website }}" target="_blank">{{ company.website|url_display }}</a>
+                            {% else %}
+                                <span class="value">-</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fas fa-location-dot"></i> {% trans 'HQ Location' %}</span>
+                            <span class="value">{{ company.hq_location }}</span>
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fas fa-flag"></i> {% trans 'IPO Status' %}</span>
+                            <span class="value">{{ company.ipo_status.name|default:'-' }}</span>
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fas fa-calendar-days"></i> {% trans 'Year founded' %}</span>
+                            <span class="value lead me-3">{{ company.year_founded|default:'-' }}</span>
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fas fa-link"></i> {% trans 'Crunchbase' %}</span>
+                            {% if company.cb_url %}
+                                <a class="value" href="{{ company.cb_url }}" target="_blank">{{ company.cb_url|url_display }}</a>
+                            {% else %}
+                                <span class="value">-</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fas fa-link"></i> {% trans 'SBIR' %}</span>
+                            {% if company.sbir_url %}
+                                <a class="value" href="{{ company.sbirn_url }}" target="_blank">{{ company.sbir_url|url_display }}</a>
+                            {% else %}
+                                <span class="value">-</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fab fa-linkedin"></i> {% trans 'Linkedin' %}</span>
+                            {% if company.linkedin_url %}
+                                <a class="value" href="{{ company.linkedin_url }}" target="_blank">{{ company.linkedin_url|url_display }}</a>
+                            {% else %}
+                                <span class="value">-</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="field">
+                            {% if company.twitter_url %}
+                                <a class="badge text-bg-dark" href="{{ company.twitter_url }}" target="_blank">
+                                    <i class="fab fa-x-twitter"></i>
+                                </a>
+                            {% endif %}
+
+                            {% if company.facebook_url %}
+                                <a class="badge text-bg-dark" href="{{ company.facebook_url }}" target="_blank">
+                                    <i class="fab fa-facebook-f"></i>
+                                </a>
+                            {% endif %}
+
+                            {% if company.email %}
+                                <a class="badge text-bg-dark" href="mailto:{{ company.email }}" target="_blank">
+                                    <i class="far fa-envelope"></i> {{ company.email }}
+                                </a>
+                            {% endif %}
+
+                            {% if company.phone_number %}
+                                <a class="badge text-bg-dark" href="tel:{{ company.phone_number }}" target="_blank">
+                                    <i class="fas fa-phone"></i> {{ company.phone_number }}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {# end basic info #}
+
+            {# funding info #}
+            <div class="col-sm-6 d-flex mt-4">
+                <div class="details-container flex-grow-1">
+
+                    <div class="row">
+
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-sack-dollar text-muted"></i> {% trans 'Total Funding' %}</div>
+                                <div class="value ms-4">
+                                    <div class="lead">{{ company.total_funding_amount|intword_usd|default_if_none:'-' }}</div>
+                                    <div class="text-muted">
+                                        {% if company.funding_rounds_count %}
+                                            {% blocktrans with funding_rounds_count=company.funding_rounds_count count counter=company.funding_rounds_count %}
+                                                {{ funding_rounds_count }} funding round
+                                            {% plural %}
+                                                {{ funding_rounds_count }} funding rounds
+                                            {% endblocktrans %}
+                                        {% endif  %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-sack-dollar text-muted"></i> {% trans 'Last funding' %}</div>
+                                <div class="value ms-4">
+                                    <div class="small fw-bold text-muted">{{ company.last_funding_type.name|default:'-' }}</div>
+                                    <div class="lead">
+                                        {{ company.last_funding_amount|intword_usd|default_if_none:'-' }}
+                                    </div>
+                                    <div class="text-muted">
+                                        {{ company.last_funding_date|date:'M Y'|default:'' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-temperature-half text-muted"></i> {% trans 'Funding status' %}</div>
+                                <div class="value fw-light ms-3">{{ company.funding_stage.name|default:'-' }}</div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-dollar-sign text-muted"></i> {% trans 'Most recent valuation' %}</div>
+                                <div class="value ms-3">
+                                    <div class="fw-light">
+                                        {% if company.valuation_range %}
+                                            {{ company.valuation_range.lower|intword_usd }} - {{ company.valuation_range.upper|intword_usd }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                    <div>{{ company.valuation_date|date:'M Y'|default:'' }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-hand-holding-dollar text-muted"></i> {% trans 'Investors' %}</div>
+                                {% if company.investors_names %}
+                                    <ul>
+                                        {% for investor in company.investors_names %}
+                                            <li class="value"> {{ investor }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="value ms-4">-</span>
+                                {% endif %}
+
+                                {% if company.num_lead_investors %}
+                                    <div class="text-muted ms-4">
+                                        {% blocktrans with num_lead_investors=company.num_lead_investors count counter=company.num_lead_investors %}
+                                            {{ num_lead_investors }} lead investor
+                                        {% plural %}
+                                            {{ num_lead_investors }} lead investors
+                                        {% endblocktrans %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-meteor text-muted"></i> {% trans 'Accelerators' %}</div>
+                                {% if company.accelerators_names %}
+                                    <ul>
+                                        {% for accelerator in company.accelerators_names %}
+                                            <li class="value"> {{ accelerator }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="value ms-4">-</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        {# end funding info #}
+
+        <div class="row">
+            <div class="col-sm-6 d-flex mt-4">
+                <div class="details-container flex-grow-1">
+                    <div class="field">
+                        <div class="label">{% trans 'Technology type' %}</div>
+                        <div class="value">
+                            {% if company.technology_type %}
+                                {% include 'dual_use/includes/mapped_tag.html' with tag=company.technology_type %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Industries' %}</div>
+                        <div class="value">
+                            {% include 'dual_use/includes/mapped_tags.html' with tags=company.industries.all %}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Industries (Crunchbase)' %}</div>
+                        <div class="value">
+                            {% for tag in company.cb_industries_names %}
+                                <span class="tag my-1">{{ tag }}</span>
+                            {% empty %}
+                                -
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">
+                            {% trans 'Thesis fit' %}
+                            {% if company.thesis_fit is True %}
+                                <i class="fas fa-circle-check fa-lg text-success"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="right"
+                                   title="{% trans 'Yes' %}"></i>
+                            {% elif company.thesis_fit is False %}
+                                <i class="fas fa-circle-xmark fa-lg text-danger"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="right"
+                                   title="{% trans 'No' %}"></i>
+                            {% else %}
+                                <i class="far fa-circle-question fa-lg text-muted"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="right"
+                                   title="{% trans 'Unknown' %}"></i>
+                            {% endif %}
+                        </div>
+                        <div class="value text-muted">
+                            {{ company.thesis_fit_assessment }}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Patents Granted' %}</div>
+                        <div class="value lead text-muted ms-2">
+                            {{ company.patents_granted_count|default_if_none:'unknown' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 d-flex mt-4">
+                <div class="details-container flex-grow-1">
+                    <div class="field">
+                        <span class="label"><i class="fas fa-people-group"></i> {% trans 'Has diversity on founding team' %}</span>
+                        <span class="value">
+                            {% if company.has_diversity_on_founders is True %}
+                                <i class="fas fa-circle-check fa-lg text-success"></i> {% trans 'Yes' %}
+                            {% elif company.has_diversity_on_founders is False %}
+                                <i class="fas fa-circle-xmark fa-lg text-warning"></i> {% trans 'No' %}
+                            {% else %}
+                                <i class="far fa-circle-question fa-lg text-muted"></i> {% trans 'Unknown' %}
+                            {% endif %}
+                        </span>
+
+                        <div>
+                            {% if company.has_women_on_founders %}
+                                <div>
+                                    <span class="tag rounded mt-3">{% trans 'Has Women on founding team' %}</span>
+                                </div>
+                            {% endif %}
+                            {% if company.has_black_on_founders %}
+                                <div>
+                                    <span class="tag rounded mt-3">{% trans 'Has Black/African on founding team' %}</span>
+                                </div>
+                            {% endif %}
+                            {% if company.has_hispanic_on_founders %}
+                                <div>
+                                    <span class="tag rounded mt-3">{% trans 'Has Hispanic on founding team' %}</span>
+                                </div>
+                            {% endif %}
+                            {% if company.has_asian_on_founders %}
+                                <div>
+                                    <span class="tag rounded mt-3">{% trans 'Has Asian on founding team' %}</span>
+                                </div>
+                            {% endif %}
+                            {% if company.has_meo_on_founders %}
+                                <div>
+                                    <span class="tag rounded mt-3">{% trans 'Has Middle Eastern/Other on founding team' %}</span>
+                                </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="my-5 pt-5">
+            <div class="d-flex align-items-end">
+                <div class="flex-grow-1">
+                    <h3 class="fw-bold">{% trans 'Patent Applications' %}</h3>
+                </div>
+
+                <div>
+
+                    {% if company.patent_applications.all %}
+                        <button type="button"
+                                class="btn btn-danger mx-1"
+                                @click="deleteSelectedPatentApplications()"
+                                :disabled="!selectedPatentApplications.length">
+                            <i class="fas fa-plus"></i> {% trans 'Delete selected patent applications' %}
+                        </button>
+                    {% endif %}
+
+                    <a href="{% url 'companies:company-create-patent-application' company.uuid %}"
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> {% trans 'Add patent application' %}
+                    </a>
+                </div>
+            </div>
+
+            <hr class="my-3">
+
+            {% include 'companies/includes/company_patent_application_list.html' with patent_applications=company.patent_applications.all %}
+        </div>
+
+    </div>
+{% endblock content %}
+
+
+{% block extra_js %}
+    <script src="{% static 'company_detail.js' %}" type="application/javascript"></script>
+{% endblock extra_js %}

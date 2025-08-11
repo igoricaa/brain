@@ -1,0 +1,522 @@
+{% extends 'dual_use/base.html' %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+{% load deals %}
+
+{% block content_class %}container-fluid{% endblock %}
+
+
+{% block page_title %}
+    <div class="d-sm-flex">
+        <div class="me-sm-5">
+            {% if report.image_sm %}
+                <img src="{{ report.image_sm.url }}" class="img-fluid">
+            {% else %}
+                <img src="{% static 'images/logo.svg' %}">
+            {% endif %}
+        </div>
+        <div class="flex-grow-1 d-flex align-items-center">
+            <h1 class="page-title align-middle py-3 py-sm-0">{{ page_title }}</h1>
+        </div>
+
+        <div class="d-flex align-items-end justify-content-sm-end">
+            <div>
+                <a href="{% url 'dual-use:report-update' report.uuid %}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-pencil"></i>
+                    {% trans 'Edit' %}
+                </a>
+
+                {% if not report.is_reviewed %}
+
+                    <form class="d-inline" action="{% url 'dual-use:report-review' report.uuid %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-dark me-2"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="bottom"
+                                data-bs-title="{% trans 'Approve' %}">
+                            <i class="fas fa-check"></i> {% trans 'Review' %}
+                        </button>
+                    </form>
+
+                {% endif %}
+
+                <a href="{% url 'dual-use:report-delete' report.uuid %}" class="btn btn-danger me-2">
+                    <i class="fas fa-xmark"></i> {% trans 'Delete' %}
+                </a>
+
+            </div>
+        </div>
+    </div>
+{% endblock page_title %}
+
+{% block content %}
+
+    <div class="">
+        <div class="row">
+            <div class="col-sm-6 d-flex mt-4">
+                <div class="details-container flex-grow-1">
+                    <div class="">{{ report.summary|linebreaks }}</div>
+
+                    <div>
+                        <div class="field">
+                            <span class="label"><i class="fas fa-earth-americas"></i> {% trans 'Website' %}</span>
+                            {% if report.website %}
+                                <a class="value" href="{{ report.website }}" target="_blank">{{ report.website|url_display }}</a>
+                            {% else %}
+                                <span class="value">-</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fas fa-location-dot"></i> {% trans 'HQ Location' %}</span>
+                            <span class="value">{{ report.display_hq_location }}</span>
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fas fa-flag"></i> {% trans 'IPO Status' %}</span>
+                            <span class="value">{{ report.ipo_status.name|default:'-' }}</span>
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fas fa-link"></i> {% trans 'Crunchbase' %}</span>
+                            {% if report.cb_url %}
+                                <a class="value" href="{{ report.cb_url }}" target="_blank">{{ report.cb_url|url_display }}</a>
+                            {% else %}
+                                <span class="value">-</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fab fa-linkedin"></i> {% trans 'Linkedin' %}</span>
+                            {% if report.linkedin_url %}
+                                <a class="value" href="{{ report.linkedin_url }}" target="_blank">{{ report.linkedin_url|url_display }}</a>
+                            {% else %}
+                                <span class="value">-</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="field">
+                            <span class="label"><i class="fas fa-calendar-days"></i> {% trans 'Year founded' %}</span>
+                            <span class="value lead me-3">{{ report.year_founded|default:'-' }}</span>
+                            <span class="label"><i class="fas fa-calendar-days"></i> {% trans 'Year evaluated' %}</span>
+                            <span class="value lead">{{ report.year_evaluated|default:'-' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 d-flex mt-4">
+                <div class="details-container flex-grow-1">
+
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-hashtag text-muted"></i> {% trans 'Last funding round type' %}</div>
+                                <div class="value fw-light">{{ report.last_funding_type.name|default:'-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-calendar text-muted"></i> {% trans 'Last funding round date' %}</div>
+                                <div class="value lead">{{ report.last_funding_date|default_if_none:'-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-hand-holding-dollar text-muted"></i> {% trans 'Last funding round amount' %}</div>
+                                <div class="value lead">{{ report.last_funding_amount|intword_usd|default_if_none:'-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-hashtag text-muted"></i> {% trans 'Funding rounds' %}</div>
+                                <div class="value lead ms-4">{{ report.funding_rounds_count|default_if_none:'-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-sack-dollar text-muted"></i> {% trans 'Total funding' %}</div>
+                                <div class="value lead ms-4">{{ report.total_funding_amount|intword_usd|default_if_none:'-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-temperature-half text-muted"></i> {% trans 'Funding status' %}</div>
+                                <div class="value fw-light ms-3">{{ report.funding_stage.name|default:'-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-money-check-dollar text-muted"></i> {% trans 'Acquired by' %}</div>
+                                <div class="value lead ms-3">{{ report.acquirer_name|default:'-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-hand-holding-dollar text-muted"></i> {% trans 'Investors' %}</div>
+                                {% if report.investors_names %}
+                                    <ul>
+                                        {% for investor in report.investors_names %}
+                                            <li class="value"> {{ investor }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="value ms-4">-</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="field">
+                                <div class="label"><i class="fas fa-meteor text-muted"></i> {% trans 'Accelerators' %}</div>
+                                {% if report.accelerators_names %}
+                                    <ul>
+                                        {% for accelerator in report.accelerators_names %}
+                                            <li class="value"> {{ accelerator }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="value ms-4">-</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-6 d-flex mt-4">
+                <div class="details-container flex-grow-1">
+                    <div class="field">
+                        <div class="label">{% trans 'Technology type' %}</div>
+                        <div class="value">
+                            {% if report.technology_type %}
+                                {% include 'dual_use/includes/mapped_tag.html' with tag=report.technology_type %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Industries' %}</div>
+                        <div class="value">
+                            {% include 'dual_use/includes/mapped_tags.html' with tags=report.industries.all %}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Industries (Crunchbase)' %}</div>
+                        <div class="value">
+                            {% for tag in report.cb_industries_names %}
+                                <span class="tag my-1">{{ tag }}</span>
+                            {% empty %}
+                                -
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">
+                            {% trans 'Thesis fit' %}
+                            {% if report.thesis_fit is True %}
+                                <i class="fas fa-circle-check fa-lg text-success"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="right"
+                                   title="{% trans 'Yes' %}"></i>
+                            {% elif report.thesis_fit is False %}
+                                <i class="fas fa-circle-xmark fa-lg text-danger"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="right"
+                                   title="{% trans 'No' %}"></i>
+                            {% else %}
+                                <i class="far fa-circle-question fa-lg text-muted"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="right"
+                                   title="{% trans 'Unknown' %}"></i>
+                            {% endif %}
+                        </div>
+                        <div class="value text-muted">
+                            {{ report.thesis_fit_assessment }}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">{% trans 'Patents Granted' %}</div>
+                        <div class="value lead text-muted ms-2">
+                            {{ report.patents_granted_count|default_if_none:'unknown' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 d-flex mt-4">
+                <div class="details-container flex-grow-1">
+                    <div class="field">
+                        <span class="label"><i class="fas fa-people-group"></i> {% trans 'Has diversity on founding team' %}</span>
+                        <span class="value">
+                            {% if report.has_diversity_on_founders is True %}
+                                <i class="fas fa-circle-check fa-lg text-success"></i> {% trans 'Yes' %}
+                            {% elif report.has_diversity_on_founders is False %}
+                                <i class="fas fa-circle-xmark fa-lg text-warning"></i> {% trans 'No' %}
+                            {% else %}
+                                <i class="far fa-circle-question fa-lg text-muted"></i> {% trans 'Unknown' %}
+                            {% endif %}
+                        </span>
+
+                        <div>
+                            {% if report.has_women_on_founders %}
+                                <div>
+                                    <span class="tag rounded mt-3">{% trans 'Has Women on founding team' %}</span>
+                                </div>
+                            {% endif %}
+                            {% if report.has_black_on_founders %}
+                                <div>
+                                    <span class="tag rounded mt-3">{% trans 'Has Black/African on founding team' %}</span>
+                                </div>
+                            {% endif %}
+                            {% if report.has_hispanic_on_founders %}
+                                <div>
+                                    <span class="tag rounded mt-3">{% trans 'Has Hispanic on founding team' %}</span>
+                                </div>
+                            {% endif %}
+                            {% if report.has_asian_on_founders %}
+                                <div>
+                                    <span class="tag rounded mt-3">{% trans 'Has Asian on founding team' %}</span>
+                                </div>
+                            {% endif %}
+                            {% if report.has_meo_on_founders %}
+                                <div>
+                                    <span class="tag rounded mt-3">{% trans 'Has Middle Eastern/Other on founding team' %}</span>
+                                </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="my-5 pt-5">
+        <div class="d-flex">
+            <div class="flex-grow-1">
+                <h3 class="fw-bold">{% trans 'Founders' %}</h3>
+            </div>
+            <div>
+                {% if company %}
+                    <a href="{% url 'talents:founder-create' company.uuid %}?next={{ request.path|urlencode }}"
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> {% trans 'Add founder' %}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <hr class="my-3">
+
+        {% if founders  %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light fw-bold">
+                    <tr>
+                        <td scope="col" class="">{% trans 'Name' %}</td>
+                        <td scope="col" class="">{% trans 'Education' %}</td>
+                        <td scope="col" class="">{% trans 'Age at founding' %}</td>
+                        <td scope="col" class="">{% trans 'Prior founding attempts' %}</td>
+                        <td scope="col" class="">{% trans 'Last significant employment' %}</td>
+                        <td scope="col" class="">{% trans 'Government or military background' %}</td>
+                        <td></td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for founder in founders %}
+                        <tr>
+                            <td>
+                                <a class="text-decoration-none"
+                                   {% if founder.linkedin_url %}
+                                        href="{{ founder.linkedin_url }}" target="_blank"
+                                   {% endif %}>
+                                    {{ founder.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <ul>
+                                {% if founder.bachelor_grad_year or founder.bachelor_school or founder.bachelor_degree_type %}
+                                    <li class="mb-2">
+                                        <div class="fw-bold text-dark">{% trans "Barchelor's degree" %}</div>
+                                        <div>
+                                            <span class="text-secondary">{% trans 'Graduation year' %}:</span>
+                                            <span class="fw-bold">{{ founder.bachelor_grad_year|default:'-' }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-secondary">{% trans 'School' %}:</span>
+                                            <span class="fw-bold">{{ founder.bachelor_school|default:'-' }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-secondary">{% trans 'Type' %}:</span>
+                                            <span class="fw-bold">{{ founder.bachelor_degree_type|default:'-' }}</span>
+                                        </div>
+                                    </li>
+                                {% endif %}
+
+                                {% if founder.graduate_degree_type or founder.graduate_school %}
+                                    <li class="mt-4 mb-2">
+                                        <div class="fw-bold text-dark">{% trans "Graduate degree" %}</div>
+                                        <div>
+                                            <span class="text-secondary">{% trans 'Type' %}:</span>
+                                            <span class="fw-bold">{{ founder.graduate_degree_type|default:'-' }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-secondary">{% trans 'School' %}:</span>
+                                            <span class="fw-bold">{{ founder.graduate_school|default:'-' }}</span>
+                                        </div>
+                                    </li>
+                                {% endif %}
+                                </ul>
+                            </td>
+                            <td>{{ founder.age_at_founding|default:'' }}</td>
+                            <td>{{ founder.prior_founding_count|default_if_none:'' }}</td>
+                            <td>
+                                {% for employment in founder.past_significant_employment %}
+                                    {{ employment }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if founder.has_military_or_govt_background is True %}
+                                    <i class="fas fa-circle-check fa-lg text-success"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-placement="top"
+                                       title="{% trans 'Yes' %}">
+                                    </i>
+                                {% elif founder.has_military_or_govt_background is False %}
+                                    <i class="fas fa-circle-xmark fa-lg text-warning"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-placement="top"
+                                       title="{% trans 'No' %}">
+                                    </i>
+                                {% else %}
+                                    <i class="far fa-circle-question fa-lg text-muted"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-placement="top"
+                                       title="{% trans 'Unknown' %}">
+                                    </i>
+                                {% endif %}
+
+                                {% for background in founder.military_or_govt_background %}
+                                    {{ background }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <a href="{% url 'talents:founder-update' founder.uuid %}?next={{ request.path|urlencode }}"
+                                   class="mx-1"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-title="{% trans 'Edit' %}">
+                                    <i class="fas fa-pencil text-muted text-opacity-50"></i>
+                                </a>
+
+                                <a href="{% url 'talents:founder-delete' founder.uuid %}?next={{ request.path|urlencode }}"
+                                   class="mx-1"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-title="{% trans 'Delete' %}">
+                                    <i class="far fa-circle-xmark text-danger text-opacity-75"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="lead text muted">{% trans 'No founders information found' %}</div>
+        {% endif %}
+    </div>
+
+
+    <div class="my-5">
+        <div class="d-flex">
+            <div class="flex-grow-1">
+                <h3 class="fw-bold">{% trans 'Grants' %}</h3>
+            </div>
+            <div>
+                {% if company %}
+                    <a href="{% url 'companies:company-create-grant' company.uuid %}?next={{ request.path|urlencode }}"
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> {% trans 'Add grant' %}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <hr class="my-3">
+
+        {% if grants  %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light fw-bold">
+                        <tr>
+                            <td scope="col" class="">{% trans 'Name' %}</td>
+                            <td scope="col" class="">{% trans 'Date' %}</td>
+                            <td scope="col" class="">{% trans 'Phase' %}</td>
+                            <td scope="col" class="">{% trans 'Program' %}</td>
+                            <td scope="col" class="">{% trans 'Amount' %}</td>
+                            <td></td>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for grant in grants %}
+                            <tr>
+                                <td>
+                                    <a class="text-decoration-none"
+                                       {% if grant.award_url %}
+                                            href="{{ grant.award_url }}" target="_blank"
+                                       {% endif %}>
+                                        {{ grant.name }}
+                                    </a>
+                                </td>
+                                <td>{{ grant.award_date_display }}</td>
+                                <td>{{ grant.phase }}</td>
+                                <td>{{ grant.program_name }}</td>
+                                <td>{{ grant.potential_amount }}</td>
+                                <td>
+                                    <a href="{% url 'companies:grant-update' grant.uuid %}?next={{ request.path|urlencode }}"
+                                       class="mx-1"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-title="{% trans 'Edit' %}">
+                                        <i class="fas fa-pencil text-muted text-opacity-50"></i>
+                                    </a>
+
+                                    <a href="{% url 'companies:grant-delete' grant.uuid %}?next={{ request.path|urlencode }}"
+                                       class="mx-1"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-title="{% trans 'Delete' %}">
+                                        <i class="far fa-circle-xmark text-danger text-opacity-75"></i>
+                                    </a>
+                                </td>
+
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="lead text muted">
+                {% trans 'No grants found. This usually indicates that the company has not received grants, but it also happens if company name does not match SBIR records.' %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock content %}
