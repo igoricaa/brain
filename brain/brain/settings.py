@@ -93,6 +93,7 @@ INSTALLED_APPS = [
     'deals',
     'dual_use',
     'debug_toolbar',
+    'django_vite',
 ]
 
 MIDDLEWARE = [
@@ -105,6 +106,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    # 'django_vite.middleware.ViteMiddleware',
 ]
 
 ROOT_URLCONF = 'brain.urls'

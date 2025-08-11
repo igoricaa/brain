@@ -15,9 +15,10 @@ EOSQL
 
 # Load PostGIS into both template_database and $POSTGRES_DB
 for DB in template_postgis "$POSTGRES_DB"; do
-    echo "Loading PostGIS extensions into $DB"
+    echo "Loading PostGIS and pgvector extensions into $DB"
     "${psql[@]}" --dbname="$DB" <<-'EOSQL'
         CREATE EXTENSION IF NOT EXISTS postgis;
+        CREATE EXTENSION IF NOT EXISTS vector;
         -- CREATE EXTENSION IF NOT EXISTS postgis_topology;
         -- Reconnect to update pg_setting.resetval
         -- See https://github.com/postgis/docker-postgis/issues/288

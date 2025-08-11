@@ -14,7 +14,7 @@ services:
   # localhost uri: postgresql+psycopg://aindex:aindex@localhost:6432/aindex
   # docker uri: postgresql+psycopg://aindex:aindex@aindex-dev-pg:5432/aindex
   aindex-dev-db:
-    image: postgis/postgis:16-3.4
+    image: pgvector/pgvector:pg16
     container_name: aindex-dev-db
     environment:
       POSTGRES_USER: ${DEV_DB_USER:-aindex}
@@ -36,7 +36,7 @@ services:
   # localhost uri: postgresql+psycopg://test_aindex:test_aindex@localhost:7432/test_aindex
   # docker uri: postgresql+psycopg://test_aindex:test_aindex@aindex-test-pg:5432/test_aindex
   aindex-test-db:
-    image: postgis/postgis:16-3.4
+    image: pgvector/pgvector:pg16
     container_name: aindex-test-db
     environment:
       POSTGRES_USER: ${TEST_DB_USER:-test_aindex}

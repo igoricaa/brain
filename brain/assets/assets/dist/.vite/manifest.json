@@ -1,0 +1,32 @@
+{
+  "src/main.tsx": {
+    "file": "assets/main-DP26CDSo.js",
+    "name": "main",
+    "src": "src/main.tsx",
+    "isEntry": true
+  },
+  "src/pages/company_detail.tsx": {
+    "file": "assets/company_detail-BNWaNpjm.js",
+    "name": "company_detail",
+    "src": "src/pages/company_detail.tsx",
+    "isEntry": true
+  },
+  "src/pages/deal_detail.tsx": {
+    "file": "assets/deal_detail-Dav4BCdy.js",
+    "name": "deal_detail",
+    "src": "src/pages/deal_detail.tsx",
+    "isEntry": true
+  },
+  "src/pages/deals_dashboard.tsx": {
+    "file": "assets/deals_dashboard-CCdoiGt1.js",
+    "name": "deals_dashboard",
+    "src": "src/pages/deals_dashboard.tsx",
+    "isEntry": true
+  },
+  "src/pages/du_dashboard.tsx": {
+    "file": "assets/du_dashboard-DrgT7qBz.js",
+    "name": "du_dashboard",
+    "src": "src/pages/du_dashboard.tsx",
+    "isEntry": true
+  }
+}
