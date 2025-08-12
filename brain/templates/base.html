@@ -37,6 +37,8 @@
 
     <body id="{% block body_id %}{% endblock %}" class="{% block body_class %}min-h-dvh bg-slate-50 text-gray-900 antialiased{% endblock %}">
 
+        {% include 'includes/loading_overlay_complete.html' %}
+
         {% block body %}
             {% block content %}{% endblock %}
         {% endblock body %}

@@ -1,0 +1,74 @@
+<!-- Loading overlay to prevent navigation flash -->
+<div id="app-loading-overlay" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #f8fafc;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+">
+    <!-- Spinner -->
+    <div style="
+        width: 40px;
+        height: 40px;
+        border: 3px solid #e2e8f0;
+        border-top: 3px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    "></div>
+    <!-- Loading text -->
+    <div style="
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+    ">Loading...</div>
+</div>
+
+<style>
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+    // Loading overlay management
+    (function() {
+        // Monitor for React app mounting
+        const checkReactMounted = () => {
+            const roots = ['deals-dashboard-root', 'deals-fresh-root', 'deal-detail-root', 'du-dashboard-root'];
+            const mountedRoot = roots.find(id => {
+                const el = document.getElementById(id);
+                return el && el.children.length > 0;
+            });
+            
+            if (mountedRoot) {
+                // React has mounted, hide loading overlay
+                const loadingOverlay = document.getElementById('app-loading-overlay');
+                if (loadingOverlay) {
+                    loadingOverlay.style.transition = 'opacity 0.3s ease-out';
+                    loadingOverlay.style.opacity = '0';
+                    setTimeout(() => loadingOverlay.remove(), 300);
+                }
+            } else {
+                // Keep checking every 50ms
+                setTimeout(checkReactMounted, 50);
+            }
+        };
+        
+        // Start checking when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(checkReactMounted, 100);
+            });
+        } else {
+            setTimeout(checkReactMounted, 100);
+        }
+    })();
+</script>
