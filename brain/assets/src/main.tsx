@@ -23,6 +23,7 @@ const pageModules = {
     '_du-dashboard': () => import('./pages/du_dashboard'),
     '_founders-list': () => import('./pages/founders'),
     '_advisors-list': () => import('./pages/advisors'),
+    '_research-agent': () => import('./pages/research_agent'),
 } as const;
 
 // Page initialization system

@@ -233,7 +233,108 @@ const asyncValidationConfig = {
 - Component: `src/components/library/RelatedDocumentsPanel.tsx` renders a Tailwind UI list of library files related to a company.
 - API: `/api/library/files/?company=<uuid>&page=<n>&page_size=<m>&source=<uuid>` and `/api/library/sources/`.
 - Usage:
-    - Deal Detail adds a panel titled “Related Documents” using `RelatedDocumentsPanel` with `paramPrefix="dl_"` so its URL state doesn’t collide with other sections.
+    - Deal Detail adds a panel titled "Related Documents" using `RelatedDocumentsPanel` with `paramPrefix="dl_"` so its URL state doesn't collide with other sections.
     - Company Detail already includes a library panel (Bootstrap-styled) and remains unchanged.
 - URL Params: `${prefix}page`, `${prefix}size`, `${prefix}all`, `${prefix}source` (Deal uses `dl_` prefix).
-- UX: Shows source filter, pagination (Prev/Next), and a range label (e.g., “Showing 1–10 of 42”). Links open in a new tab.
+- UX: Shows source filter, pagination (Prev/Next), and a range label (e.g., "Showing 1–10 of 42"). Links open in a new tab.
+
+## Navigation Loading Overlay (Aug 2025)
+
+### Problem Addressed
+Navigation between React pages showed brief content flash as Django templates loaded before React components mounted. Users experienced jarring flashes of unstyled content during the ~100-200ms gap.
+
+### Technical Solution
+**File**: `templates/includes/loading_overlay_complete.html`
+
+Implemented a full-screen loading overlay that:
+- **Covers navigation flash**: Professional spinner overlay prevents any flash visibility
+- **Perfect timing**: All code inline (HTML + CSS + JavaScript) for zero loading delays
+- **React awareness**: Monitors React root elements and removes overlay when components mount
+- **Smooth UX**: Elegant fade-out transition when React takes over
+
+### Critical Architecture Decisions
+
+**Why Inline Code is Required**:
+- External CSS files create loading delays that allow flash through
+- Template includes have microsecond delays that can expose flash
+- External JavaScript loads too late to prevent initial flash
+- **Key insight**: For timing-critical UX, inline code is the correct technical choice
+
+### Frontend Integration Points
+
+The overlay monitors these React mounting points in `main.tsx`:
+```typescript
+const roots = ['deals-dashboard-root', 'deals-fresh-root', 'deal-detail-root', 'du-dashboard-root'];
+```
+
+**Detection Logic**:
+- Polls every 50ms for React components with children
+- Triggers smooth opacity fade-out when React content detected
+- Removes overlay after 300ms transition completes
+
+### Performance Impact
+- **Zero delay**: Overlay appears instantly on navigation
+- **Minimal overhead**: Simple polling logic with automatic cleanup
+- **Smooth transitions**: Users see professional loading instead of content flash
+- **No React deps**: Works independently of React loading state
+
+### Usage
+Include in base templates where navigation flash could occur:
+```html
+{% include 'includes/loading_overlay_complete.html' %}
+```
+
+**Critical**: Never extract code from this file - the inline approach is required for perfect timing.
+
+## Research Agent (Frontend-only)
+
+The Research Agent is a frontend-only dashboard that analyzes research papers and teams. It is implemented as a React island loaded via the single-entry router and rendered from a minimal Django shell template. No backend logic or APIs are required to view the page; it uses mock data.
+
+### URL & Template
+
+- URL: `/research-agent/` (project-level route in `brain/brain/urls.py`)
+- Template shell: `brain/templates/research/agent.html`
+  - Sets `body id="_research-agent"` to trigger lazy-loading of the page module
+  - Mount point: `<div id="research-agent-root"></div>`
+
+### Page Registration
+
+- Router: `assets/src/main.tsx`
+  - Added `'_research-agent': () => import('./pages/research_agent')`
+
+### Files Added
+
+- Page module:
+  - `assets/src/pages/research_agent.tsx`: mounts `ResearchAgentApp` into `#research-agent-root`.
+- Components:
+  - `assets/src/components/research/FeaturedAnalysis.tsx` (Card + ScrollArea + Markdown)
+  - `assets/src/components/research/TeamAnalysis.tsx` (Card + ScrollArea + Markdown)
+  - `assets/src/components/research/PapersList.tsx` (list of papers, citations, external links, expandable markdown evaluation)
+  - `assets/src/components/research/TeamMembersList.tsx` (list of members, expandable analysis)
+- Common:
+  - `assets/src/components/common/Markdown.tsx` (minimal, safe markdown: H1/H2/H3, `- ` bullets, `**bold**`, `[text](url)`)
+- UI helpers:
+  - `assets/src/components/ui/scroll-area.tsx` (simple overflow container)
+  - `assets/src/components/ui/collapsible.tsx` (lightweight wrappers; triggers use Button ghost variant)
+- Mocks:
+  - `assets/src/lib/mocks/research_agent.ts` (research analysis, papers, team analysis, team members)
+
+### Design & Guidelines Alignment
+
+- Layout: top grid with Featured Analysis (xl:col-span-2) and Team Analysis; bottom grid with Papers and Team Members (xl:2 columns).
+- Borders: lists use `divide-y divide-border` per design tokens; no per-item hard-coded border colors.
+- Cards: rely on shadcn `Card` (`border`, `shadow-sm`, `bg-card`, `text-muted-foreground`).
+- Accordion: `Button variant="ghost" size="sm"` as trigger with chevron that rotates (`rotate-90`) on expand, `aria-expanded` set.
+- Markdown: wrapped in `prose prose-sm max-w-none`; links validated to http(s), open in new tab with external-link icon.
+- Accessibility: headings maintain hierarchy; triggers carry `aria-expanded` and inherit focus-visible ring from Button.
+
+### Sidebar Navigation
+
+- Updated `templates/includes/sidebar_nav.html`:
+  - The "Research Agent" link points to `{% url 'research-agent' %}` and highlights when `'/research-agent' in request.path`.
+
+### Future Enhancements
+
+- Replace mock data with APIs (e.g., `/api/research/analysis`, `/api/research/papers`, `/api/research/team`, `/api/research/members`) using `http` (axios) per repo standards.
+- Optionally migrate collapsible/scroll-area to Radix primitives once dependencies are approved.
+- Add filters/sorting for papers and team members if needed.

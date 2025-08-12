@@ -160,8 +160,57 @@ if (import.meta.env?.DEV) {
 ```
 This prevents `ReferenceError: $RefreshSig$ is not defined` when React components load.
 
+## Navigation Flash Fix (Aug 2025)
+
+### Problem Solved
+During React page navigation, users experienced a brief content flash between page load and React mounting. This occurred because:
+1. Django template content rendered immediately
+2. Brief gap before React components mounted and took over
+3. During this gap (~100-200ms), template content was visible, creating a jarring flash
+
+### Solution: Loading Overlay
+**File**: `templates/includes/loading_overlay_complete.html`
+
+A loading overlay covers the entire screen during navigation:
+- **Immediate appearance**: Inline styles ensure zero delay 
+- **React detection**: JavaScript monitors for React component mounting
+- **Smooth transition**: Fades out when React takes over
+- **Timing critical**: All code is inline to prevent any loading delays
+
+### Architecture Decisions
+**Why Everything is Inline**: 
+- External CSS files have loading delays that allow flash to appear
+- Template includes have microsecond delays that can cause flash
+- External JavaScript files load too late to prevent initial flash
+- **Lesson**: For timing-critical UX, inline code is sometimes the correct technical solution
+
+### Implementation Details
+```html
+<!-- All inline: HTML + CSS + JavaScript for perfect timing -->
+<div id="app-loading-overlay" style="/* inline styles */">
+  <div style="/* spinner styles */"></div>
+  <div style="/* text styles */">Loading...</div>
+</div>
+<style>@keyframes spin { /* inline animation */ }</style>
+<script>/* inline React detection and cleanup */</script>
+```
+
+**React Detection Logic**:
+- Monitors root elements: `deals-dashboard-root`, `deals-fresh-root`, `deal-detail-root`, `du-dashboard-root`
+- Checks every 50ms for mounted React components
+- Triggers smooth fade-out when React content appears
+
+### Usage
+Include in any base template where navigation flash could occur:
+```html
+{% include 'includes/loading_overlay_complete.html' %}
+```
+
+**Result**: Zero navigation flash, smooth professional loading experience.
+
 ## Tips
 - Use UUID fields for lookups (`slug_field='uuid'` in views, DRF lookups).
 - Prefer DRF list/detail for data; minimize server-side context.
 - Lint/format: `npm run lint`, `npm run format` (ESLint + Prettier configured in `brain/package.json`).
 - **Single-entry pages**: Check console logs for loading confirmation during development.
+- **Navigation flash**: Never extract timing-critical code from `loading_overlay_complete.html` - inline is required for perfect timing.
