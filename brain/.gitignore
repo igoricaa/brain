@@ -14,7 +14,6 @@ develop-eggs/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -121,6 +120,7 @@ node_modules/
 *.DS_Store
 *.swp
 *.swo
+
 
 # nohup
 nohup.out

@@ -1,226 +1,229 @@
 {
-  "_DealsTable-Vt2xi25z.js": {
-    "file": "assets/DealsTable-Vt2xi25z.js",
-    "name": "DealsTable",
-    "imports": [
-      "_client-CELuiih2.js",
-      "_useDebounce-D9_hLeS9.js",
-      "_createLucideIcon-Bts7lC9l.js",
-      "_file-text-DEi76f3e.js",
-      "_http-DyippOnw.js"
-    ]
-  },
-  "_PeopleList-D3CrpLxk.js": {
-    "file": "assets/PeopleList-D3CrpLxk.js",
-    "name": "PeopleList",
-    "imports": [
-      "_client-CELuiih2.js",
-      "_useDebounce-D9_hLeS9.js",
-      "_external-link-C5JB_SwN.js",
-      "_useQuery-Cv3Nw_PY.js",
-      "_http-DyippOnw.js"
-    ]
-  },
-  "_charts-mqTMQPUh.js": {
-    "file": "assets/charts-mqTMQPUh.js",
-    "name": "charts",
-    "imports": [
-      "_client-CELuiih2.js"
-    ]
-  },
-  "_client-CELuiih2.js": {
-    "file": "assets/client-CELuiih2.js",
-    "name": "client"
-  },
-  "_createLucideIcon-Bts7lC9l.js": {
-    "file": "assets/createLucideIcon-Bts7lC9l.js",
-    "name": "createLucideIcon",
-    "imports": [
-      "_client-CELuiih2.js"
-    ]
-  },
-  "_external-link-C5JB_SwN.js": {
-    "file": "assets/external-link-C5JB_SwN.js",
-    "name": "external-link",
-    "imports": [
-      "_createLucideIcon-Bts7lC9l.js"
-    ]
-  },
-  "_file-text-DEi76f3e.js": {
-    "file": "assets/file-text-DEi76f3e.js",
-    "name": "file-text",
-    "imports": [
-      "_createLucideIcon-Bts7lC9l.js"
-    ]
-  },
-  "_http-DyippOnw.js": {
-    "file": "assets/http-DyippOnw.js",
-    "name": "http",
-    "imports": [
-      "_client-CELuiih2.js"
-    ]
-  },
-  "_queryClient-IUlXQVtS.js": {
-    "file": "assets/queryClient-IUlXQVtS.js",
-    "name": "queryClient",
-    "imports": [
-      "_client-CELuiih2.js",
-      "_http-DyippOnw.js",
-      "_useQuery-Cv3Nw_PY.js"
-    ]
-  },
-  "_useDebounce-D9_hLeS9.js": {
-    "file": "assets/useDebounce-D9_hLeS9.js",
-    "name": "useDebounce",
-    "imports": [
-      "_createLucideIcon-Bts7lC9l.js",
-      "_client-CELuiih2.js"
-    ]
-  },
-  "_useQuery-Cv3Nw_PY.js": {
-    "file": "assets/useQuery-Cv3Nw_PY.js",
-    "name": "useQuery",
-    "imports": [
-      "_http-DyippOnw.js"
-    ]
-  },
-  "src/main.tsx": {
-    "file": "assets/main-DdXQIZcl.js",
-    "name": "main",
-    "src": "src/main.tsx",
-    "isEntry": true,
-    "dynamicImports": [
-      "src/pages/company_detail.tsx",
-      "src/pages/company_detail.tsx",
-      "src/pages/deals_dashboard.tsx",
-      "src/pages/deals_fresh.tsx",
-      "src/pages/deals_reviewed.tsx",
-      "src/pages/deal_detail.tsx",
-      "src/pages/deal_assessment.tsx",
-      "src/pages/du_dashboard.tsx",
-      "src/pages/founders.tsx",
-      "src/pages/advisors.tsx"
-    ],
-    "css": [
-      "assets/main-025rLf1A.css"
-    ]
-  },
-  "src/pages/advisors.tsx": {
-    "file": "assets/advisors-BPlNlOEF.js",
-    "name": "advisors",
-    "src": "src/pages/advisors.tsx",
-    "isDynamicEntry": true,
-    "imports": [
-      "_client-CELuiih2.js",
-      "_http-DyippOnw.js",
-      "_PeopleList-D3CrpLxk.js",
-      "_useDebounce-D9_hLeS9.js",
-      "_createLucideIcon-Bts7lC9l.js",
-      "_external-link-C5JB_SwN.js",
-      "_useQuery-Cv3Nw_PY.js"
-    ]
-  },
-  "src/pages/company_detail.tsx": {
-    "file": "assets/company_detail-C2hMADrx.js",
-    "name": "company_detail",
-    "src": "src/pages/company_detail.tsx",
-    "isEntry": true,
-    "isDynamicEntry": true,
-    "imports": [
-      "_client-CELuiih2.js",
-      "_queryClient-IUlXQVtS.js",
-      "_http-DyippOnw.js",
-      "_createLucideIcon-Bts7lC9l.js",
-      "_file-text-DEi76f3e.js",
-      "_external-link-C5JB_SwN.js",
-      "_useQuery-Cv3Nw_PY.js"
-    ]
-  },
-  "src/pages/deal_assessment.tsx": {
-    "file": "assets/deal_assessment-BNZx5F1A.js",
-    "name": "deal_assessment",
-    "src": "src/pages/deal_assessment.tsx",
-    "isDynamicEntry": true,
-    "imports": [
-      "_client-CELuiih2.js",
-      "_http-DyippOnw.js",
-      "_queryClient-IUlXQVtS.js",
-      "_useQuery-Cv3Nw_PY.js"
-    ]
-  },
-  "src/pages/deal_detail.tsx": {
-    "file": "assets/deal_detail-B937OsM1.js",
-    "name": "deal_detail",
-    "src": "src/pages/deal_detail.tsx",
-    "isEntry": true,
-    "isDynamicEntry": true,
-    "imports": [
-      "_client-CELuiih2.js"
-    ]
-  },
-  "src/pages/deals_dashboard.tsx": {
-    "file": "assets/deals_dashboard-HmqcohCY.js",
-    "name": "deals_dashboard",
-    "src": "src/pages/deals_dashboard.tsx",
-    "isEntry": true,
-    "isDynamicEntry": true,
-    "imports": [
-      "_client-CELuiih2.js",
-      "_charts-mqTMQPUh.js"
-    ]
-  },
-  "src/pages/deals_fresh.tsx": {
-    "file": "assets/deals_fresh-3ZpD3F7J.js",
-    "name": "deals_fresh",
-    "src": "src/pages/deals_fresh.tsx",
-    "isDynamicEntry": true,
-    "imports": [
-      "_client-CELuiih2.js",
-      "_http-DyippOnw.js",
-      "_useDebounce-D9_hLeS9.js",
-      "_DealsTable-Vt2xi25z.js",
-      "_createLucideIcon-Bts7lC9l.js",
-      "_file-text-DEi76f3e.js"
-    ]
-  },
-  "src/pages/deals_reviewed.tsx": {
-    "file": "assets/deals_reviewed-DBUA8gF_.js",
-    "name": "deals_reviewed",
-    "src": "src/pages/deals_reviewed.tsx",
-    "isDynamicEntry": true,
-    "imports": [
-      "_client-CELuiih2.js",
-      "_http-DyippOnw.js",
-      "_useDebounce-D9_hLeS9.js",
-      "_DealsTable-Vt2xi25z.js",
-      "_createLucideIcon-Bts7lC9l.js",
-      "_file-text-DEi76f3e.js"
-    ]
-  },
-  "src/pages/du_dashboard.tsx": {
-    "file": "assets/du_dashboard-CVhVc-xT.js",
-    "name": "du_dashboard",
-    "src": "src/pages/du_dashboard.tsx",
-    "isEntry": true,
-    "isDynamicEntry": true,
-    "imports": [
-      "_client-CELuiih2.js",
-      "_charts-mqTMQPUh.js"
-    ]
-  },
-  "src/pages/founders.tsx": {
-    "file": "assets/founders-3RYbMhjx.js",
-    "name": "founders",
-    "src": "src/pages/founders.tsx",
-    "isDynamicEntry": true,
-    "imports": [
-      "_client-CELuiih2.js",
-      "_http-DyippOnw.js",
-      "_PeopleList-D3CrpLxk.js",
-      "_useDebounce-D9_hLeS9.js",
-      "_createLucideIcon-Bts7lC9l.js",
-      "_external-link-C5JB_SwN.js",
-      "_useQuery-Cv3Nw_PY.js"
-    ]
-  }
+    "_DealsTable-KvjOVh6C.js": {
+        "file": "assets/DealsTable-KvjOVh6C.js",
+        "name": "DealsTable",
+        "imports": [
+            "_client-DuPDxHFB.js",
+            "_useDebounce-Bd8j9bN2.js",
+            "_badge-Cl8BaPfh.js",
+            "_createLucideIcon-Bb1I0_ek.js",
+            "_file-text-DsB0r3LY.js",
+            "_http-vKd65xFl.js"
+        ]
+    },
+    "_PeopleList-DApCfiSo.js": {
+        "file": "assets/PeopleList-DApCfiSo.js",
+        "name": "PeopleList",
+        "imports": [
+            "_client-DuPDxHFB.js",
+            "_badge-Cl8BaPfh.js",
+            "_useDebounce-Bd8j9bN2.js",
+            "_external-link-CyX2oq8H.js",
+            "_useQuery-W_ov3O9W.js",
+            "_http-vKd65xFl.js"
+        ]
+    },
+    "_badge-Cl8BaPfh.js": {
+        "file": "assets/badge-Cl8BaPfh.js",
+        "name": "badge",
+        "imports": ["_createLucideIcon-Bb1I0_ek.js", "_client-DuPDxHFB.js"]
+    },
+    "_building-Bb59871D.js": {
+        "file": "assets/building-Bb59871D.js",
+        "name": "building",
+        "imports": ["_client-DuPDxHFB.js", "_createLucideIcon-Bb1I0_ek.js"]
+    },
+    "_charts-CG6M4AZz.js": {
+        "file": "assets/charts-CG6M4AZz.js",
+        "name": "charts",
+        "imports": ["_client-DuPDxHFB.js"]
+    },
+    "_client-DuPDxHFB.js": {
+        "file": "assets/client-DuPDxHFB.js",
+        "name": "client"
+    },
+    "_createLucideIcon-Bb1I0_ek.js": {
+        "file": "assets/createLucideIcon-Bb1I0_ek.js",
+        "name": "createLucideIcon",
+        "imports": ["_client-DuPDxHFB.js"]
+    },
+    "_external-link-CyX2oq8H.js": {
+        "file": "assets/external-link-CyX2oq8H.js",
+        "name": "external-link",
+        "imports": ["_createLucideIcon-Bb1I0_ek.js"]
+    },
+    "_file-text-DsB0r3LY.js": {
+        "file": "assets/file-text-DsB0r3LY.js",
+        "name": "file-text",
+        "imports": ["_createLucideIcon-Bb1I0_ek.js"]
+    },
+    "_http-vKd65xFl.js": {
+        "file": "assets/http-vKd65xFl.js",
+        "name": "http",
+        "imports": ["_client-DuPDxHFB.js"]
+    },
+    "_queryClient-DyldXEBQ.js": {
+        "file": "assets/queryClient-DyldXEBQ.js",
+        "name": "queryClient",
+        "imports": ["_client-DuPDxHFB.js", "_http-vKd65xFl.js", "_useQuery-W_ov3O9W.js"]
+    },
+    "_useDebounce-Bd8j9bN2.js": {
+        "file": "assets/useDebounce-Bd8j9bN2.js",
+        "name": "useDebounce",
+        "imports": ["_createLucideIcon-Bb1I0_ek.js", "_client-DuPDxHFB.js"]
+    },
+    "_useQuery-W_ov3O9W.js": {
+        "file": "assets/useQuery-W_ov3O9W.js",
+        "name": "useQuery",
+        "imports": ["_http-vKd65xFl.js"]
+    },
+    "src/main.tsx": {
+        "file": "assets/main-wLOhIrQ-.js",
+        "name": "main",
+        "src": "src/main.tsx",
+        "isEntry": true,
+        "dynamicImports": [
+            "src/pages/company_detail.tsx",
+            "src/pages/company_detail.tsx",
+            "src/pages/deals_dashboard.tsx",
+            "src/pages/deals_fresh.tsx",
+            "src/pages/deals_reviewed.tsx",
+            "src/pages/deal_detail.tsx",
+            "src/pages/deal_assessment.tsx",
+            "src/pages/du_dashboard.tsx",
+            "src/pages/founders.tsx",
+            "src/pages/advisors.tsx",
+            "src/pages/research_agent.tsx"
+        ],
+        "css": ["assets/main-k1keGToT.css"]
+    },
+    "src/pages/advisors.tsx": {
+        "file": "assets/advisors-BT98LI0C.js",
+        "name": "advisors",
+        "src": "src/pages/advisors.tsx",
+        "isDynamicEntry": true,
+        "imports": [
+            "_client-DuPDxHFB.js",
+            "_http-vKd65xFl.js",
+            "_PeopleList-DApCfiSo.js",
+            "_badge-Cl8BaPfh.js",
+            "_createLucideIcon-Bb1I0_ek.js",
+            "_useDebounce-Bd8j9bN2.js",
+            "_external-link-CyX2oq8H.js",
+            "_useQuery-W_ov3O9W.js"
+        ]
+    },
+    "src/pages/company_detail.tsx": {
+        "file": "assets/company_detail-D6oJhHZ8.js",
+        "name": "company_detail",
+        "src": "src/pages/company_detail.tsx",
+        "isEntry": true,
+        "isDynamicEntry": true,
+        "imports": [
+            "_client-DuPDxHFB.js",
+            "_queryClient-DyldXEBQ.js",
+            "_http-vKd65xFl.js",
+            "_building-Bb59871D.js",
+            "_file-text-DsB0r3LY.js",
+            "_createLucideIcon-Bb1I0_ek.js",
+            "_external-link-CyX2oq8H.js",
+            "_useQuery-W_ov3O9W.js"
+        ]
+    },
+    "src/pages/deal_assessment.tsx": {
+        "file": "assets/deal_assessment-nGH0VHfp.js",
+        "name": "deal_assessment",
+        "src": "src/pages/deal_assessment.tsx",
+        "isDynamicEntry": true,
+        "imports": [
+            "_client-DuPDxHFB.js",
+            "_http-vKd65xFl.js",
+            "_queryClient-DyldXEBQ.js",
+            "_useQuery-W_ov3O9W.js"
+        ]
+    },
+    "src/pages/deal_detail.tsx": {
+        "file": "assets/deal_detail-B1yRK79D.js",
+        "name": "deal_detail",
+        "src": "src/pages/deal_detail.tsx",
+        "isEntry": true,
+        "isDynamicEntry": true,
+        "imports": ["_client-DuPDxHFB.js"]
+    },
+    "src/pages/deals_dashboard.tsx": {
+        "file": "assets/deals_dashboard-Bu0BNz_Z.js",
+        "name": "deals_dashboard",
+        "src": "src/pages/deals_dashboard.tsx",
+        "isEntry": true,
+        "isDynamicEntry": true,
+        "imports": ["_client-DuPDxHFB.js", "_charts-CG6M4AZz.js"]
+    },
+    "src/pages/deals_fresh.tsx": {
+        "file": "assets/deals_fresh-BPXSNUJe.js",
+        "name": "deals_fresh",
+        "src": "src/pages/deals_fresh.tsx",
+        "isDynamicEntry": true,
+        "imports": [
+            "_client-DuPDxHFB.js",
+            "_http-vKd65xFl.js",
+            "_badge-Cl8BaPfh.js",
+            "_DealsTable-KvjOVh6C.js",
+            "_useDebounce-Bd8j9bN2.js",
+            "_createLucideIcon-Bb1I0_ek.js",
+            "_file-text-DsB0r3LY.js"
+        ]
+    },
+    "src/pages/deals_reviewed.tsx": {
+        "file": "assets/deals_reviewed-B_9KKr2j.js",
+        "name": "deals_reviewed",
+        "src": "src/pages/deals_reviewed.tsx",
+        "isDynamicEntry": true,
+        "imports": [
+            "_client-DuPDxHFB.js",
+            "_http-vKd65xFl.js",
+            "_badge-Cl8BaPfh.js",
+            "_DealsTable-KvjOVh6C.js",
+            "_useDebounce-Bd8j9bN2.js",
+            "_createLucideIcon-Bb1I0_ek.js",
+            "_file-text-DsB0r3LY.js"
+        ]
+    },
+    "src/pages/du_dashboard.tsx": {
+        "file": "assets/du_dashboard-YWKDCf3g.js",
+        "name": "du_dashboard",
+        "src": "src/pages/du_dashboard.tsx",
+        "isEntry": true,
+        "isDynamicEntry": true,
+        "imports": ["_client-DuPDxHFB.js", "_charts-CG6M4AZz.js"]
+    },
+    "src/pages/founders.tsx": {
+        "file": "assets/founders-_aVYDRvE.js",
+        "name": "founders",
+        "src": "src/pages/founders.tsx",
+        "isDynamicEntry": true,
+        "imports": [
+            "_client-DuPDxHFB.js",
+            "_http-vKd65xFl.js",
+            "_PeopleList-DApCfiSo.js",
+            "_badge-Cl8BaPfh.js",
+            "_createLucideIcon-Bb1I0_ek.js",
+            "_useDebounce-Bd8j9bN2.js",
+            "_external-link-CyX2oq8H.js",
+            "_useQuery-W_ov3O9W.js"
+        ]
+    },
+    "src/pages/research_agent.tsx": {
+        "file": "assets/research_agent-Cw6LmJ88.js",
+        "name": "research_agent",
+        "src": "src/pages/research_agent.tsx",
+        "isDynamicEntry": true,
+        "imports": [
+            "_client-DuPDxHFB.js",
+            "_createLucideIcon-Bb1I0_ek.js",
+            "_badge-Cl8BaPfh.js",
+            "_building-Bb59871D.js",
+            "_file-text-DsB0r3LY.js",
+            "_external-link-CyX2oq8H.js"
+        ]
+    }
 }

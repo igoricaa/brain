@@ -149,7 +149,22 @@ export function DualUseSignalsCell({ signals }: { signals: DualUseSignal[] }) {
 
     return (
         <div className="flex flex-wrap gap-1">
-            {Object.entries(categorizedSignals).map(([categoryName, { category, signals }]) => (
+            {signals.map((s) => (
+                <Badge
+                    key={s.uuid}
+                    variant="outline"
+                    style={{
+                        backgroundColor: s.category?.bg_color || '#6B7280',
+                        color: s.category?.text_color || '#FFFFFF',
+                        borderColor: s.category?.bg_color || '#6B7280',
+                    }}
+                    className="text-xs px-2 py-0.5"
+                    title={s.name}
+                >
+                    {s.name}
+                </Badge>
+            ))}
+            {/* {Object.entries(categorizedSignals).map(([categoryName, { category, signals }]) => (
                 <Badge
                     key={categoryName}
                     variant="outline"
@@ -166,7 +181,7 @@ export function DualUseSignalsCell({ signals }: { signals: DualUseSignal[] }) {
                         <span className="ml-1 opacity-75">({signals.length})</span>
                     )}
                 </Badge>
-            ))}
+            ))} */}
         </div>
     );
 }
