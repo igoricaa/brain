@@ -1,15 +1,30 @@
 {
+  "_client-DrRGiZqB.js": {
+    "file": "assets/client-DrRGiZqB.js",
+    "name": "client"
+  },
   "src/main.tsx": {
-    "file": "assets/main-DP26CDSo.js",
+    "file": "assets/main-B62qpfgS.js",
     "name": "main",
     "src": "src/main.tsx",
-    "isEntry": true
+    "isEntry": true,
+    "dynamicImports": [
+      "src/pages/company_detail.tsx",
+      "src/pages/deals_dashboard.tsx"
+    ],
+    "css": [
+      "assets/main-CIn9KNht.css"
+    ]
   },
   "src/pages/company_detail.tsx": {
-    "file": "assets/company_detail-BNWaNpjm.js",
+    "file": "assets/company_detail-BgblgidA.js",
     "name": "company_detail",
     "src": "src/pages/company_detail.tsx",
-    "isEntry": true
+    "isEntry": true,
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-DrRGiZqB.js"
+    ]
   },
   "src/pages/deal_detail.tsx": {
     "file": "assets/deal_detail-Dav4BCdy.js",
@@ -18,10 +33,14 @@
     "isEntry": true
   },
   "src/pages/deals_dashboard.tsx": {
-    "file": "assets/deals_dashboard-CCdoiGt1.js",
+    "file": "assets/deals_dashboard-kfWqwSrI.js",
     "name": "deals_dashboard",
     "src": "src/pages/deals_dashboard.tsx",
-    "isEntry": true
+    "isEntry": true,
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-DrRGiZqB.js"
+    ]
   },
   "src/pages/du_dashboard.tsx": {
     "file": "assets/du_dashboard-DrgT7qBz.js",

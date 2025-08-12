@@ -6,12 +6,12 @@ Central checklist for adapting legacy UI into brain and progressively migrating 
 - [done] Create `brain/assets/` via Vite React template (TS), set `build.outDir='assets/dist'`, `base='/static/'`, `build.manifest=true`.
 - [done] Dev: `npm run dev` (Vite 7); Django: `python manage.py runserver`.
 - [done] Production: `npm run build`; serve `assets/dist` via Django staticfiles.
-- [done] Django helper (template tag) to resolve entries from `manifest.json` when not in DEBUG.
+- [done] Django integration using `django-vite` package for asset management (replaces custom template tag).
 
 ## Companies
 - [done] Port templates from `aindex-web/templates/companies/*` to `brain/templates/companies/*` where missing.
 - [done] Verify URLs in `brain/apps/companies/urls.py` match expectations; confirm `slug_field='uuid'`.
-- [done] React mount + page-specific entry: `#company-detail-root` and `{% vite_entry 'src/pages/company_detail.tsx' %}`.
+- [done] React mount + page-specific entry: `#company-detail-root` and `{% vite_asset 'src/pages/company_detail.tsx' %}`.
 - [done] Initial API call: `/api/companies/companies/{uuid}/` for About card.
 - [next] Add founders/advisors lists; grants/patents via APIs.
 

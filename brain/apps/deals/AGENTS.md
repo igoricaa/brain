@@ -12,23 +12,23 @@ Purpose: deals domain (Deal, DraftDeal, files, decks, papers, dual-use signals).
 - Endpoints: `deals`, `drafts`, `files`, `decks`, `papers`, `du-signals`.
 - List/detail via `uuid`; filters available (see `api/filters.py`).
 
-## Server Views & Templates (to add)
-- URLs (new): `brain/apps/deals/urls.py` mirroring legacy aindex-web:
-  - `'' → DealsDashboardView` (name `deals-dashboard`)
-  - `'fresh'`, `'reviewed'`, `'missed'` lists
-  - `'<uuid:uuid>/' → DealDetailView`, `update`, `assessment`, `delete`, `refresh`, `processing-status`
-  - `'dash/data/' → DealsDashboardDataView` (JSON)
-- Templates to port to `brain/templates/deals/`:
+## Server Views & Templates
+- URLs: `brain/apps/deals/urls.py` added with names:
+  - `dashboard`, `fresh_deals`, `reviewed_deals`, `missed_deals`
+  - `deal_detail`, `deal_update`, `deal_assessment`, `deal_confirm_delete`, `deck_create`
+  - `processing_status` (polling stub), `dashboard_data` (JSON stub)
+- Templates (ported shells) in `brain/templates/deals/`:
   - `base.html`, `deals_dashboard.html`, `fresh_deals.html`, `reviewed_deals.html`, `missed_deal_list.html`,
     `deal_detail.html`, `deal_assessment.html`, `deal_confirm_delete.html`, `deck_create.html`.
+- Project URLs include `path('deals/', include(('deals.urls','deals'), namespace='deals')))`.
 
 ## Adaptation Checklist (Phase 1)
-- Implement URLs and thin class-based views that render shells; move data to DRF and JSON views.
-- Port templates and update static includes to Vite entries (`deals_dashboard`, `deal_detail`).
-- Add `DealsDashboardDataView` (JSON) aggregations (date trend, stages, industries, DU signals) equivalent to legacy.
-- Implement polling endpoint for `processing-status` returning `{ready: bool}`.
+- [done] Add URLs and thin function views that render shells.
+- [done] Port templates and prepare React mount points.
+- [todo T-0203] Implement `dashboard_data` JSON aggregations (trend, stages, industries, DU signals).
+- [todo T-0304] Flesh out `processing_status` and `deal_refresh` behavior.
 
 ## React Migration (Phase 2)
-- Replace Vue dashboard with React charts (react-chartjs-2) calling `dash/data/`.
+- Replace Vue dashboard with React charts (react-chartjs-2) calling `deals/dashboard_data`.
 - Deal Detail/Assessment: React form with optimistic UI and API updates; Affinity send flow via existing endpoints.
-- Mount points: `#_deals-dashboard`, `#deal-detail-root`, `#deal-assessment-root`.
+- Mount points: `#deals-dashboard-root`, `#deal-detail-root`, `#deal-assessment-root`.

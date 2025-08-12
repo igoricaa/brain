@@ -40,17 +40,19 @@ This document tracks epics and granular tickets for adapting the legacy UI into 
   - Acceptance: Panels render from API with loading/error states; no server-side duplication.
   - Deps: T-0001, T-0003.
   - Estimate: 1–1.5d
-  - Status: In Progress (About panel implemented; mounts/entry wired)
+  - Status: Completed (About panel island mounted; entry wired; no server duplication)
 - T-0103 Grants/Patents CRUD QA
-  - Scope: Verify server forms (create/update/delete) flow; adjust templates/redirects; add small UX improvements (toasts).
-  - Acceptance: All CRUD paths work; success messages visible.
+  - Scope: Verify server forms (create/update/delete) flow; adjust templates/redirects; add small UX improvements (toasts). Add “View all” links and simple pagination for Grants and Patent Applications; preserve redirect back to the same paginated view.
+  - Acceptance: All CRUD paths work; success messages visible; grants/patents panels show paginated lists with View all/Prev/Next; actions redirect back to the original paginated view.
   - Deps: T-0101.
   - Estimate: 0.5d
-- T-0104 Library docs in company panel
-  - Scope: Fetch related docs from `/api/library/files/?company=<uuid>` (or appropriate filter) and render table.
-  - Acceptance: Documents list visible in a panel; paginated.
+  - Status: Completed (server-side pagination + redirect preservation; patent bulk delete server-side form)
+- T-0104 Library panel filter/pagination
+  - Scope: Add company-scoped Library panel on company detail; fetch related docs from `/api/library/files/?company=<uuid>` (or appropriate filter); implement filter + pagination controls to match grants/patents UX.
+  - Acceptance: Documents list visible in a panel; filterable and paginated with View all/Prev/Next; preserves query params.
   - Deps: T-0102.
   - Estimate: 0.5d
+  - Status: Completed
 
 ## Epic 2 — Deals Shell + Dashboard Data
 - T-0201 Add deals URLs and views
@@ -58,21 +60,25 @@ This document tracks epics and granular tickets for adapting the legacy UI into 
   - Acceptance: Server routes respond with templates or JSON; uuid slug in URLs.
   - Deps: T-0003.
   - Estimate: 0.75d
+  - Status: Completed
 - T-0202 Port deals templates
   - Scope: Copy `aindex-web/templates/deals/*` pages listed in checklists and adapt base/includes.
   - Acceptance: Pages render with placeholders for React mounts; navigation works.
   - Deps: T-0201.
   - Estimate: 1d
+  - Status: Completed (shell templates with React mounts in brain/templates/deals/*)
 - T-0203 Dashboard JSON aggregation
   - Scope: Implement DealsDashboardDataView with aggregations (date_count_trend, funding_stage_count, industry_count, du_signal_count) per legacy behavior.
   - Acceptance: `/deals/dash/data/` returns expected JSON; used by dashboard.
   - Deps: T-0201.
   - Estimate: 0.75d
+  - Status: Completed
 - T-0204 React dashboard (charts + tables)
   - Scope: Add `deals_dashboard` entry; implement charts with react-chartjs-2 using the JSON view; filter/query params persisted in URL.
   - Acceptance: Charts render and update on filter changes; share color palette with legacy.
   - Deps: T-0203, T-0001.
   - Estimate: 1–1.5d
+  - Status: Completed (charts render from JSON, URL filters persist, legacy palette applied)
 
 ## Epic 3 — Deals Detail & Assessment
 - T-0301 Deal detail shell + template
@@ -149,3 +155,6 @@ This document tracks epics and granular tickets for adapting the legacy UI into 
 - Filters: see `brain/apps/**/api/filters.py`
 - Color palettes: mirror legacy `aindex-web/assets/js/du_charts.js`
 - Chart options: mirror legacy `aindex-web/assets/js/deals_charts_options.js`
+
+## Maintenance
+- Keep this document up to date: After you complete any ticket, immediately update its Status here and note any deviations from scope or acceptance criteria.

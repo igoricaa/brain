@@ -32,8 +32,8 @@ This monorepo hosts: (1) `aindex/` a standalone Python backend (do not modify), 
 - PRs: include description, linked issues, screenshots for UI changes, and note migrations/API updates.
 
 ## V2 Frontend Adaptation Roadmap (brain)
-- Companies: keep existing server views (detail, grant/patent CRUD). Ensure `companies/company_detail.html` loads charts/widgets and maps to APIs: `/api/companies/companies`, `.../grants`, `.../patent-applications` (lookup by `uuid`).
-- Deals: port pages (`deals/base.html`, `deals_dashboard.html`, `fresh_deals.html`, `reviewed_deals.html`, `missed_deal_list.html`, `deal_detail.html`, `deal_assessment.html`, `deck_create.html`) and add URLs/views in `brain/apps/deals`. Use DRF endpoints under `/api/deals/*`.
+- Companies: keep existing server views (detail, grant/patent CRUD). Ensure `companies/company_detail.html` loads charts/widgets and maps to APIs: `/api/companies/companies`, `.../grants`, `.../patent-applications` (lookup by `uuid`). Company detail grants/patents panels are paginated with “View all” links; CRUD flows preserve `next` redirect back to the same paginated view; patent bulk delete uses a single server-side POST form.
+- Deals: URLs and shell templates added under `brain/apps/deals` and `brain/templates/deals`. Next: data JSON aggregation and React dashboard.
 - Dual-use: port `dual_use/*` templates and add URLs/views in `brain/apps/dual_use`; back with `/api/deals/du-signals` and related.
 - People: map aindex-web `talents/*` to brain models (`socialgraph.Profile`, `companies.Founder/Advisor`). Replace talent forms with API-driven UIs.
 - Assets: add `brain/assets` + Vite (entries for `main`, `deals_dashboard`, `deal_detail`, `company_detail`, `du_dashboard`) building to `brain/assets/dist` (already in `STATICFILES_DIRS`).
@@ -41,7 +41,7 @@ This monorepo hosts: (1) `aindex/` a standalone Python backend (do not modify), 
 ## React & Vite (Hybrid → Standalone)
 - Versions: React 19, Vite 7.1.1.
 - Dev: `npm run dev` (Vite server at 5173). Prod: `npm run build` (hashed assets + manifest).
-- Django integration: `{% load vite %}{% vite_entry 'src/main.tsx' %}` in base, and page-specific `{% vite_entry 'src/pages/<entry>.tsx' %}` where needed (e.g., company_detail).
+- Django integration: Using `django-vite` package - `{% load django_vite %}{% vite_hmr_client %}{% vite_asset 'src/main.tsx' %}` in base, and page-specific `{% vite_asset 'src/pages/<entry>.tsx' %}` where needed (e.g., company_detail, deals dashboard).
 - Migration: start with islands in Django templates, then graduate to a standalone React app consuming `/api/*`.
 
 ## Security & Configuration

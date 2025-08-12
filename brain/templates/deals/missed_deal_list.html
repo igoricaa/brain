@@ -1,0 +1,10 @@
+{% extends 'deals/base.html' %}
+{% load i18n %}
+
+{% block body_id %}_deals-missed{% endblock %}
+{% block deals_title %}{% trans 'Missed Deals' %}{% endblock %}
+
+{% block deals_content %}
+<div id="deals-missed-root"></div>
+{% endblock %}
+

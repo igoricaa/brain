@@ -1,0 +1,10 @@
+{% extends 'deals/base.html' %}
+{% load i18n %}
+
+{% block body_id %}_deal-detail{% endblock %}
+{% block deals_title %}{% trans 'Deal Detail' %}{% endblock %}
+
+{% block deals_content %}
+<div id="deal-detail-root" data-uuid="{{ uuid }}"></div>
+{% endblock %}
+

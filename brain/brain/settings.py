@@ -282,6 +282,19 @@ STORAGES = {
     },
 }
 
+# django-vite configuration (new-style per-app config)
+DJANGO_VITE = {
+    'default': {
+        'dev_mode': DEBUG,
+        'dev_server_protocol': env('VITE_DEV_SERVER_PROTOCOL', default='http'),
+        'dev_server_host': env('VITE_DEV_SERVER_HOST', default='localhost'),
+        'dev_server_port': env.int('VITE_DEV_SERVER_PORT', default=5173),
+        'manifest_path': BASE_DIR / 'assets' / 'dist' / 'manifest.json',
+        # Optionally prefix static URL if your static files are served under a subpath
+        'static_url_prefix': '',
+    }
+}
+
 if STORAGES['default']['BACKEND'] == 'storages.backends.gcloud.GoogleCloudStorage':
     STORAGES['default']['OPTIONS']['bucket_name'] = env('GS_BUCKET_NAME')
     STORAGES['default']['OPTIONS']['location'] = env('GS_LOCATION', default='')

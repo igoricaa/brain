@@ -23,10 +23,9 @@
                         <td>
                             <input
                                 class="form-check-input"
-                                name="patent_applications_selected"
+                                name="patent_applications"
                                 type="checkbox"
-                                value="{{ patent.id }}"
-                                v-model="selectedPatentApplications">
+                                value="{{ patent.id }}">
                         </td>
                         <td>
                             <a class="text-decoration-none">
@@ -126,22 +125,4 @@
     <div class="text-secondary">{% trans 'No patent application information found.' %}</div>
 {% endif %}
 
-
-<div style="display:none">
-    <form id="_pa-bulk-delete-form"
-          method="POST"
-          action="{% url 'companies:company-delete-patent-applications' company.uuid %}">
-        {% csrf_token %}
-
-        <input type="hidden" name="next" value="{{ request.path|urlencode }}">
-        <input type="hidden" name="confirmed" value="0">
-
-        <input type="checkbox"
-               name="patent_applications"
-               checked
-               v-for="patent in selectedPatentApplications"
-               :value="patent">
-
-    </form>
-</div>
-
+{# Legacy hidden Vue-driven form removed; checkboxes now post within the parent form #}

@@ -1,6 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 
 from django_filters import rest_framework as filters
+from django.db.models import Q
 
 from ..models import File, Paper, PaperAuthor
 
@@ -9,6 +10,10 @@ __all__ = ['FileFilter', 'PaperFilter', 'PaperAuthorFilter']
 
 class FileFilter(filters.FilterSet):
 
+    company = filters.UUIDFilter(
+        method='filter_company',
+        help_text=_('filter by related company UUID'),
+    )
     source = filters.UUIDFilter(
         field_name='source__uuid',
         help_text=_('filter by source UUID'),
@@ -20,7 +25,20 @@ class FileFilter(filters.FilterSet):
 
     class Meta:
         model = File
-        fields = ['source', 'category', 'processing_status']
+        fields = ['company', 'source', 'category', 'processing_status']
+
+    def filter_company(self, queryset, name, value):
+        """Filter files related to a company.
+
+        Strategy:
+        - Match tags convention 'company:<uuid>' when present
+        - Include DealFile descendants via deal->company relationship if available
+        """
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(tags__contains=[f'company:{value}']) | Q(dealfile__deal__company__uuid=value)
+        )
 
 
 class PaperFilter(FileFilter):

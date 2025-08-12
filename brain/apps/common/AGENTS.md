@@ -4,11 +4,9 @@ Helpers shared across apps.
 
 ## Template Tags
 - `apps/common/templatetags/brain.py`
-  - Filters: `intword_usd` (formats currency as K/M with $), `url_display` (domain + path from URL).
-- `brain/templatetags/vite.py`
-  - Tag: `{% vite_entry 'src/<entry>.tsx' %}`
-  - DEBUG: injects Vite dev client and module script from http://localhost:5173.
-  - PROD: resolves hashed files and CSS via `assets/dist/manifest.json`.
+  - Filters: `intword_usd` (USD compact K/M), `url_display` (domain + path from URL).
+- Assets: use the `django_vite` library in templates.
+  - `{% load django_vite %}{% vite_entry 'src/<entry>.tsx' %}`
 
 ## Usage
-- Load with `{% load brain %}` or `{% load vite %}` at the top of templates.
+- Load with `{% load brain %}` for filters, `{% load django_vite %}` for assets.

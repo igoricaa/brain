@@ -2,6 +2,7 @@
   "name": "brain-frontend",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "engines": {
     "node": ">=18"
   },
@@ -15,6 +16,7 @@
     "format:check": "prettier --check \"assets/**/*.{ts,tsx,js,jsx,css,scss,md}\""
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.11",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
@@ -28,11 +30,14 @@
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "prettier": "^3.3.3",
+    "tailwindcss": "^4.1.11",
     "typescript": "^5.9.2",
     "vite": "^7.1.1"
   },
   "dependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^19.0.0",
+    "chart.js": "^4.4.4"
   }
 }

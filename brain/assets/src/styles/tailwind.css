@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+
+@theme {
+    --color-primary-500: oklch(0.7 0.2 250);
+    --font-display: 'Inter', sans-serif;
+    --spacing-18: 4.5rem;
+    --radius-xl: 1rem;
+}
+
+/* Include Django server-rendered templates so their classes are generated */
+/* Paths are relative to this file: brain/assets/src/styles/tailwind.css */
+/* Optimized: specific app template paths for better performance */
+@source "../../../templates";
+@source "../../../apps/companies/templates";
+@source "../../../apps/deals/templates";
+@source "../../../apps/library/templates";
+@source "../../../apps/dual_use/templates";
+@source "../../../apps/socialgraph/templates";

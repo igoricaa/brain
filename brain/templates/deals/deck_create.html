@@ -1,0 +1,10 @@
+{% extends 'deals/base.html' %}
+{% load i18n %}
+
+{% block body_id %}_deal-deck-create{% endblock %}
+{% block deals_title %}{% trans 'Create Deal Deck' %}{% endblock %}
+
+{% block deals_content %}
+<div id="deal-deck-create-root" data-uuid="{{ uuid }}"></div>
+{% endblock %}
+

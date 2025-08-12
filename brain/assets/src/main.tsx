@@ -1,18 +1,68 @@
 // Minimal bootstrap for hybrid setup. Avoid external deps to keep repo install-light.
+import './styles/tailwind.css';
+
+// Extend window for single-entry mode flag and React refresh runtime
+declare global {
+    interface Window {
+        __SINGLE_ENTRY_MODE__?: boolean;
+        $RefreshReg$?: (type: unknown, id: string) => void;
+        $RefreshSig$?: () => (type: unknown) => unknown;
+    }
+}
+
+// Page modules registry - lazy loaded for code splitting
+const pageModules = {
+    '_company-detail': () => import('./pages/company_detail'),
+    // Future migrations:
+    '_deals-dashboard': () => import('./pages/deals_dashboard'),
+    // '_deal-detail': () => import('./pages/deal_detail'),
+    // '_du-dashboard': () => import('./pages/du_dashboard'),
+} as const;
+
+// Page initialization system
+async function initializePage() {
+    const bodyId = document.body.id;
+
+    if (bodyId && bodyId in pageModules) {
+        try {
+            const module = await pageModules[bodyId as keyof typeof pageModules]();
+
+            if (module.initialize && typeof module.initialize === 'function') {
+                module.initialize();
+            }
+        } catch (error) {
+            console.error(`Failed to load page module ${bodyId}:`, error);
+        }
+    }
+}
 
 // Initialize basic helpers (e.g., auto-hide site messages if present)
+function initializeGlobalFeatures() {
+    const toasts = Array.from(document.querySelectorAll<HTMLElement>('.toast.site-message'));
+    toasts.forEach((el) => {
+        // Fallback: simple auto-hide without Bootstrap dependency
+        el.style.opacity = '1';
+        setTimeout(() => {
+            el.style.transition = 'opacity 0.5s';
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 600);
+        }, 6000);
+    });
+}
+
+// Set global flag to prevent legacy self-execution in page modules
+window.__SINGLE_ENTRY_MODE__ = true;
+
+// Initialize React refresh runtime for development
+if (import.meta.env?.DEV) {
+    window.$RefreshReg$ = window.$RefreshReg$ || (() => {});
+    window.$RefreshSig$ = window.$RefreshSig$ || (() => (type: unknown) => type);
+}
+
+// Main initialization
 document.addEventListener('DOMContentLoaded', () => {
-  const toasts = Array.from(document.querySelectorAll<HTMLElement>('.toast.site-message'))
-  toasts.forEach((el) => {
-    // Fallback: simple auto-hide without Bootstrap dependency
-    el.style.opacity = '1'
-    setTimeout(() => {
-      el.style.transition = 'opacity 0.5s'
-      el.style.opacity = '0'
-      setTimeout(() => el.remove(), 600)
-    }, 6000)
-  })
-})
+    initializeGlobalFeatures();
+    initializePage();
+});
 
 // Export nothing; this is an entry file.
-

@@ -18,18 +18,33 @@ Purpose: companies domain and related people. Provides API and some server views
 - Patent CRUD: `PatentApplication*View` → `templates/companies/patent_application_*.html`.
 - URLs: `brain/apps/companies/urls.py`.
 
+## Company Detail Pagination & CRUD UX
+- Grants pagination: server-rendered with simple controls and a “View all” toggle.
+  - Query params: `g_page`, `g_size`, `g_all` (default size = 5; `g_all=1` shows full list).
+  - Context keys: `grants_page`, `grants_list`, `grants_total`, `g_size`.
+  - Template shows “Showing X–Y of Z” with Prev/Next; links preserve other section params.
+- Patent Applications pagination: mirrors Grants implementation.
+  - Query params: `p_page`, `p_size`, `p_all` (default size = 5; `p_all=1` shows full list).
+  - Context keys: `patents_page`, `patent_applications`, `patents_total`, `p_size`.
+- Redirect preservation: create/update/delete links and forms include `next={{ request.get_full_path }}`; delete confirm templates include hidden `next` input so actions return to the same paginated view.
+- Patent bulk delete: implemented as a single server-side POST form wrapping the list.
+  - Checkboxes: `name="patent_applications"` (multiple values submitted).
+  - Bulk delete action consumes the list and redirects back using `next` when present.
+- Performance: `CompanyDetailView` prefetches grants; lists are paginated in view logic.
+
 ## Frontend Hooks
-- Page-specific Vite entry loaded in template:
-  - In `company_detail.html`: `{% block extra_js %}{% load vite %}{% vite_entry 'src/pages/company_detail.tsx' %}{% endblock %}`
-  - React mount: `<div id="company-detail-root" data-uuid="{{ company.uuid }}"></div>`
-- Current component: About card renders website, HQ, founded, summary by fetching `/api/companies/companies/{uuid}/`.
-- Next targets: founders/advisors lists; patents/grants tables; charts.
+- Page Vite entry:
+  - `{% block extra_js %}{% load django_vite %}{% vite_entry 'src/pages/company_detail.tsx' %}{% endblock %}` in `company_detail.html`.
+- React islands and mounts:
+  - About card [done T-0102]: `<div id="company-about-root" data-uuid="{{ company.uuid }}"></div>` fetches `/api/companies/companies/{uuid}/` with loading/error states.
+  - Library panel [done T-0104]: `<div id="company-library-root" data-uuid="{{ company.uuid }}"></div>` fetches `/api/library/files/?company={{ uuid }}` with source filter + pagination; preserves other query params in links.
+- Grants/Patents remain server-rendered with pagination and "View all" for now.
 
 ## Adaptation Checklist (Phase 1)
 - Port any missing blocks/partials from `aindex-web/templates/companies/*` to `brain/templates/companies/*`.
 - Ensure base layout parity (nav, messages) with `brain/templates/base.html`.
 - Confirm forms work; align field names with current models.
-- Done: core templates ported; page-specific Vite entry wired; initial React widget mounted.
+- Done: core templates ported; page Vite entry wired; About + Library islands mounted; grants/patents server pagination and redirects complete.
 
 ## React Migration (Phase 2)
 - Add `company_detail` entry; mount components into `#company-detail-root` and sub-roots per panel.

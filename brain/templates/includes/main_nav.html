@@ -2,184 +2,232 @@
 
 {% load static %}
 
-<nav id="main-nav" class="navbar navbar-expand-lg bg-white border-bottom">
-    <div class="container-fluid container-main bg-white navbar-container">
-        <a class="navbar-brand" href="{# % url 'home' % #}">
-            <img src="{% static 'images/logo.svg' %}" class="me-4">{{ SITE_NAME }}
-        </a>
+<nav id="main-nav" class="bg-white border-b border-gray-200">
+  <!-- Mobile nav toggle (peer) for collapse without JS) -->
+  <input id="nav-toggle" type="checkbox" class="peer sr-only" aria-hidden="true" />
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="flex h-16 items-center justify-between">
+      <!-- Brand -->
+      <a class="flex items-center text-gray-900 hover:opacity-80" href="{# % url 'home' % #}">
+        <img src="{% static 'images/logo.svg' %}" class="mr-4 h-8 w-auto" alt="logo" />
+        <span class="text-base font-semibold">{{ SITE_NAME }}</span>
+      </a>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
+      <!-- Mobile hamburger -->
+      <label for="nav-toggle" class="inline-flex cursor-pointer items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-blue-600/50 lg:hidden" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="sr-only">Open main menu</span>
+        <span class="block h-0.5 w-5 bg-current"></span>
+        <span class="mt-1 block h-0.5 w-5 bg-current"></span>
+        <span class="mt-1 block h-0.5 w-5 bg-current"></span>
+      </label>
 
-            <!--TODO: remove the {% comment %} and {% endcomment %} tags after fixing the missing urls -->
-            {% comment %}
-            <ul class="navbar-nav me-auto">
-                {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        {% url 'deals:deal-list-fresh' as fresh_deals_url %}
-                        <a class="nav-link
-                                  {% if request.path == fresh_deals_url %}active{% endif %}"
-                           href="{{ fresh_deals_url }}">
-                            {% trans 'Fresh Deals' %}
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        {% url 'deals:deal-list-reviewed' as reviewed_deals_url %}
-                        <a class="nav-link
-                                  {% if request.path == reviewed_deals_url %}active{% endif %}"
-                           href="{{ reviewed_deals_url }}">
-                            {% trans 'Past Deals' %}
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="btn btn-primary text-uppercase text-nowrap navbar-btn mx-lg-5" href="{% url 'deals:deck-create' %}">
-                            + {% trans 'Upload New Deal' %}
-                        </a>
-                    </li>
-
-
-                    <li class="nav-item dropdown">
-                        {% url 'deals:missed-deal-list' as missed_deals_url %}
-                        {% url 'deals:deals-dashboard' as deals_dashboard_url %}
-
-                        <a href="#"
-                           class="nav-link dropdown-toggle
-                                  {% if request.path == missed_deals_url or request.path == deals_dashboard_url %}active{% endif %}"
-                           id="dropdown-deals"
-                           data-bs-toggle="dropdown"
-                           aria-expanded="false">
-                            <span>{% trans 'Deals' %}</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="dropdown-deals">
-                            <li>
-                                <a class="dropdown-item {% if request.path == deals_dashboard_url %}active{% endif %}"
-                                   href="{{ deals_dashboard_url }}">
-                                    <i class="fas fa-chart-line me-3"></i>
-                                    {% trans 'Dashboard' %}
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item {% if request.path == missed_deals_url %}active{% endif %}"
-                                   href="{{ missed_deals_url }}">
-                                    <i class="fas fa-list me-3"></i>
-                                    {% trans 'Missed Deals' %}
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-
-
-                    <li class="nav-item dropdown">
-                        {% url 'dual-use:dashboard' as du_dash_url %}
-                        {% url 'dual-use:report-list' as report_list_url %}
-                        {% url 'dual-use:unreviewed-report-list' as unreviewed_report_list_url %}
-                        {% url 'dual-use:report-create' as report_create_url %}
-                        {% url 'dual-use:report-import' as report_import_url %}
-
-                        <a href="#"
-                           class="nav-link dropdown-toggle {% if 'dual-use' in request.resolver_match.app_name %}active{% endif %}"
-                           id="dropdown-dual-use"
-                           data-bs-toggle="dropdown"
-                           aria-expanded="false">
-                            <span>{% trans 'Dual-use' %}</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="dropdown-dual-use">
-                            <li>
-                                <a class="dropdown-item {% if request.path == du_dash_url %}active{% endif %}"
-                                   href="{{ du_dash_url }}">
-                                    <i class="fas fa-chart-line me-3"></i>
-                                    {% trans 'Dashboard' %}
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item {% if request.path == report_list_url %}active{% endif %}"
-                                   href="{{ report_list_url }}">
-                                    <i class="fas fa-list me-3"></i>
-                                    {% trans 'Companies' %}
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item {% if request.path == report_import_url %}active{% endif %}"
-                                   href="{{ report_import_url }}">
-                                    <i class="fas fa-file-arrow-up me-3"></i>
-                                    {% trans 'Import Companies' %}
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item {% if request.path == report_create_url %}active{% endif %}"
-                                   href="{{ report_create_url }}">
-                                    <i class="fas fa-plus me-3"></i>
-                                    {% trans 'Add Company' %}
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item {% if request.path == unreviewed_report_list_url %}active{% endif %}"
-                                   href="{{ unreviewed_report_list_url }}">
-                                    <i class="fas fa-list me-3"></i>
-                                    {% trans 'Unreviewed Companies' %}
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                {% endif %}
-            </ul>
-            {% endcomment %}
-            <!--TODO: remove the above {% comment %} and {% endcomment %} tags after fixing the missing urls -->
-
-            <ul class="navbar-nav">
-                {% if user.is_authenticated %}
-                    <li class="nav-item dropdown">
-                        <a href="#" class="nav-link link-dark dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                            <span class="me-2">{{ user.display_name }}</span>
-                            {# TODO: display real image #}
-                            {% if user.avatar %}
-                                <img src="{{ user.avatar }}" alt="mdo" width="32" height="32" class="rounded-circle">
-                            {% else %}
-                                <span class="btn btn-dark rounded-circle">{{ user.display_name|upper|slice:1 }}</span>
-                            {% endif %}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end mb-5" aria-labelledby="dropdownUser1" style="">
-                            {% if user.is_staff %}
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'admin:index' %}" target="_blank">{% trans 'Administration' %}</a>
-                                </li>
-                            {% endif %}
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'account_logout' %}">
-                                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                                    {% trans 'Sign out' %}
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item"
-                                   href="https://www.notion.so/How-to-use-the-AINdex-12106afb979f49fdbf8ec0603eb8aa8b"
-                                   target="_blank">
-                                    {% trans 'How to Use' %}
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+      <!-- Desktop right area -->
+      <div class="hidden lg:block">
+        <ul class="flex items-center gap-4">
+          {% if user.is_authenticated %}
+            <li class="relative">
+              <!-- Peer toggle for user dropdown -->
+              <input id="user-menu-toggle" type="checkbox" class="peer sr-only" aria-hidden="true" />
+              <label for="user-menu-toggle" class="flex cursor-pointer select-none items-center gap-2 text-gray-700 hover:text-gray-900 focus:outline-hidden">
+                <span class="text-sm">{{ user.display_name }}</span>
+                {% if user.avatar %}
+                  <img src="{{ user.avatar }}" alt="avatar" class="h-8 w-8 rounded-full" />
                 {% else %}
-                    <li class="nav-item">
-                        <a href="{% url 'account_login' %}"
-                           class="btn btn-primary">
-                            {% translate 'Login' %}
-                        </a>
-                    </li>
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-xs font-medium text-white">{{ user.display_name|upper|slice:1 }}</span>
                 {% endif %}
-            </ul>
-        </div>
+              </label>
+              <ul class="absolute right-0 z-50 mt-2 hidden w-56 rounded-md border border-gray-200 bg-white p-1 shadow-lg peer-checked:block">
+                {% if user.is_staff %}
+                  <li>
+                    <a class="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50" href="{% url 'admin:index' %}" target="_blank">{% trans 'Administration' %}</a>
+                  </li>
+                  <li><div class="my-1 h-px bg-gray-200"></div></li>
+                {% endif %}
+                <li>
+                  <a class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50" href="{% url 'account_logout' %}">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    {% trans 'Sign out' %}
+                  </a>
+                </li>
+                <li><div class="my-1 h-px bg-gray-200"></div></li>
+                <li>
+                  <a class="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50" href="https://www.notion.so/How-to-use-the-AINdex-12106afb979f49fdbf8ec0603eb8aa8b" target="_blank">{% trans 'How to Use' %}</a>
+                </li>
+              </ul>
+            </li>
+          {% else %}
+            <li>
+              <a href="{% url 'account_login' %}" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-600/50">
+                {% translate 'Login' %}
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
     </div>
+
+    <!-- Mobile collapsed content -->
+    <div class="hidden peer-checked:block lg:hidden" id="navbarNav">
+      <!--TODO: remove the {% comment %} and {% endcomment %} tags after fixing the missing urls -->
+      {% comment %}
+      <ul class="navbar-nav me-auto">
+          {% if user.is_authenticated %}
+              <li class="nav-item">
+                  {% url 'deals:deal-list-fresh' as fresh_deals_url %}
+                  <a class="nav-link
+                            {% if request.path == fresh_deals_url %}active{% endif %}"
+                     href="{{ fresh_deals_url }}">
+                      {% trans 'Fresh Deals' %}
+                  </a>
+              </li>
+
+              <li class="nav-item">
+                  {% url 'deals:deal-list-reviewed' as reviewed_deals_url %}
+                  <a class="nav-link
+                            {% if request.path == reviewed_deals_url %}active{% endif %}"
+                     href="{{ reviewed_deals_url }}">
+                      {% trans 'Past Deals' %}
+                  </a>
+              </li>
+
+              <li class="nav-item">
+                  <a class="btn btn-primary text-uppercase text-nowrap navbar-btn mx-lg-5" href="{% url 'deals:deck-create' %}">
+                      + {% trans 'Upload New Deal' %}
+                  </a>
+              </li>
+
+
+              <li class="nav-item dropdown">
+                  {% url 'deals:missed-deal-list' as missed_deals_url %}
+                  {% url 'deals:deals-dashboard' as deals_dashboard_url %}
+
+                  <a href="#"
+                     class="nav-link dropdown-toggle
+                            {% if request.path == missed_deals_url or request.path == deals_dashboard_url %}active{% endif %}"
+                     id="dropdown-deals"
+                     data-bs-toggle="dropdown"
+                     aria-expanded="false">
+                      <span>{% trans 'Deals' %}</span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="dropdown-deals">
+                      <li>
+                          <a class="dropdown-item {% if request.path == deals_dashboard_url %}active{% endif %}"
+                             href="{{ deals_dashboard_url }}">
+                              <i class="fas fa-chart-line me-3"></i>
+                              {% trans 'Dashboard' %}
+                          </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                          <a class="dropdown-item {% if request.path == missed_deals_url %}active{% endif %}"
+                             href="{{ missed_deals_url }}">
+                              <i class="fas fa-list me-3"></i>
+                              {% trans 'Missed Deals' %}
+                          </a>
+                      </li>
+                  </ul>
+              </li>
+
+
+              <li class="nav-item dropdown">
+                  {% url 'dual-use:dashboard' as du_dash_url %}
+                  {% url 'dual-use:report-list' as report_list_url %}
+                  {% url 'dual-use:unreviewed-report-list' as unreviewed_report_list_url %}
+                  {% url 'dual-use:report-create' as report_create_url %}
+                  {% url 'dual-use:report-import' as report_import_url %}
+
+                  <a href="#"
+                     class="nav-link dropdown-toggle {% if 'dual-use' in request.resolver_match.app_name %}active{% endif %}"
+                     id="dropdown-dual-use"
+                     data-bs-toggle="dropdown"
+                     aria-expanded="false">
+                      <span>{% trans 'Dual-use' %}</span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="dropdown-dual-use">
+                      <li>
+                          <a class="dropdown-item {% if request.path == du_dash_url %}active{% endif %}"
+                             href="{{ du_dash_url }}">
+                              <i class="fas fa-chart-line me-3"></i>
+                              {% trans 'Dashboard' %}
+                          </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                          <a class="dropdown-item {% if request.path == report_list_url %}active{% endif %}"
+                             href="{{ report_list_url }}">
+                              <i class="fas fa-list me-3"></i>
+                              {% trans 'Companies' %}
+                          </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                          <a class="dropdown-item {% if request.path == report_import_url %}active{% endif %}"
+                             href="{{ report_import_url }}">
+                              <i class="fas fa-file-arrow-up me-3"></i>
+                              {% trans 'Import Companies' %}
+                          </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                          <a class="dropdown-item {% if request.path == report_create_url %}active{% endif %}"
+                             href="{{ report_create_url }}">
+                              <i class="fas fa-plus me-3"></i>
+                              {% trans 'Add Company' %}
+                          </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                          <a class="dropdown-item {% if request.path == unreviewed_report_list_url %}active{% endif %}"
+                             href="{{ unreviewed_report_list_url }}">
+                              <i class="fas fa-list me-3"></i>
+                              {% trans 'Unreviewed Companies' %}
+                          </a>
+                      </li>
+                  </ul>
+              </li>
+          {% endif %}
+      </ul>
+      {% endcomment %}
+
+      <ul class="flex flex-col gap-2 border-t border-gray-200 py-3">
+        {% if user.is_authenticated %}
+          <li class="relative">
+            <!-- Peer toggle for mobile user dropdown -->
+            <input id="user-menu-toggle-mobile" type="checkbox" class="peer sr-only" aria-hidden="true" />
+            <label for="user-menu-toggle-mobile" class="flex cursor-pointer select-none items-center justify-between rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              <span class="flex items-center gap-2">
+                {% if user.avatar %}
+                  <img src="{{ user.avatar }}" alt="avatar" class="h-8 w-8 rounded-full" />
+                {% else %}
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-xs font-medium text-white">{{ user.display_name|upper|slice:1 }}</span>
+                {% endif %}
+                <span>{{ user.display_name }}</span>
+              </span>
+              <i class="fa-solid fa-angle-down text-gray-500"></i>
+            </label>
+            <ul class="mt-1 hidden space-y-1 rounded-md border border-gray-200 bg-white p-1 shadow-sm peer-checked:block">
+              {% if user.is_staff %}
+                <li>
+                  <a class="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50" href="{% url 'admin:index' %}" target="_blank">{% trans 'Administration' %}</a>
+                </li>
+                <li><div class="my-1 h-px bg-gray-200"></div></li>
+              {% endif %}
+              <li>
+                <a class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50" href="{% url 'account_logout' %}"><i class="fa-solid fa-arrow-right-from-bracket"></i> {% trans 'Sign out' %}</a>
+              </li>
+              <li><div class="my-1 h-px bg-gray-200"></div></li>
+              <li>
+                <a class="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50" href="https://www.notion.so/How-to-use-the-AINdex-12106afb979f49fdbf8ec0603eb8aa8b" target="_blank">{% trans 'How to Use' %}</a>
+              </li>
+            </ul>
+          </li>
+        {% else %}
+          <li>
+            <a href="{% url 'account_login' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">{% translate 'Login' %}</a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
 </nav>

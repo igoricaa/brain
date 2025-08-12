@@ -7,9 +7,9 @@
 {% block content %}
 <form method="post">
   {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.GET.next }}">
   <p>{% trans 'Are you sure you want to delete this patent application?' %}</p>
   <button class="btn btn-danger" type="submit">{% trans 'Delete' %}</button>
   <a class="btn btn-secondary" href="{{ object.company.get_absolute_url|default:'/' }}">{% trans 'Cancel' %}</a>
 </form>
 {% endblock %}
-

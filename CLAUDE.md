@@ -102,8 +102,10 @@ This is a monorepo containing three related components:
 - **Target State**: Standalone React SPA consuming DRF APIs
 - **Tech Stack**: React 19 + TypeScript + Vite 7.1.1
 - **Migration Path**: See `docs/TASKS.md` for detailed epic breakdown
-- **Django Integration**: `{% load vite %}{% vite_entry 'src/main.tsx' %}` in base template
-  - Page-specific entries: `{% vite_entry 'src/pages/<page>.tsx' %}` in extra_js blocks
+- **Django Integration**: Using `django-vite` package for asset management
+  - Base template: `{% load django_vite %}{% vite_hmr_client %}{% vite_asset 'src/main.tsx' %}`
+  - Page-specific entries: `{% vite_asset 'src/pages/<page>.tsx' %}` in extra_js blocks
+  - HMR client injection in development mode via `{% vite_hmr_client %}`
 - **Key URLs**:
   - Companies: `/companies/<uuid>/` → React components for panels
   - Deals: `/deals/`, `/deals/<uuid>/` → Dashboard and detail views
