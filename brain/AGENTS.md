@@ -22,6 +22,7 @@ This is the v2 Django project and API. Frontend moves here using a hybrid Django
 ### React Forms Standard (2025)
 - We are standardizing on React forms across v2 to avoid server-side widget styling and to enable a smooth migration to a full SPA later.
 - Form engine: `react-hook-form` + `@hookform/resolvers` + `zod` (v4) for schema validation.
+- **Async Validation**: Real-time server-side validation with TanStack Query, debouncing, caching, and loading states.
 - UI: Tailwind utilities (shadcn/ui compatible). No global Tailwind base overrides for Django widgets are required when using React forms.
 
 #### How islands load
@@ -37,13 +38,14 @@ This is the v2 Django project and API. Frontend moves here using a hybrid Django
     id="grant-form-root"
     data-action="{{ request.path }}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}"
     data-csrf="{{ csrf_token }}"
-    data-fields='[{"name":"name","label":"Name","type":"text","required":true}]'
+    data-fields='[{"name":"name","label":"Name","type":"text","required":true,"asyncValidation":{"endpoint":"/api/validate/name/","debounceMs":500}}]'
     data-initial='{}'
     data-cancel="{{ request.GET.next|default:'/' }}"
   ></div>
   ```
 - The page must set a `body id`, e.g. `{% block body_id %}_grant-create{% endblock %}`, to trigger lazy-loading.
 - Cancel navigation: use the `?next=` query param whenever linking to create/update pages to guarantee a good return URL.
+- **Async validation**: Add `asyncValidation` config to field definitions for real-time server validation (see `brain/assets/AGENTS.md` for details).
 
 #### Why no Tailwind base for Django widgets?
 - Since forms render as React islands, we do not rely on `{{ form.as_p }}` styling. This avoids maintaining global CSS overrides for Django widgets. You can still add base styles if you have legacy pages, but new work uses the React FormRenderer.

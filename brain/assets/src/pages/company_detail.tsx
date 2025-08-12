@@ -234,9 +234,9 @@ function useLibrarySources() {
                 const json = (await resp.json()) as ApiList<LibrarySource> | LibrarySource[];
                 const items = Array.isArray(json) ? json : json.results || [];
                 if (!cancelled) setData(items);
-    } catch (_) {
-        // noop
-    }
+            } catch (_) {
+                // noop
+            }
         }
         run();
         return () => {

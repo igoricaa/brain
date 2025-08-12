@@ -11,11 +11,9 @@ export default defineConfig(({ mode }) => ({
         react({
             // Exclude dynamically imported page modules from React refresh
             // This prevents the preamble detection error
-            exclude: mode === 'development' ? [
-                /src\/pages\/.*\.tsx$/
-            ] : [],
-        }), 
-        tailwindcss()
+            exclude: mode === 'development' ? [/src\/pages\/.*\.tsx$/] : [],
+        }),
+        tailwindcss(),
     ],
     base: '/static/',
     build: {
