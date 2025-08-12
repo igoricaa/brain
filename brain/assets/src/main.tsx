@@ -16,9 +16,13 @@ const pageModules = {
     '_grant-create': () => import('./pages/company_detail'),
     // Future migrations:
     '_deals-dashboard': () => import('./pages/deals_dashboard'),
+    '_deals-fresh': () => import('./pages/deals_fresh'),
+    '_deals-reviewed': () => import('./pages/deals_reviewed'),
     '_deal-detail': () => import('./pages/deal_detail'),
     '_deal-assessment': () => import('./pages/deal_assessment'),
-    // '_du-dashboard': () => import('./pages/du_dashboard'),
+    '_du-dashboard': () => import('./pages/du_dashboard'),
+    '_founders-list': () => import('./pages/founders'),
+    '_advisors-list': () => import('./pages/advisors'),
 } as const;
 
 // Page initialization system

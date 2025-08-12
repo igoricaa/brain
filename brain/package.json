@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.11",
+    "@types/node": "^24.2.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
@@ -36,13 +37,23 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
+    "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-progress": "^1.1.7",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.12",
     "@tanstack/react-query": "^5.84.2",
     "axios": "^1.11.0",
     "chart.js": "^4.4.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.539.0",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.62.0",
+    "tailwind-merge": "^3.3.1",
     "zod": "^4.0.0"
   }
 }

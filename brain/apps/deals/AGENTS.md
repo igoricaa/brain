@@ -42,7 +42,14 @@ Purpose: deals domain (Deal, DraftDeal, files, decks, papers, dual-use signals).
 ## React Migration (Phase 2)
 - Replace Vue dashboard with React charts (react-chartjs-2) calling `deals/dash/data/`.
 - Deal Detail/Assessment: React form with optimistic UI and API updates; Affinity send flow via existing endpoints.
-- Mount points: `#deals-dashboard-root`, `#deal-detail-root`, `#deal-assessment-root`.
+- Mount points: `#deals-dashboard-root`, `#deals-fresh-root`, `#deals-reviewed-root`, `#deal-detail-root`, `#deal-assessment-root`.
+
+### Reviewed Deals (T-0402)
+- **Template**: `reviewed_deals.html` migrated to `main.html` layout with green review theme
+- **Component**: `assets/src/pages/deals_reviewed.tsx` following fresh deals pattern
+- **Features**: Search with 300ms debounce, infinite scroll, URL sync, "✓ Reviewed" status indicator
+- **API**: Uses `status: 'active'` filter for reviewed deals
+- **Theme**: Green color scheme with Export/Filter actions in page header
 
 ### Deal Assessment (v2 specifics)
 - Endpoint: `/api/deals/assessments/` (create/update latest by `deal=<uuid>`).
@@ -70,3 +77,14 @@ Purpose: deals domain (Deal, DraftDeal, files, decks, papers, dual-use signals).
 
 ### Notes
 - Time axis uses category labels for simplicity; if time-scale ticks are preferred, add `chartjs-adapter-dayjs-4` and switch the x-scale to `type: 'time'`.
+
+## Related Documents Panel (Epic 6 — T-0601)
+
+- Purpose: Show library documents related to the deal’s company on the Deal Detail page without adding backend routes.
+- UI: Tailwind-styled panel titled “Related Documents” with a source filter dropdown and Prev/Next pagination; displays file name (from `file` URL or `src_url`) and optional source label.
+- API: Uses existing Library endpoints:
+  - Files: `/api/library/files/?company=<company_uuid>&page=<n>&page_size=<m>&source=<source_uuid>`
+  - Sources: `/api/library/sources/`
+- Params: URL state uses the `dl_` prefix to avoid collisions with other sections: `dl_page`, `dl_size`, `dl_all` (view all = 100), `dl_source`.
+- Implementation: `assets/src/components/library/RelatedDocumentsPanel.tsx`; mounted from `assets/src/pages/deal_detail.tsx` below the Decks/Papers row when `deal.company` is present.
+- Company Page: A separate Bootstrap-styled Library panel already exists; this change does not modify company templates.

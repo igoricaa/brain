@@ -1,10 +1,28 @@
-{% extends 'deals/base.html' %}
+{% extends 'main.html' %}
 {% load i18n %}
+{% load django_vite %}
 
 {% block body_id %}_deals-dashboard{% endblock %}
-{% block deals_title %}{% trans 'Deals Dashboard' %}{% endblock %}
 
-{% block deals_content %}
+{% block page_title %}{% trans 'Deals Dashboard' %}{% endblock %}
+{% block page_subtitle %}
+<p class="mt-1 text-sm text-gray-500">{% trans 'Monitor your investment pipeline and performance' %}</p>
+{% endblock %}
+
+{% block page_actions %}
+<button type="button" class="inline-flex items-center rounded-md bg-green-100 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-200">
+    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+    </svg>
+    {% trans 'Live Data' %}
+</button>
+{% endblock %}
+
+{% block content %}
 <div id="deals-dashboard-root"></div>
+{% endblock %}
+
+{% block extra_js %}
+{% vite_asset 'src/pages/deals_dashboard.tsx' %}
 {% endblock %}
 

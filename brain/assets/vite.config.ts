@@ -15,6 +15,11 @@ export default defineConfig(({ mode }) => ({
         }),
         tailwindcss(),
     ],
+    resolve: {
+        alias: {
+            '@': resolve(__dirname, 'src'),
+        },
+    },
     base: '/static/',
     build: {
         outDir: 'assets/dist',

@@ -95,9 +95,12 @@ function toLineData(series: DateCount[], label: string) {
             {
                 label,
                 data: series.map((d) => d.count),
-                borderColor: 'rgba(47, 75, 124, 1.0)',
-                backgroundColor: 'rgba(47, 75, 124, 0.2)',
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: 0.3,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 4,
             },
         ],
     };
@@ -112,6 +115,7 @@ function toPieData(rows: CountByName[]) {
             {
                 data,
                 backgroundColor: labels.map((_, i) => colorPalette[i % colorPalette.length]),
+                borderWidth: 0,
             },
         ],
     };
@@ -125,158 +129,239 @@ function toBarData(rows: CountByName[], topN = 10) {
             {
                 label: 'Count',
                 data: top.map((r) => r.count),
-                backgroundColor: top.map((_, i) => colorPalette[i % colorPalette.length]),
+                backgroundColor: '#3B82F6',
+                borderRadius: 4,
             },
         ],
     };
 }
 
-function Metric({ label, value }: { label: string; value: number | string }) {
+function MetricCard({
+    label,
+    value,
+    period,
+    icon,
+    iconBg,
+}: {
+    label: string;
+    value: number | string;
+    period: string;
+    icon: string;
+    iconBg: string;
+}) {
     return (
-        <div className="p-3 bg-white rounded border">
-            <div className="text-muted small">{label}</div>
-            <div className="h5 m-0">{value}</div>
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+            <div className="flex items-center">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${iconBg}`}>
+                    <span className="text-2xl">{icon}</span>
+                </div>
+                <div className="ml-4 flex-1">
+                    <p className="text-sm font-medium text-gray-500">{label}</p>
+                    <p className="text-2xl font-semibold text-gray-900">{value}</p>
+                    <p className="text-xs text-gray-400">{period}</p>
+                </div>
+            </div>
         </div>
     );
 }
 
-function InlineLegend({ labels, colors }: { labels: string[]; colors: string[] }) {
+function ChartCard({
+    title,
+    children,
+    action,
+}: {
+    title: string;
+    children: React.ReactNode;
+    action?: React.ReactNode;
+}) {
     return (
-        <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0' }}>
-            {labels.map((l, i) => (
-                <li
-                    key={`${l}-${i}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}
-                >
-                    <span
-                        style={{
-                            display: 'inline-block',
-                            width: 10,
-                            height: 10,
-                            background: colors[i % colors.length],
-                        }}
-                    />
-                    <span className="small text-muted">{l}</span>
-                </li>
-            ))}
-        </ul>
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                {action}
+            </div>
+            {children}
+        </div>
+    );
+}
+
+function RecentActivity() {
+    const activities = [
+        {
+            id: 1,
+            type: 'deal',
+            title: 'New deal submitted: Senira',
+            subtitle: 'Fintech • $2M seed',
+            time: '5 days ago',
+            icon: '🟢',
+        },
+        {
+            id: 2,
+            type: 'assessment',
+            title: 'Assessment completed: Croptell',
+            subtitle: 'AI/ML • $1M late seed',
+            time: '6 days ago',
+            icon: '🔵',
+        },
+    ];
+
+    return (
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">Recent Activity</h3>
+            <p className="mb-4 text-sm text-gray-500">Latest updates and deal submissions</p>
+
+            <div className="space-y-4">
+                {activities.map((activity) => (
+                    <div key={activity.id} className="flex items-start space-x-3">
+                        <span className="text-xl">{activity.icon}</span>
+                        <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{activity.title}</p>
+                            <p className="text-xs text-gray-500">
+                                {activity.subtitle} • {activity.time}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 }
 
 function DealsDashboardApp() {
-    const { data, loading, error, params, update } = useDashboardData();
-
-    const dateFrom = params.get('date_from') || (data?.date_from ?? '');
-    const dateTo = params.get('date_to') || (data?.date_to ?? '');
+    const { data, loading, error } = useDashboardData();
 
     const trendData = useMemo(
         () => (data ? toLineData(data.date_count_trend, 'Deals per day') : null),
         [data],
     );
     const fundingData = useMemo(() => (data ? toPieData(data.funding_stage_count) : null), [data]);
-    const duData = useMemo(() => (data ? toPieData(data.du_signal_count) : null), [data]);
-    const industryData = useMemo(() => (data ? toBarData(data.industry_count, 10) : null), [data]);
+
+    const chartOptions = {
+        ...simpleLineOptions,
+        scales: {
+            x: {
+                grid: {
+                    display: false,
+                },
+                ticks: {
+                    autoSkip: true,
+                    maxTicksLimit: 7,
+                },
+            },
+            y: {
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)',
+                },
+                beginAtZero: true,
+            },
+        },
+        plugins: {
+            legend: {
+                display: false,
+            },
+        },
+    };
+
+    const pieOptions = {
+        ...simplePieOptions,
+        plugins: {
+            legend: {
+                position: 'right' as const,
+                labels: {
+                    padding: 15,
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                },
+            },
+        },
+    };
+
+    if (loading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <div className="text-gray-500">Loading dashboard data...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="rounded-lg bg-red-50 p-4">
+                <p className="text-sm text-red-800">Error loading dashboard: {error}</p>
+            </div>
+        );
+    }
+
+    if (!data) return null;
 
     return (
-        <div className="container-fluid">
-            <div className="d-flex flex-wrap align-items-end gap-3 mb-3">
-                <div>
-                    <label className="small text-muted">From</label>
-                    <input
-                        type="date"
-                        className="form-control form-control-sm"
-                        value={dateFrom}
-                        onChange={(e) => update((p) => p.set('date_from', e.target.value))}
-                    />
-                </div>
-                <div>
-                    <label className="small text-muted">To</label>
-                    <input
-                        type="date"
-                        className="form-control form-control-sm"
-                        value={dateTo}
-                        onChange={(e) => update((p) => p.set('date_to', e.target.value))}
-                    />
-                </div>
+        <div className="space-y-6">
+            {/* Metrics Row */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <MetricCard
+                    label="Today"
+                    value={data.today_count}
+                    period={`Yesterday: ${data.yesterday_count}`}
+                    icon="📊"
+                    iconBg="bg-blue-100"
+                />
+                <MetricCard
+                    label="This Week"
+                    value={data.current_week_count}
+                    period={`Last Week: ${data.previous_week_count}`}
+                    icon="📈"
+                    iconBg="bg-red-100"
+                />
+                <MetricCard
+                    label="This Month"
+                    value={data.current_month_count}
+                    period={`Last Month: ${data.previous_month_count}`}
+                    icon="📅"
+                    iconBg="bg-orange-100"
+                />
+                <MetricCard
+                    label="Total Deals"
+                    value={data.total_count}
+                    period={`This Year: ${data.current_year_count}`}
+                    icon="🎯"
+                    iconBg="bg-green-100"
+                />
             </div>
 
-            {loading && <div className="text-muted small">Loading…</div>}
-            {error && <div className="text-danger small">{error}</div>}
+            {/* Charts Row */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <ChartCard
+                    title="Deal Flow Trend"
+                    action={
+                        <button className="text-sm text-blue-600 hover:text-blue-700">
+                            View Details
+                        </button>
+                    }
+                >
+                    <p className="mb-4 text-sm text-gray-500">
+                        Daily received deals over the past month
+                    </p>
+                    {trendData && (
+                        <div className="h-64">
+                            <Line data={trendData} options={chartOptions} />
+                        </div>
+                    )}
+                </ChartCard>
 
-            {!loading && data && (
-                <>
-                    <div className="row g-3 mb-3">
-                        <div className="col-sm-6 col-lg-3">
-                            <Metric label="Total" value={data.total_count} />
+                <ChartCard title="Funding Stages">
+                    <p className="mb-4 text-sm text-gray-500">
+                        Distribution of deals by funding stage
+                    </p>
+                    {fundingData && (
+                        <div className="h-64">
+                            <Pie data={fundingData} options={pieOptions} />
                         </div>
-                        <div className="col-sm-6 col-lg-3">
-                            <Metric label="Today" value={data.today_count} />
-                        </div>
-                        <div className="col-sm-6 col-lg-3">
-                            <Metric label="This month" value={data.current_month_count} />
-                        </div>
-                        <div className="col-sm-6 col-lg-3">
-                            <Metric label="This year" value={data.current_year_count} />
-                        </div>
-                    </div>
+                    )}
+                </ChartCard>
+            </div>
 
-                    <div className="row g-4">
-                        <div className="col-lg-6">
-                            <div className="p-3 bg-white rounded border">
-                                <div className="mb-2 fw-semibold">Deals per day</div>
-                                {trendData && (
-                                    <Line
-                                        data={trendData}
-                                        options={{
-                                            ...simpleLineOptions,
-                                            scales: { x: { ticks: { autoSkip: true } } },
-                                        }}
-                                    />
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                            <div className="p-3 bg-white rounded border">
-                                <div className="mb-2 fw-semibold">Funding stage</div>
-                                {fundingData && (
-                                    <>
-                                        <Pie data={fundingData} options={simplePieOptions} />
-                                        <InlineLegend
-                                            labels={fundingData.labels as string[]}
-                                            colors={colorPalette}
-                                        />
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                            <div className="p-3 bg-white rounded border">
-                                <div className="mb-2 fw-semibold">Industries (top 10)</div>
-                                {industryData && (
-                                    <Bar data={industryData} options={simpleBarOptions} />
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                            <div className="p-3 bg-white rounded border">
-                                <div className="mb-2 fw-semibold">Dual-use signals</div>
-                                {duData && (
-                                    <>
-                                        <Pie data={duData} options={simplePieOptions} />
-                                        <InlineLegend
-                                            labels={duData.labels as string[]}
-                                            colors={colorPalette}
-                                        />
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
+            {/* Recent Activity */}
+            <RecentActivity />
         </div>
     );
 }

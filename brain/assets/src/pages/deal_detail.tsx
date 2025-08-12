@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useMemo, useState } from 'react';
+import RelatedDocumentsPanel from '../components/library/RelatedDocumentsPanel';
 
 type Related = { uuid: string; name?: string | null };
 type RelatedSignal = { uuid: string; name: string; code?: string | null };
@@ -298,7 +299,9 @@ function DealDetailApp({ uuid }: { uuid: string }) {
     const [lastStatus, setLastStatus] = useState<string | null>(null);
 
     function getCookie(name: string) {
-        const match = document.cookie.match('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)');
+        const match = document.cookie.match(
+            '(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)',
+        );
         return match ? decodeURIComponent(match[1]) : null;
     }
 
@@ -428,6 +431,12 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                     <FileList title="Papers" files={papers} />
                 )}
             </div>
+
+            <RelatedDocumentsPanel
+                companyUuid={deal.company?.uuid || null}
+                paramPrefix="dl_"
+                title="Related Documents"
+            />
         </div>
     );
 }

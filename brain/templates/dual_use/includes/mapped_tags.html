@@ -1,0 +1,6 @@
+{% for tag in tags %}
+  {% include 'dual_use/includes/mapped_tag.html' with tag=tag %}
+{% empty %}
+  <span class="text-xs text-gray-400">—</span>
+{% endfor %}
+

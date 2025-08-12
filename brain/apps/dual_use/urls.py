@@ -16,7 +16,4 @@ urlpatterns = [
     path("reports/<uuid:uuid>/update/", views.report_update, name="report-update"),
     path("reports/<uuid:uuid>/delete/", views.report_delete, name="report-delete"),
 
-    # Placeholder for dashboard data (hooked by templates later)
-    path("summary/data/", views.summary_data, name="summary-data"),
 ]
-

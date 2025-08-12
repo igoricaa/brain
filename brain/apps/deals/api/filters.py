@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from django_filters import rest_framework as filters
@@ -11,6 +12,7 @@ class DealFilter(filters.FilterSet):
 
     company = filters.UUIDFilter(field_name='company__uuid', help_text=_('filter by company UUID'))
     file = filters.UUIDFilter(field_name='file__uuid', help_text=_('filter by file UUID'))
+    q = filters.CharFilter(method='search_deals', help_text=_('search in company names and deal names'))
 
     class Meta:
         model = Deal
@@ -19,6 +21,15 @@ class DealFilter(filters.FilterSet):
             'file',
             'status',
         ]
+
+    def search_deals(self, queryset, name, value):
+        """Search for deals by company name or deal name"""
+        if not value:
+            return queryset
+        
+        return queryset.filter(
+            Q(company__name__icontains=value) | Q(name__icontains=value)
+        )
 
 
 class DealFileFilter(filters.FilterSet):

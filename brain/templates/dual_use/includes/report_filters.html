@@ -1,0 +1,34 @@
+{% load i18n %}
+{# Shell filters placeholder; to be replaced with API-driven filters in React #}
+<form class="flex flex-wrap gap-3 items-end" method="GET" action="">
+  <div>
+    <label class="block text-xs text-gray-600" for="id_year_evaluated">{% trans 'Evaluation year' %}</label>
+    <select id="id_year_evaluated" name="year_evaluated" class="mt-1 block w-48 rounded border-gray-300 text-sm">
+      <option value="">—</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs text-gray-600" for="id_industries">{% trans 'Industry' %}</label>
+    <select id="id_industries" name="industries" class="mt-1 block w-56 rounded border-gray-300 text-sm">
+      <option value="">—</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs text-gray-600" for="id_country">{% trans 'Country' %}</label>
+    <select id="id_country" name="hq_country" class="mt-1 block w-48 rounded border-gray-300 text-sm">
+      <option value="">—</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs text-gray-600" for="id_thesis_fit">{% trans 'Thesis fit' %}</label>
+    <select id="id_thesis_fit" name="thesis_fit" class="mt-1 block w-40 rounded border-gray-300 text-sm">
+      <option value="">—</option>
+      <option value="true">{% trans 'Yes' %}</option>
+      <option value="false">{% trans 'No' %}</option>
+    </select>
+  </div>
+  <div>
+    <button type="submit" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-1.5 text-white text-sm">{% trans 'Filter' %}</button>
+  </div>
+</form>
+

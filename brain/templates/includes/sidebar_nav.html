@@ -1,0 +1,109 @@
+{% load i18n %}
+{% load static %}
+
+<nav id="sidebar-nav" class="fixed left-0 top-0 h-full w-64 bg-slate-900 text-white">
+  <div class="flex h-full flex-col">
+    <!-- Logo/Brand -->
+    <div class="flex h-16 items-center border-b border-slate-800 px-6">
+      <a href="/" class="flex items-center space-x-2 text-white hover:text-slate-200">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="16" r="6" fill="currentColor"/>
+          <circle cx="22" cy="16" r="6" fill="currentColor"/>
+        </svg>
+        <span class="text-lg font-semibold">brAINbrAIN</span>
+      </a>
+    </div>
+    
+    <!-- User info -->
+    {% if user.is_authenticated %}
+    <div class="border-b border-slate-800 px-6 py-4">
+      <div class="text-sm text-slate-400">AIN Ventures</div>
+    </div>
+    {% endif %}
+    
+    <!-- Navigation -->
+    <div class="flex-1 overflow-y-auto px-3 py-4">
+      <div class="space-y-1">
+        <div class="mb-4 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Navigation</div>
+        
+        <a href="{% url 'deals:dashboard' %}" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white {% if '/deals/dashboard' in request.path %}bg-slate-800 text-white{% endif %}">
+          <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          {% trans 'Dashboard' %}
+        </a>
+        
+        <a href="{% url 'deals:fresh_deals' %}" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white {% if '/deals/fresh' in request.path %}bg-slate-800 text-white{% endif %}">
+          <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+          {% trans 'Fresh Deals' %}
+        </a>
+        
+        <a href="{% url 'deals:reviewed_deals' %}" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white {% if '/deals/reviewed' in request.path %}bg-slate-800 text-white{% endif %}">
+          <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          {% trans 'Past Deals' %}
+        </a>
+        
+        {# Placeholder links - these pages are not yet implemented #}
+        <a href="#" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white opacity-50 cursor-not-allowed">
+          <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          {% trans 'Research Agent' %}
+        </a>
+        
+        <a href="#" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white opacity-50 cursor-not-allowed">
+          <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+          </svg>
+          {% trans 'File Management' %}
+        </a>
+        
+        <a href="#" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white opacity-50 cursor-not-allowed">
+          <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          {% trans 'Team' %}
+        </a>
+      </div>
+    </div>
+    
+    <!-- Upload button -->
+    <div class="border-t border-slate-800 p-4">
+      <button disabled class="flex w-full items-center justify-center rounded-lg bg-gray-400 px-4 py-2 text-sm font-medium text-white cursor-not-allowed" title="Upload functionality not yet implemented">
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+        </svg>
+        {% trans 'Upload New Deal' %}
+      </a>
+    </div>
+    
+    <!-- User menu -->
+    {% if user.is_authenticated %}
+    <div class="border-t border-slate-800 p-4">
+      <div class="relative">
+        <button type="button" class="group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white" onclick="document.getElementById('user-dropdown').classList.toggle('hidden')">
+          <span class="flex-1 text-left">{{ user.display_name|truncatechars:20 }}</span>
+          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
+          </svg>
+        </button>
+        
+        <div id="user-dropdown" class="absolute bottom-full left-0 right-0 z-50 mb-2 hidden rounded-lg border border-slate-700 bg-slate-800 py-1 shadow-lg">
+          {% if user.is_staff %}
+          <a href="{% url 'admin:index' %}" target="_blank" class="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700 hover:text-white">
+            {% trans 'Administration' %}
+          </a>
+          {% endif %}
+          <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700 hover:text-white">
+            {% trans 'Sign out' %}
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</nav>

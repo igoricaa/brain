@@ -56,7 +56,58 @@ Purpose: companies domain and related people. Provides API and some server views
 - Confirm forms work; align field names with current models.
 - Done: core templates ported; page Vite entry wired; About + Library islands mounted; grants/patents server pagination and redirects complete.
 
-## React Migration (Phase 2)
-- Add `company_detail` entry; mount components into `#company-detail-root` and sub-roots per panel.
-- Replace server-rendered tables with API-driven React tables; paginate via DRF params.
-- Use `uuid` from template context via `data-uuid` attributes for initial fetch.
+## React Migration (Phase 2) - COMPLETED ✅
+- ✅ Added `company_detail` entry; components mounted into `#company-detail-root` and sub-roots per panel.
+- ✅ Enhanced React islands with modern shadcn/ui components and responsive design.
+- ✅ Maintained server-rendered pagination while modernizing UI components.
+- ✅ Used `uuid` from template context via `data-uuid` attributes for initial fetch.
+
+## Company Detail Page Redesign (T-0402) - COMPLETED ✅
+
+### Template Migration
+- **Layout Change**: Migrated from `companies/base.html` to `main.html` for consistent sidebar navigation
+- **Modern Header**: Added page title, subtitle with location/founded info, company logo, and action buttons
+- **Metric Cards**: Implemented 4-column responsive grid with funding metrics:
+  - Total Funding (green icon) - shows total amount and number of rounds
+  - Last Funding (blue icon) - shows amount, type, and date
+  - Valuation (purple icon) - shows range and date
+  - Stage (orange icon) - shows current funding stage
+
+### React Component Enhancements
+- **CompanyAbout**: Redesigned with modern grid layout, proper typography, external link icons
+- **CompanyLibraryPanel**: Enhanced with document filtering, modern pagination controls, and file icons
+- **shadcn/ui Integration**: Added Avatar, Separator, Progress, Alert, and Tabs components
+- **Responsive Design**: All grids adapt from mobile (1 column) to desktop (2-4 columns)
+
+### Design System Implementation
+- **Card Pattern**: Consistent `rounded-lg bg-white p-6 shadow-sm border border-gray-200` throughout
+- **Icon System**: Lucide React icons (Building, FileText, ExternalLink, Filter) with consistent sizing
+- **Color Scheme**: Colorful metric card icons, muted text hierarchy (`text-gray-900`, `text-gray-500`)
+- **Typography**: Modern heading scale (`text-2xl`, `text-lg`) with proper font weights
+
+### Dependencies Added
+- `@radix-ui/react-avatar@^1.1.10`
+- `@radix-ui/react-separator@^1.1.7`
+- `@radix-ui/react-progress@^1.1.7`
+- `@radix-ui/react-tabs@^1.1.12`
+
+### File Structure
+```
+brain/
+├── templates/companies/company_detail.html    # Redesigned template with metric cards
+├── assets/src/
+│   ├── components/ui/
+│   │   ├── avatar.tsx                         # New shadcn/ui component
+│   │   ├── separator.tsx                      # New shadcn/ui component
+│   │   ├── progress.tsx                       # New shadcn/ui component
+│   │   ├── alert.tsx                          # New shadcn/ui component
+│   │   └── tabs.tsx                           # New shadcn/ui component
+│   └── pages/company_detail.tsx               # Enhanced React components
+```
+
+### Accessibility & Performance
+- **ARIA Labels**: Proper semantic HTML with role attributes
+- **Keyboard Navigation**: Tab-friendly interactive elements
+- **Loading States**: Skeleton loading and error handling
+- **Build Size**: Maintained efficient bundle size (10.94 kB gzipped)
+- **Mobile Responsive**: Adapts gracefully from mobile to desktop

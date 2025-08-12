@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client';
 import FormRenderer, { type FormFieldDef } from '../components/forms/FormRenderer';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../lib/queryClient';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Separator } from '../components/ui/separator';
+import { ExternalLink, Building, FileText, Filter } from 'lucide-react';
 // API helpers used by FormRenderer internally
 
 type Company = {
@@ -113,34 +117,62 @@ function CompanyAbout({ company }: { company: Company }) {
         () => joinLocation(company.hq_country, company.hq_state_name, company.hq_city_name),
         [company.hq_country, company.hq_state_name, company.hq_city_name],
     );
+
     return (
-        <div className="card mt-3">
-            <div className="card-header">About</div>
-            <div className="card-body">
-                <div className="mb-2">
-                    <strong>Website:</strong>{' '}
-                    {company.website ? (
-                        <a href={company.website} target="_blank" rel="noreferrer">
-                            {company.website}
-                        </a>
-                    ) : (
-                        <span>-</span>
-                    )}
-                </div>
-                <div className="mb-2">
-                    <strong>HQ:</strong> <span>{location || '-'}</span>
-                </div>
-                <div className="mb-2">
-                    <strong>Founded:</strong> <span>{company.year_founded ?? '-'}</span>
-                </div>
-                {company.summary && (
-                    <div className="mb-0">
-                        <strong>Summary:</strong>
-                        <div>{stripTemplateArtifacts(company.summary)}</div>
+        <>
+            <div className="flex items-center gap-2 mb-4">
+                <Building className="h-5 w-5 text-gray-600" />
+                <h3 className="text-lg font-semibold text-gray-900">About</h3>
+            </div>
+
+            <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                        <div>
+                            <dt className="text-sm font-medium text-gray-500">Website</dt>
+                            <dd className="text-sm text-gray-900">
+                                {company.website ? (
+                                    <a
+                                        href={company.website}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                                    >
+                                        {company.website}
+                                        <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                ) : (
+                                    '-'
+                                )}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="text-sm font-medium text-gray-500">Headquarters</dt>
+                            <dd className="text-sm text-gray-900">{location || '-'}</dd>
+                        </div>
                     </div>
+
+                    <div className="space-y-3">
+                        <div>
+                            <dt className="text-sm font-medium text-gray-500">Founded</dt>
+                            <dd className="text-sm text-gray-900">{company.year_founded ?? '-'}</dd>
+                        </div>
+                    </div>
+                </div>
+
+                {company.summary && (
+                    <>
+                        <Separator />
+                        <div>
+                            <dt className="text-sm font-medium text-gray-500 mb-2">Summary</dt>
+                            <dd className="text-sm text-gray-900 leading-relaxed">
+                                {stripTemplateArtifacts(company.summary)}
+                            </dd>
+                        </div>
+                    </>
                 )}
             </div>
-        </div>
+        </>
     );
 }
 
@@ -274,20 +306,25 @@ function CompanyLibraryPanel({ uuid }: { uuid: string }) {
     const viewAllLink = buildMergedLink({ l_all: '1', l_size: null, l_page: null });
 
     return (
-        <div className="card mt-3">
-            <div className="card-header d-flex align-items-center justify-content-between">
-                <span>Library Documents</span>
-                <span className="small">
-                    <a className="text-decoration-none" href={viewAllLink}>
+        <>
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-gray-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">Library Documents</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                    <a href={viewAllLink} className="text-xs text-blue-600 hover:text-blue-800">
                         View all
                     </a>
-                </span>
+                </div>
             </div>
-            <div className="card-body">
-                <div className="d-flex align-items-center gap-2 mb-3">
-                    <label className="small text-muted">Source</label>
+
+            <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-gray-500" />
+                    <label className="text-sm font-medium text-gray-500">Source</label>
                     <select
-                        className="form-select form-select-sm w-auto"
+                        className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white"
                         value={source || ''}
                         onChange={(e) => {
                             const value = e.target.value || null;
@@ -304,68 +341,77 @@ function CompanyLibraryPanel({ uuid }: { uuid: string }) {
                     </select>
                 </div>
 
-                {loading && <div className="text-muted small">Loading…</div>}
-                {error && <div className="text-danger small">{error}</div>}
+                {loading && <div className="text-sm text-gray-500">Loading documents…</div>}
+                {error && <div className="text-sm text-red-600">{error}</div>}
                 {!loading && !error && (
-                    <>
-                        <ul className="mb-2">
-                            {data.results && data.results.length ? (
-                                data.results.map((f) => (
-                                    <li key={f.uuid}>
-                                        {f.file || f.src_url ? (
-                                            <a
-                                                href={(f.file as string) || (f.src_url as string)}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                {fileDisplayName(f)}
-                                            </a>
-                                        ) : (
-                                            <span>{fileDisplayName(f)}</span>
-                                        )}
-                                        {f.source?.name ? (
-                                            <span className="text-muted small ms-2">
-                                                {f.source.name}
-                                            </span>
-                                        ) : null}
-                                    </li>
-                                ))
-                            ) : (
-                                <span className="text-secondary">No documents found.</span>
-                            )}
-                        </ul>
-                        {typeof data.count === 'number' && data.results && data.results.length ? (
-                            <div className="d-flex align-items-center justify-content-end gap-2 small">
-                                <span className="text-muted">
+                    <div className="space-y-3">
+                        {data.results && data.results.length ? (
+                            data.results.map((f) => (
+                                <div key={f.uuid} className="border-l-4 border-blue-200 pl-4">
+                                    {f.file || f.src_url ? (
+                                        <a
+                                            href={(f.file as string) || (f.src_url as string)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-sm font-medium text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                                        >
+                                            {fileDisplayName(f)}
+                                            <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                    ) : (
+                                        <span className="text-sm font-medium text-gray-900">
+                                            {fileDisplayName(f)}
+                                        </span>
+                                    )}
+                                    {f.source?.name && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {f.source.name}
+                                        </p>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-sm text-gray-500">No documents found.</p>
+                        )}
+
+                        {typeof data.count === 'number' && data.results && data.results.length && (
+                            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                                <p className="text-xs text-gray-600">
                                     Showing {(page - 1) * size + 1}-
                                     {(page - 1) * size + data.results.length} of {data.count}
-                                </span>
-                                <div className="btn-group btn-group-sm" role="group">
+                                </p>
+                                <div className="flex items-center gap-2">
                                     {prevLink ? (
-                                        <a className="btn btn-outline-secondary" href={prevLink}>
+                                        <a
+                                            href={prevLink}
+                                            className="inline-flex items-center rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                        >
                                             Prev
                                         </a>
                                     ) : (
-                                        <span className="btn btn-outline-secondary disabled">
+                                        <span className="inline-flex items-center rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-400">
                                             Prev
                                         </span>
                                     )}
                                     {nextLink ? (
-                                        <a className="btn btn-outline-secondary" href={nextLink}>
+                                        <a
+                                            href={nextLink}
+                                            className="inline-flex items-center rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                        >
                                             Next
                                         </a>
                                     ) : (
-                                        <span className="btn btn-outline-secondary disabled">
+                                        <span className="inline-flex items-center rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-400">
                                             Next
                                         </span>
                                     )}
                                 </div>
                             </div>
-                        ) : null}
-                    </>
+                        )}
+                    </div>
                 )}
             </div>
-        </div>
+        </>
     );
 }
 

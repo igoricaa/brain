@@ -5,6 +5,8 @@
 {% block du_title %}{% trans 'Dual-use Reports' %}{% endblock %}
 
 {% block du_content %}
-<div class="text-sm text-gray-700">Report list shell</div>
+<div class="mb-4">
+  {% include 'dual_use/includes/report_filters.html' %}
+  <div class="mt-4 text-sm text-gray-700">Report list shell</div>
+</div>
 {% endblock %}
-

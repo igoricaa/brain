@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
+from django.db.models import Count
 
 
 def du_dashboard(request: HttpRequest) -> HttpResponse:
@@ -32,10 +33,7 @@ def report_delete(request: HttpRequest, uuid) -> HttpResponse:
     return render(request, "dual_use/report_delete.html", {"uuid": uuid})
 
 
-def summary_data(request: HttpRequest) -> JsonResponse:
-    """Placeholder summary data endpoint for the DU dashboard.
-
-    Will be implemented in T-0403; for now return an empty payload so the route responds.
-    """
-    return JsonResponse({"ok": True, "data": {}})
-
+"""
+Note: A former JSON view `summary_data` lived here. It has been replaced by the
+DRF endpoint `/api/dual-use/summary/` (see `dual_use.api.views`).
+"""

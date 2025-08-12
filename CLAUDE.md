@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Main repository guidelines: `AGENTS.md`
 - This file: `CLAUDE.md` (development commands and architecture)
 - Migration roadmap: `docs/TASKS.md` and `docs/FRONTEND_MIGRATION_CHECKLIST.md`
+- **UI Redesign**: `docs/sidebar_redesign.md` (T-0401 Sidebar Navigation Implementation)
 
 ### Module-Specific Documentation (AGENTS.md)
 - Brain overview: `brain/AGENTS.md`
@@ -79,6 +80,7 @@ This is a monorepo containing three related components:
    - API endpoints under `apps/*/api/` with serializers, views, filters
    - Uses PostgreSQL with PostGIS and pgvector extensions
    - OpenAPI documentation via drf-spectacular
+   - **UI Layout**: Fixed sidebar navigation with modern design (`bg-slate-50`, brAINbrAIN branding)
    - **Frontend Migration**: Transitioning to React + Vite (see docs/TASKS.md)
 
 3. **aindex-web/** - Legacy Django application (Django 5.1) with web UI
@@ -101,14 +103,15 @@ This is a monorepo containing three related components:
 - **Current State**: Hybrid approach with Django templates + React islands
 - **Target State**: Standalone React SPA consuming DRF APIs
 - **Tech Stack**: React 19 + TypeScript + Vite 7.1.1
+- **UI Architecture**: Fixed sidebar layout (`w-64` left, `ml-64` content offset)
 - **Migration Path**: See `docs/TASKS.md` for detailed epic breakdown
 - **Django Integration**: Using `django-vite` package for asset management
   - Base template: `{% load django_vite %}{% vite_hmr_client %}{% vite_asset 'src/main.tsx' %}`
-  - Page-specific entries: `{% vite_asset 'src/pages/<page>.tsx' %}` in extra_js blocks
+  - Layout template: `main.html` includes `sidebar_nav.html` for consistent navigation
   - HMR client injection in development mode via `{% vite_hmr_client %}`
 - **Key URLs**:
   - Companies: `/companies/<uuid>/` → React components for panels
-  - Deals: `/deals/`, `/deals/<uuid>/` → Dashboard and detail views
+  - Deals: `/deals/`, `/deals/<uuid>/` → Dashboard and detail views with sidebar
   - APIs: All under `/api/` namespace with consistent patterns
 
 ## Code Style & Standards
@@ -123,6 +126,8 @@ This is a monorepo containing three related components:
 ### JavaScript/Frontend
 - Legacy (aindex-web): Webpack, Bootstrap 5, Chart.js, Vue.js
 - Modern (brain): React 19 + TypeScript + Vite 7.1.1
+- **Design System**: Tailwind CSS 4.1.1, sidebar navigation, colorful metric cards
+- **Layout Patterns**: Fixed sidebar (`bg-slate-900`), content area (`bg-white`), app background (`bg-slate-50`)
 - Naming: camelCase for variables, kebab-case for files, PascalCase for components
 - Assets: `assets/` → `assets/dist/` (Webpack) or `brain/assets/` → `brain/assets/dist/` (Vite)
 - Frontend structure: Entries in `brain/assets/src/`, config at `brain/assets/vite.config.ts`
@@ -147,12 +152,14 @@ This is a monorepo containing three related components:
 
 - **Primary work should be in brain**, not aindex-web
 - **Always check AGENTS.md files** for module-specific guidance and patterns
+- **UI/Template Work**: All new pages should extend `main.html` for consistent sidebar layout
 - Check for existing patterns in the target app before implementing
 - Use appropriate virtual environment for each component
 - Run tests and linting before committing:
   - Python: `black`, `isort`, `flake8`, `python manage.py test`
   - Frontend: `npm run lint`, `npm run format`
 - For frontend work, check if React component exists before modifying templates
+- **Design Consistency**: Follow established patterns in `sidebar_nav.html` and metric card components
 - Consult `docs/TASKS.md` for migration status and planned work
 
 ## Security & Configuration

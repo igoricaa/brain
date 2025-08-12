@@ -10,6 +10,14 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
 - `src/lib/*`: shared helpers (e.g., `lib/charts.ts` registers Chart.js + legacy palette).
 - `tsconfig.json`: TS settings for Vite React.
 
+## UI Layout Architecture (T-0401 Sidebar Redesign)
+
+- **Layout Structure**: Fixed sidebar navigation (`w-64` left) with content area offset (`ml-64`).
+- **Template Integration**: `main.html` loads `includes/sidebar_nav.html` for consistent navigation.
+- **Background**: App uses `bg-slate-50` for modern, clean aesthetic.
+- **Navigation**: brAINbrAIN branding with dark navy sidebar (`bg-slate-900`).
+- **Design System**: Follows fresh deals pattern with colorful metric cards and clean typography.
+
 ## Commands (from brain/)
 
 - `npm run dev`: Vite dev server (HMR) at 5173.
@@ -19,7 +27,7 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
 ## Django Integration
 
 - Base: `{% load django_vite %}{% vite_hmr_client %}{% vite_asset 'src/main.tsx' %}` only. Page code is lazy-loaded by `main.tsx`.
-- Body IDs used by router: `_company-detail`, `_grant-create`, `_deals-dashboard`, `_deal-detail`, `_du-dashboard`.
+- Body IDs used by router: `_company-detail`, `_grant-create`, `_deals-dashboard`, `_deals-fresh`, `_deals-reviewed`, `_deal-detail`, `_du-dashboard`, `_founders-list`, `_advisors-list`.
 
 ## Adding a New Page Module
 
@@ -27,18 +35,44 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
 2. Add a body id in the Django template (e.g., `<body id="_my-page">`).
 3. Register it in `pageModules` within `src/main.tsx`: `'_my-page': () => import('./pages/my_page')`.
 
+### People Lists (Founders/Advisors)
+
+- Modules: `src/pages/founders.tsx` and `src/pages/advisors.tsx` mount into `#founders-root` and `#advisors-root` on body IDs `#_founders-list` and `#_advisors-list` respectively.
+- Data: `/api/companies/founders` and `/api/companies/advisors` (DRF page-number pagination: `?q=<query>&page=<n>&page_size=30`, optional `ordering=-created_at`).
+- Hooks: `src/hooks/usePeople.ts` (`useFounders`, `useAdvisors`) with `keepPreviousData` and 30s `staleTime`.
+- UI: shadcn/ui `Input`, `Table`, `Button`, `Badge`, `Skeleton`; Tailwind layout mirrors Fresh Deals header/search/table.
+- UX: 300ms debounced search; URL sync for `q` and `page`; Cmd/Ctrl+K focuses search; up to 3 company chips with `+N` overflow.
+- Quick preview: In DevTools set `document.body.id` to the body id and append the root div; the page will mount and fetch APIs immediately.
+
 ## Notes
 
 - Keep modules small; share logic via `src/components` and `src/lib`.
 - Prefer DRF endpoints under `/api/*` and handle auth via same-origin credentials.
 - React Forms: Use the shared FormRenderer (react-hook-form + zod) with API submission via TanStack Query + Axios. See below.
 
-## Deals Dashboard (React)
+## Deals Components (React)
+
+### Dashboard (`deals_dashboard.tsx`)
 
 - Module: `src/pages/deals_dashboard.tsx` mounts at `#deals-dashboard-root` on body `#_deals-dashboard`.
-- Charts: `react-chartjs-2` + `chart.js`; shared palette in `src/lib/charts.ts`.
-- Data: `/deals/dash/data/`; date filters (`date_from`, `date_to`) persisted in the URL via `history.replaceState`.
-- Optional: for time-axis tick formatting, add `chartjs-adapter-dayjs-4` and switch x-scale `type: 'time'`.
+- **Design**: Colorful metric cards with icons and period comparisons (Today/Week/Month/Total).
+- **Components**: `MetricCard` with colored backgrounds (`bg-blue-100`, `bg-red-100`, etc.), `ChartCard` for data visualization.
+- Charts: `react-chartjs-2` + `chart.js`; updated colors (`#3B82F6` blue theme), clean chart styling.
+- Data: `/deals/dash/data/`; removed date filters for simplified UX.
+- **Recent Activity**: Sample activity feed with emoji indicators and company information.
+
+### Fresh Deals (`deals_fresh.tsx`)
+
+- Module: `src/pages/deals_fresh.tsx` mounts at `#deals-fresh-root` on body `#_deals-fresh`.
+- **API**: Uses `status: 'new'` filter with search and infinite scroll.
+- **Features**: 300ms debounced search, Cmd+K focus, URL sync, "0 Pending" indicator.
+
+### Past Deals (`deals_reviewed.tsx`)
+
+- Module: `src/pages/deals_reviewed.tsx` mounts at `#deals-reviewed-root` on body `#_deals-reviewed`.
+- **API**: Uses `status: 'active'` filter for reviewed deals.
+- **Theme**: Green color scheme with "✓ Reviewed" indicator and Export/Filter actions.
+- **Features**: Same search/scroll patterns as Fresh Deals with reviewed-specific styling.
 
 ## Dependencies
 
@@ -64,6 +98,7 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
 - Provider: Wrap mounts in `QueryClientProvider` using `src/lib/queryClient.ts`.
 - HTTP: Axios instance is configured in `src/lib/http.ts` with CSRF and DRF error normalization.
 - Mount contract (example in Django template):
+
     ```html
     <div
         id="grant-form-root"
@@ -76,10 +111,12 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
         data-cancel="{{ request.GET.next|default:'/' }}"
     ></div>
     ```
-  - Page id: set `{% block body_id %}_grant-create{% endblock %}` to load the page module.
-  - Behavior: On success, redirects to `data-cancel` or `?next=`. DRF field errors are shown inline; `non_field_errors` become a top-level error.
+
+    - Page id: set `{% block body_id %}_grant-create{% endblock %}` to load the page module.
+    - Behavior: On success, redirects to `data-cancel` or `?next=`. DRF field errors are shown inline; `non_field_errors` become a top-level error.
 
 ## Deal Assessment (v2)
+
 - Page: `src/pages/deal_assessment.tsx`, mounted on `body#_deal-assessment` into `#deal-assessment-root`.
 - API: Uses `/api/deals/assessments/` to create or update the latest assessment for a deal, and `/api/deals/deals/{uuid}/` to toggle `sent_to_affinity`.
 - Choices: Quality percentile options are currently hardcoded in the frontend for speed (Most interesting/Top 1%, Very interesting/Top 5%, etc.). Plan to centralize via a small choices endpoint later.
@@ -185,8 +222,18 @@ const asyncValidationConfig = {
 
 - Module: `src/pages/deal_detail.tsx`, mounted on `body#_deal-detail` into `#deal-detail-root`.
 - Behavior: A top row shows “Last status” and a “Refresh Data” button.
-  - On click, POSTs to `/deals/<uuid>/refresh/` (uses a small local CSRF helper) and polls `/deals/<uuid>/processing-status/` with exponential backoff (0.5s → cap 5s, up to 8 attempts).
-  - When ready, re-fetches the deal, decks, and papers; the button/status row remains visible and stable to avoid flashing. Only the content panels update.
-  - On timeout, shows a non-blocking amber warning.
+    - On click, POSTs to `/deals/<uuid>/refresh/` (uses a small local CSRF helper) and polls `/deals/<uuid>/processing-status/` with exponential backoff (0.5s → cap 5s, up to 8 attempts).
+    - When ready, re-fetches the deal, decks, and papers; the button/status row remains visible and stable to avoid flashing. Only the content panels update.
+    - On timeout, shows a non-blocking amber warning.
 - Loading Strategy: Full-page skeleton only on first load; re-fetches keep stale content visible (panels may show small inline loaders).
 - Note on HTTP: This page uses `fetch` for small server actions to avoid pulling axios into the entry; the broader codebase standardizes on Axios via `src/lib/http.ts`.
+
+## Library Integration (Epic 6)
+
+- Component: `src/components/library/RelatedDocumentsPanel.tsx` renders a Tailwind UI list of library files related to a company.
+- API: `/api/library/files/?company=<uuid>&page=<n>&page_size=<m>&source=<uuid>` and `/api/library/sources/`.
+- Usage:
+    - Deal Detail adds a panel titled “Related Documents” using `RelatedDocumentsPanel` with `paramPrefix="dl_"` so its URL state doesn’t collide with other sections.
+    - Company Detail already includes a library panel (Bootstrap-styled) and remains unchanged.
+- URL Params: `${prefix}page`, `${prefix}size`, `${prefix}all`, `${prefix}source` (Deal uses `dl_` prefix).
+- UX: Shows source filter, pagination (Prev/Next), and a range label (e.g., “Showing 1–10 of 42”). Links open in a new tab.

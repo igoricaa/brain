@@ -91,14 +91,14 @@ This document tracks epics and granular tickets for adapting the legacy UI into 
   - Estimate: 2d
   - Status: Pending
 - T-0206 React reviewed deals list  
-  - Scope: Create `pages/deals_reviewed.tsx` extending fresh deals layout with additional Assessment column. Show recommendation status (call/pass with color coding), Affinity sync status badge ("Not sent to Affinity" warning). Handle all existing columns from fresh deals plus assessment-specific data. Implement same search and pagination patterns as fresh deals.
-  - API Integration: Fetch `/api/deals/deals/?status=reviewed` with proper joins to assessment data. Use deal recommendation field mappings (PREP_TO_CALL → "call" text-success, PREP_TO_PASS → "pass" text-danger, others → muted display). Check `sent_to_affinity` boolean for badge display. Handle assessment relationship properly (may be null for older deals).
-  - UI/UX: Add 6th column for Assessment with recommendation display. Use semantic colors for call (green) / pass (red) recommendations. Show warning badge for `sent_to_affinity=false` deals. Maintain all styling from fresh deals table. Handle center alignment for assessment column with flex-column layout. Include search form in page header matching legacy.
-  - Technical Details: Extend `DealRow` component with assessment props. Create `AssessmentStatus` component for recommendation display. Handle conditional badge rendering for Affinity status. Reuse industry/dual-use/processing components from fresh deals. Add proper TypeScript interfaces for assessment data. Include pagination and search from T-0205 patterns.
-  - Acceptance: Reviewed deals display with assessment column showing proper call/pass colors. Affinity sync warnings appear correctly. All fresh deals functionality preserved. Search works across company names. Page header includes search form. Pagination and performance match fresh deals.
-  - Deps: T-0205 (shares components), T-0202 (shell template), T-0303 (assessment endpoints exist).
+  - Scope: Create `pages/deals_reviewed.tsx` following fresh deals pattern with green review theme. Implement search functionality, infinite scroll pagination, and proper sidebar layout integration. Use "✓ Reviewed" indicator and Export/Filter actions in page header.
+  - API Integration: Fetch `/api/deals/deals/?status=active` for reviewed deals with search via `q` parameter. Reuse existing DealsList table components and search infrastructure from fresh deals.
+  - UI/UX: Template migrated to `main.html` sidebar layout. Green color scheme with "✓ Reviewed" status indicator. Export and Filter buttons in page header. Search input with 300ms debounce and Cmd+K focus shortcut. Same table structure as fresh deals with reviewed-specific styling.
+  - Technical Details: Component reuses DealsList, DealsTable infrastructure with different API parameters. Added to `main.tsx` router registry as `_deals-reviewed`. Template extends `main.html` with proper page blocks. URL sync for search queries and pagination state.
+  - Acceptance: Past Deals page displays with sidebar layout and green theme. Search works with debounced input. Infinite scroll loads more deals. Export/Filter buttons present. Navigation active states work correctly. Performance matches fresh deals.
+  - Deps: T-0205 (shares components), T-0202 (shell template), sidebar redesign (T-0401).
   - Estimate: 1.5d
-  - Status: Pending  
+  - Status: Completed (template migrated to sidebar layout, React component implemented with fresh deals patterns, router registry updated)  
 - T-0207 React missed deals list
   - Scope: Create `pages/deals_missed.tsx` with distinct layout for missed deal data structure. Implement 5-column layout: Company (logo + name + location + funding stage), Description (truncated summary), Technology/Industries (technology_type tag + industry tags), Last Funding (amount + date), Total Funding (amount + rounds count with pluralization). Use different data model (MissedDeal vs Deal) with different field structure and relationships.
   - API Integration: Create or extend API for missed deals at `/api/deals/missed/` or equivalent. Handle MissedDeal model with fields: name, hq_location, summary, last_funding_amount, last_funding_date, total_funding_amount, funding_rounds_count. Include relationships to Company (for logo, industries, technology_type). Handle potential null company relationships gracefully.
@@ -151,17 +151,19 @@ This document tracks epics and granular tickets for adapting the legacy UI into 
   - Acceptance: Routes respond; templates render.
   - Deps: T-0003.
   - Estimate: 0.5d
-  - Status: Completed (URLs included under `dual-use/`, thin views render shell templates, dashboard mount added, `summary-data` stub route present)
+  - Status: Completed (URLs included under `dual-use/`, thin views render shell templates, dashboard mount added; server placeholder removed in favor of DRF summary)
 - T-0402 Port dual-use templates
   - Scope: Copy `aindex-web/templates/dual_use/*` as shells; adjust includes.
   - Acceptance: Pages render with mount `#du-dashboard-root` on dashboard.
   - Deps: T-0401.
   - Estimate: 0.75d
+  - Status: Completed (ported shells for dashboard + report pages; added `includes/` placeholders for filters and tags; dashboard mount present)
 - T-0403 React DU dashboard
   - Scope: Implement charts/tables fetching taxonomy/counts (from `/api/deals/du-signals/` and/or dashboard JSON similar to deals).
   - Acceptance: Charts render; filters update data; colors consistent.
   - Deps: T-0402, (optional JSON agg task).
   - Estimate: 1d
+  - Status: Completed (React page with filters for DU category + HQ country; fetches `/api/dual-use/summary/` and uses `/api/deals/du-signals` to populate categories; charts rendered with shared palette; aggregation mirrors v1 pattern)
 
 ## Epic 5 — Socialgraph/Talents Migration
 - T-0501 Founders/advisors React components
@@ -169,13 +171,15 @@ This document tracks epics and granular tickets for adapting the legacy UI into 
   - Acceptance: Lists render; link to company detail; pagination works.
   - Deps: T-0102.
   - Estimate: 0.75d
+  - Status: Completed (frontend-only people lists with Tailwind + shadcn/ui; debounced `q` search, DRF page-number pagination; mounts registered as `_founders-list`/`_advisors-list`)
 
 ## Epic 6 — Library Integrations
 - T-0601 Related documents on company/deal
-  - Scope: Fetch from `/api/library/files`/`papers` filtered by company/deal; render small tables.
-  - Acceptance: Panel shows recent docs; pagination present.
-  - Deps: T-0102, T-0302.
+  - Scope: Add a frontend-only Related Documents panel to Deal Detail that shows Library files related to the deal’s company using `/api/library/files/?company=<uuid>`. Include a source filter and DRF pagination controls. Do not change backend APIs.
+  - Acceptance: On `/deals/<uuid>/` a panel titled “Related Documents” appears below Decks/Papers. It lists files with source labels, supports a source dropdown, and Prev/Next. Uses URL params with `dl_` prefix (e.g., `dl_page`, `dl_size`, `dl_source`) and does not interfere with other sections. If no company is linked, shows a helpful message.
+  - Deps: Existing Library APIs (`/api/library/files`, `/api/library/sources`).
   - Estimate: 0.5d
+  - Status: Completed (Tailwind panel added via `RelatedDocumentsPanel`; mounted from Deal Detail with `paramPrefix="dl_"`; docs updated)
 
 ## Epic 7 — Tooling, Tests, and QA
 - T-0701 Frontend unit tests setup

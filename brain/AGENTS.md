@@ -4,7 +4,8 @@ This is the v2 Django project and API. Frontend moves here using a hybrid Django
 
 ## Layout & Settings
 - Project: `brain/brain/{settings.py,urls.py,api_urls.py}`; `INSTALLED_APPS` includes `companies`, `deals`, `dual_use`, `library`, `locations`, `socialgraph`, `users`, `common`.
-- Templates: `brain/templates` (extends `base.html`, `main.html`).
+- **Templates**: `brain/templates` (extends `base.html`, `main.html`). **NEW**: Fixed sidebar layout with `includes/sidebar_nav.html`.
+- **Layout Architecture**: Sidebar navigation (`w-64` fixed left) with content offset (`ml-64`). Background: `bg-slate-50`.
 - Static: `STATICFILES_DIRS` includes `assets/dist` (Vite build output).
 - Auth: Allauth + OAuth2; DRF auth via session or token scopes.
 
@@ -94,6 +95,8 @@ This is the v2 Django project and API. Frontend moves here using a hybrid Django
 - T-0301 Deals: Deal detail SSR header + Tailwind breadcrumb added; single-entry router wired for `_deal-detail`.
 - T-0302 Deals: React Deal Detail page renders summary, industries, signals, decks/papers using axios; loading/error states.
 - T-0303 Deals: Added DRF assessments endpoint and React assessment page (FormRenderer + axios). Choices hardcoded (documented); success banner with back-to-detail button.
+- **T-0401 Sidebar Redesign**: Complete UI overhaul from top navigation to fixed sidebar layout. New `sidebar_nav.html`, brAINbrAIN branding, `bg-slate-50` background, colorful dashboard metrics. See `docs/sidebar_redesign.md` for full details.
+- **T-0402 Reviewed Deals React Component**: Implemented React component for Past Deals (`deals_reviewed.tsx`) following fresh deals pattern. Template migrated to `main.html` layout with green review theme, search functionality, and infinite scroll.
 
 ## Server Views (Deals)
 - URLs: `brain/apps/deals/urls.py` with names: `dashboard`, `fresh_deals`, `reviewed_deals`, `missed_deals`, `deal_detail`, `deal_update`, `deal_assessment`, `deal_confirm_delete`, `deck_create`, `processing_status`, and `dashboard_data`.

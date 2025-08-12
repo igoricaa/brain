@@ -7,27 +7,34 @@
         {% include 'includes/site_messages.html' %}
     {% endblock %}
 
-    {% block main_nav %}
-        {% include 'includes/main_nav.html' %}
-    {% endblock main_nav %}
+    {% block sidebar_nav %}
+        {% include 'includes/sidebar_nav.html' %}
+    {% endblock sidebar_nav %}
 
-    {% block content_wrapper %}
-        <div class="{% block content_class %}mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8{% endblock %}" id="content-wrapper">
+    <div class="ml-64">
+        {% block content_wrapper %}
+            <div class="{% block content_class %}w-full{% endblock %}" id="content-wrapper">
 
-            {% block page_header %}
-                <div class="border-b border-gray-200 bg-white py-4 sm:py-6">
-                    {% block page_title %}<h1 class="{% block page_title_class %}text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900{% endblock %}">{{ page_title }}</h1>{% endblock %}
-                    {% block page_subtitle %}{% endblock %}
+                {% block page_header %}
+                    <div class="bg-white px-8 py-6 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                {% block page_title %}<h1 class="{% block page_title_class %}text-2xl font-semibold text-gray-900{% endblock %}">{{ page_title }}</h1>{% endblock %}
+                                {% block page_subtitle %}{% endblock %}
+                            </div>
+                            {% block page_actions %}{% endblock %}
+                        </div>
+                    </div>
+                {% endblock page_header %}
+
+                <div class="p-8">
+                    {% block content %}
+                    {% endblock content %}
                 </div>
-            {% endblock page_header %}
 
-            <div class="py-6">
-                {% block content %}
-                {% endblock content %}
             </div>
-
-        </div>
-    {% endblock content_wrapper %}
+        {% endblock content_wrapper %}
+    </div>
 
     {% block footer %}
     {% endblock %}
