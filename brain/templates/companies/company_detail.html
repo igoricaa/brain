@@ -298,6 +298,8 @@
                         {% trans 'Add' %}
                     </a>
 
+                    {# React form mount moved to grant_create.html for testing #}
+
                     {% if grants_total or company.grants.count %}
                     <ul class="mb-2">
                         {% if grants_page %} {% for g in grants_page %}
@@ -333,8 +335,7 @@
                     {% if grants_page %}
                     <div class="flex items-center justify-end gap-2 text-xs">
                         <span class="text-muted text-gray-600">
-                            {% blocktrans %} Showing {{ grants_page.start_index }}–{{
-                            grants_page.end_index }} of {{ grants_total }} {% endblocktrans %}
+                            {% blocktrans %} Showing {{ grants_page.start_index }}–{{ grants_page.end_index }} of {{ grants_total }} {% endblocktrans %}
                         </span>
                         <div class="flex items-center gap-2" role="group">
                             {% if grants_page.has_previous %}

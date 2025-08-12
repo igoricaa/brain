@@ -11,6 +11,7 @@ Purpose: companies domain and related people. Provides API and some server views
 - Base: `/api/companies/`
 - Endpoints: `companies`, `founders`, `advisors`, `grants`, `clinical-studies`, `patent-applications`.
 - Lookups: by `uuid`; serializers include related minimal objects for lists.
+- Create/Update (policy): forms in v2 submit to API endpoints using Axios (session auth via CSRF) with TanStack Query. Server-side views remain for route and permission checks, but React islands handle the UX.
 
 ## Server Views & Templates
 - Detail: `CompanyDetailView` → `templates/companies/company_detail.html` (slug by `uuid`).
@@ -33,12 +34,21 @@ Purpose: companies domain and related people. Provides API and some server views
 - Performance: `CompanyDetailView` prefetches grants; lists are paginated in view logic.
 
 ## Frontend Hooks
-- Page Vite entry:
-  - `{% block extra_js %}{% load django_vite %}{% vite_entry 'src/pages/company_detail.tsx' %}{% endblock %}` in `company_detail.html`.
-- React islands and mounts:
-  - About card [done T-0102]: `<div id="company-about-root" data-uuid="{{ company.uuid }}"></div>` fetches `/api/companies/companies/{uuid}/` with loading/error states.
-  - Library panel [done T-0104]: `<div id="company-library-root" data-uuid="{{ company.uuid }}"></div>` fetches `/api/library/files/?company={{ uuid }}` with source filter + pagination; preserves other query params in links.
-- Grants/Patents remain server-rendered with pagination and "View all" for now.
+- Single entry: `base.html` includes only `src/main.tsx`. Page modules lazy-load by `body id`.
+- React islands:
+  - About card [done]: `<div id="company-about-root" data-uuid="{{ company.uuid }}"></div>` fetches `/api/companies/companies/{uuid}/`.
+  - Library panel [done]: `<div id="company-library-root" data-uuid="{{ company.uuid }}"></div>` fetches `/api/library/files/?company={{ uuid }}`.
+  - Grant create [new]: `grant_create.html` sets `{% block body_id %}_grant-create{% endblock %}` and includes:
+    ```html
+    <div id="grant-form-root"
+         data-api-endpoint="/companies/grants/"
+         data-company="{{ company.uuid }}"
+         data-csrf="{{ csrf_token }}"
+         data-fields='[{"name":"name","label":"Name","type":"text","required":true}]'
+         data-initial='{}'
+         data-cancel="{{ request.GET.next|default:'/' }}"></div>
+    ```
+    The page module mounts `FormRenderer` (react-hook-form + zod) inside `QueryClientProvider` and posts to API via Axios.
 
 ## Adaptation Checklist (Phase 1)
 - Port any missing blocks/partials from `aindex-web/templates/companies/*` to `brain/templates/companies/*`.

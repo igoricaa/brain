@@ -106,12 +106,11 @@ class RelatedCompanyFounderSerializer(serializers.ModelSerializer):
 class RelatedCompanyAdvisorSerializer(serializers.ModelSerializer):
     uuid = serializers.UUIDField(source='advisor.uuid')
     name = serializers.CharField(source='advisor.name')
-    title = serializers.CharField(source='advisor.title')
     linkedin_url = serializers.URLField(source='advisor.linkedin_url')
 
     class Meta:
         model = CompanyAdvisor
-        fields = ['uuid', 'name', 'title', 'linkedin_url']
+        fields = ['uuid', 'name', 'linkedin_url']
 
 
 class RelatedFounderCompanySerializer(serializers.ModelSerializer):

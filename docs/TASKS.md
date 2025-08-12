@@ -86,11 +86,13 @@ This document tracks epics and granular tickets for adapting the legacy UI into 
   - Acceptance: Page loads and mount exists; breadcrumb/nav correct.
   - Deps: T-0201, T-0202.
   - Estimate: 0.5d
+  - Status: Completed (SSR header + Tailwind breadcrumb, single-entry router wired)
 - T-0302 React deal detail component
   - Scope: Fetch `/api/deals/deals/{uuid}`; render summary, industries, signals, files/papers links; add loading/error states.
   - Acceptance: Data-driven detail; no Jinja duplication.
   - Deps: T-0301.
   - Estimate: 1d
+  - Status: Completed (React detail page with Tailwind panels; fetches deal, decks, and papers; loading/error states; no server duplication)
 - T-0303 React assessment form
   - Scope: Implement assessment panel (quality percentile, rationale, pros/cons, send_to_affinity) with toggles; submit via DRF or scoped endpoint.
   - Acceptance: Form saves; validation and messages visible; if “send to Affinity”, show notice.

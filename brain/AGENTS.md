@@ -19,10 +19,58 @@ This is the v2 Django project and API. Frontend moves here using a hybrid Django
 - Asset tags: `{% load django_vite %}{% vite_hmr_client %}{% vite_asset 'src/main.tsx' %}` in base template only.
 - Legacy entries (being phased out): `deals_dashboard`, `deal_detail`, `du_dashboard`.
 
+### React Forms Standard (2025)
+- We are standardizing on React forms across v2 to avoid server-side widget styling and to enable a smooth migration to a full SPA later.
+- Form engine: `react-hook-form` + `@hookform/resolvers` + `zod` (v4) for schema validation.
+- UI: Tailwind utilities (shadcn/ui compatible). No global Tailwind base overrides for Django widgets are required when using React forms.
+
+#### How islands load
+- `src/main.tsx` contains a `pageModules` registry. Each Django template sets a `body id` to opt-in a page module.
+- Example registry entries:
+  - `'_company-detail'`: `() => import('./pages/company_detail')`
+  - `'_grant-create'`: `() => import('./pages/company_detail')` (reuses the same module which mounts the React FormRenderer)
+
+#### Using the React FormRenderer
+- Mount container in a Django template:
+  ```html
+  <div
+    id="grant-form-root"
+    data-action="{{ request.path }}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}"
+    data-csrf="{{ csrf_token }}"
+    data-fields='[{"name":"name","label":"Name","type":"text","required":true}]'
+    data-initial='{}'
+    data-cancel="{{ request.GET.next|default:'/' }}"
+  ></div>
+  ```
+- The page must set a `body id`, e.g. `{% block body_id %}_grant-create{% endblock %}`, to trigger lazy-loading.
+- Cancel navigation: use the `?next=` query param whenever linking to create/update pages to guarantee a good return URL.
+
+#### Why no Tailwind base for Django widgets?
+- Since forms render as React islands, we do not rely on `{{ form.as_p }}` styling. This avoids maintaining global CSS overrides for Django widgets. You can still add base styles if you have legacy pages, but new work uses the React FormRenderer.
+
+#### Optional serializer for forms (recommended)
+- Purpose: Convert a Django `Form`/`ModelForm` into a `FormFieldDef[]` JSON descriptor so templates don’t hand-author field lists.
+- Benefits:
+  - Single source of truth for required/labels/help text/options.
+  - Keeps React form in sync with server-side validation and widgets.
+- Shape:
+  ```ts
+  interface FormFieldDef {
+    name: string; label: string; type: 'text'|'textarea'|'number'|'select'|'date'|'checkbox';
+    required?: boolean; placeholder?: string; helpText?: string; options?: {label:string; value:string;}[];
+    min?: number; max?: number; pattern?: string;
+  }
+  ```
+- Usage:
+  - In the Django view, serialize the form fields to JSON and pass to the template as `fields_json`.
+  - In the template: `data-fields='{{ fields_json|safe }}'`.
+
+
 ## UI Conventions (Companies)
 - Company detail grants/patents panels are paginated server-side with a “View all” toggle.
 - Query params: Grants `g_page/g_size/g_all`, Patents `p_page/p_size/p_all` (default page size = 5).
 - CRUD flows include a `next` param and redirect back to the same paginated view after actions; patent bulk delete uses a single POST form with checkboxes named `patent_applications`.
+ - React forms: `grant_create.html` uses a React island. `body id="_grant-create"` triggers the lazy-loaded page module which mounts the FormRenderer.
 
 ## Useful Paths
 - Companies templates/views: `brain/apps/companies/views/*`, `brain/apps/companies/urls.py`, templates under `brain/templates/companies/`.

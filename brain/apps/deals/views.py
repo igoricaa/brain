@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from django.http import JsonResponse, HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.db.models import Count
 from django.db.models.functions import TruncDate
@@ -27,7 +27,12 @@ def missed_deals(request: HttpRequest) -> HttpResponse:
 
 
 def deal_detail(request: HttpRequest, uuid) -> HttpResponse:
-    return render(request, "deals/deal_detail.html", {"uuid": uuid})
+    deal = get_object_or_404(Deal.objects.select_related("company", "funding_stage"), uuid=uuid)
+    context = {
+        "deal": deal,
+        "company": deal.company,
+    }
+    return render(request, "deals/deal_detail.html", context)
 
 
 def deal_update(request: HttpRequest, uuid) -> HttpResponse:

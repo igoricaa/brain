@@ -13,9 +13,10 @@ declare global {
 // Page modules registry - lazy loaded for code splitting
 const pageModules = {
     '_company-detail': () => import('./pages/company_detail'),
+    '_grant-create': () => import('./pages/company_detail'),
     // Future migrations:
     '_deals-dashboard': () => import('./pages/deals_dashboard'),
-    // '_deal-detail': () => import('./pages/deal_detail'),
+    '_deal-detail': () => import('./pages/deal_detail'),
     // '_du-dashboard': () => import('./pages/du_dashboard'),
 } as const;
 
@@ -54,6 +55,9 @@ function initializeGlobalFeatures() {
 window.__SINGLE_ENTRY_MODE__ = true;
 
 // Initialize React refresh runtime for development
+// Vite injects import.meta.env in the browser
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 if (import.meta.env?.DEV) {
     window.$RefreshReg$ = window.$RefreshReg$ || (() => {});
     window.$RefreshSig$ = window.$RefreshSig$ || (() => (type: unknown) => type);

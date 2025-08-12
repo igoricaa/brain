@@ -5,8 +5,10 @@
 {% block deals_title %}{% trans 'Delete Deal' %}{% endblock %}
 
 {% block deals_content %}
-<div class="alert alert-warning">
-  {% trans 'This is a placeholder for the delete confirmation. Actual form wiring to be added.' %}
-  <div class="mt-2 small text-muted">UUID: {{ uuid }}</div>
+<div class="rounded-md border border-amber-200 bg-amber-50 p-4 text-amber-900">
+  <p class="text-sm">
+    {% trans 'This is a placeholder for the delete confirmation. Actual form wiring to be added.' %}
+  </p>
+  <div class="mt-2 text-xs text-gray-600">UUID: {{ uuid }}</div>
+</div>
 {% endblock %}
-

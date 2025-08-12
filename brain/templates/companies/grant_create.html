@@ -2,15 +2,23 @@
 
 {% load i18n %}
 
+{% block body_id %}_grant-create{% endblock %}
+
 {% block page_title %}{% trans 'Add grant' %}{% endblock %}
 
 {% block content %}
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <input type="hidden" name="next" value="{{ request.GET.next }}">
-  <button class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-600/50" type="submit">{% trans 'Save' %}</button>
-  <a class="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-gray-300/50" href="{{ object.get_absolute_url|default:request.META.HTTP_REFERER }}">{% trans 'Cancel' %}</a>
-</form>
+  <div
+    id="grant-form-root"
+    data-api-endpoint="/companies/grants/"
+    data-company="{{ company.uuid }}"
+    data-action="{{ request.path }}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}"
+    data-csrf="{{ csrf_token }}"
+    data-fields='[{"name":"name","label":"{% trans "Name" %}","type":"text","required":true},{"name":"potential_amount","label":"{% trans "Potential Amount (USD)" %}","type":"number","required":true},{"name":"award_date","label":"{% trans "Award Date" %}","type":"date"},{"name":"description","label":"{% trans "Description" %}","type":"textarea"}]'
+    data-initial='{}'
+    data-cancel="{{ request.GET.next|default:'/' }}"
+  ></div>
+
+  {# Ensure the page includes the company_detail entry (already globally loaded via base.html vite_asset). If not, add: #}
+  {# {% vite_asset 'src/pages/company_detail.tsx' %} #}
 {% endblock %}
 

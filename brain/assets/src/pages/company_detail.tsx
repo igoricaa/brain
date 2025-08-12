@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import FormRenderer, { type FormFieldDef } from '../components/forms/FormRenderer';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../lib/queryClient';
+// API helpers used by FormRenderer internally
 
 type Company = {
     uuid: string;
@@ -35,27 +39,7 @@ type ApiList<T> = {
     results?: T[];
 };
 
-type Grant = {
-    uuid: string;
-    name: string;
-    awarded_date?: string | null;
-    document_url?: string | null;
-};
-
-type PatentApplication = {
-    uuid: string;
-    number?: string | null;
-    patent_number?: string | null;
-    filing_date_str?: string | null;
-    status_code?: string | null;
-};
-
-interface Paper {
-    uuid: string;
-    title: string;
-    publication_year?: number | null;
-    file?: string | null;
-}
+// Types for grants/patents/papers retained in API layer; unused here
 
 type LibraryFile = {
     uuid: string;
@@ -114,7 +98,7 @@ function stripTemplateArtifacts(input?: string | null): string {
         // Remove {% ... %} and {{ ... }} and {# ... #}
         const withoutTags = input
             .replace(/\{#([\s\S]*?)#\}/g, '')
-            .replace(/\{\%([\s\S]*?)\%\}/g, '')
+            .replace(/\{%([\s\S]*?)%\}/g, '')
             .replace(/\{\{([\s\S]*?)\}\}/g, '')
             .trim();
         // Collapse multiple blank lines to a single newline
@@ -189,7 +173,12 @@ function buildMergedLink(merge: Record<string, string | null>) {
     return qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
 }
 
-function useLibraryFiles(companyUuid: string, page: number, pageSize: number, source?: string | null) {
+function useLibraryFiles(
+    companyUuid: string,
+    page: number,
+    pageSize: number,
+    source?: string | null,
+) {
     const [data, setData] = useState<ApiList<LibraryFile>>({});
     const [loading, setLoading] = useState<boolean>(!!companyUuid);
     const [error, setError] = useState<string | null>(null);
@@ -245,7 +234,9 @@ function useLibrarySources() {
                 const json = (await resp.json()) as ApiList<LibrarySource> | LibrarySource[];
                 const items = Array.isArray(json) ? json : json.results || [];
                 if (!cancelled) setData(items);
-            } catch (_) {}
+    } catch (_) {
+        // noop
+    }
         }
         run();
         return () => {
@@ -287,7 +278,9 @@ function CompanyLibraryPanel({ uuid }: { uuid: string }) {
             <div className="card-header d-flex align-items-center justify-content-between">
                 <span>Library Documents</span>
                 <span className="small">
-                    <a className="text-decoration-none" href={viewAllLink}>View all</a>
+                    <a className="text-decoration-none" href={viewAllLink}>
+                        View all
+                    </a>
                 </span>
             </div>
             <div className="card-body">
@@ -331,7 +324,9 @@ function CompanyLibraryPanel({ uuid }: { uuid: string }) {
                                             <span>{fileDisplayName(f)}</span>
                                         )}
                                         {f.source?.name ? (
-                                            <span className="text-muted small ms-2">{f.source.name}</span>
+                                            <span className="text-muted small ms-2">
+                                                {f.source.name}
+                                            </span>
                                         ) : null}
                                     </li>
                                 ))
@@ -342,18 +337,27 @@ function CompanyLibraryPanel({ uuid }: { uuid: string }) {
                         {typeof data.count === 'number' && data.results && data.results.length ? (
                             <div className="d-flex align-items-center justify-content-end gap-2 small">
                                 <span className="text-muted">
-                                    Showing {(page - 1) * size + 1}–{(page - 1) * size + data.results.length} of {data.count}
+                                    Showing {(page - 1) * size + 1}-
+                                    {(page - 1) * size + data.results.length} of {data.count}
                                 </span>
                                 <div className="btn-group btn-group-sm" role="group">
                                     {prevLink ? (
-                                        <a className="btn btn-outline-secondary" href={prevLink}>Prev</a>
+                                        <a className="btn btn-outline-secondary" href={prevLink}>
+                                            Prev
+                                        </a>
                                     ) : (
-                                        <span className="btn btn-outline-secondary disabled">Prev</span>
+                                        <span className="btn btn-outline-secondary disabled">
+                                            Prev
+                                        </span>
                                     )}
                                     {nextLink ? (
-                                        <a className="btn btn-outline-secondary" href={nextLink}>Next</a>
+                                        <a className="btn btn-outline-secondary" href={nextLink}>
+                                            Next
+                                        </a>
                                     ) : (
-                                        <span className="btn btn-outline-secondary disabled">Next</span>
+                                        <span className="btn btn-outline-secondary disabled">
+                                            Next
+                                        </span>
                                     )}
                                 </div>
                             </div>
@@ -371,10 +375,6 @@ function mountAbout() {
     if (!el) return;
     const uuid = el.getAttribute('data-uuid');
     if (!uuid) return;
-    const { data, loading, error } = (function useOnce() {
-        // This is a small helper to fetch and render synchronously via a wrapper component
-        return { data: null as Company | null, loading: false, error: null as string | null };
-    })();
     // Prefer a proper component mount to leverage hooks
     const root = createRoot(el);
     function AboutShell({ uuid }: { uuid: string }) {
@@ -385,6 +385,38 @@ function mountAbout() {
         return <CompanyAbout company={data} />;
     }
     root.render(<AboutShell uuid={uuid} />);
+}
+
+function mountGrantForm() {
+    const el = document.getElementById('grant-form-root') as HTMLDivElement | null;
+    if (!el) return;
+    // Legacy action preserved for backward compat but unused in API mode
+    const csrf = el.dataset.csrf || null;
+    const initial = el.dataset.initial ? JSON.parse(el.dataset.initial) : {};
+    const fields: FormFieldDef[] = el.dataset.fields ? JSON.parse(el.dataset.fields) : [];
+    const cancelHref = el.dataset.cancel || null;
+    const apiEndpoint = el.dataset.apiEndpoint || '/companies/grants/';
+    const company = el.dataset.company || undefined;
+
+    const root = createRoot(el);
+    root.render(
+        <QueryClientProvider client={queryClient}>
+            <FormRenderer
+                csrfToken={csrf}
+                fields={fields}
+                defaultValues={initial}
+                submitLabel="Save"
+                cancelHref={cancelHref}
+                api={{
+                    endpoint: apiEndpoint,
+                    method: 'post',
+                    payload: (values) => ({ ...values, ...(company ? { company } : {}) }),
+                    headers: {},
+                }}
+                nextUrl={cancelHref || undefined}
+            />
+        </QueryClientProvider>,
+    );
 }
 
 function mountLibrary() {
@@ -398,6 +430,7 @@ function mountLibrary() {
 
 function mountAll() {
     mountAbout();
+    mountGrantForm();
     mountLibrary();
 }
 

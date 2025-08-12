@@ -16,7 +16,7 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
 
 ## Django Integration
 - Base: `{% load django_vite %}{% vite_hmr_client %}{% vite_asset 'src/main.tsx' %}` only. Page code is lazy-loaded by `main.tsx`.
-- Body IDs used by router: `_company-detail`, `_deals-dashboard`, `_deal-detail`, `_du-dashboard`.
+- Body IDs used by router: `_company-detail`, `_grant-create`, `_deals-dashboard`, `_deal-detail`, `_du-dashboard`.
 
 ## Adding a New Page Module
 1) Create `src/pages/my_page.tsx` that exports `initialize()` and mounts into a known root element.
@@ -26,7 +26,7 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
 ## Notes
 - Keep modules small; share logic via `src/components` and `src/lib`.
 - Prefer DRF endpoints under `/api/*` and handle auth via same-origin credentials.
-- Company detail uses React islands for the About card and a Library panel; grants/patents remain server-rendered with pagination and “View all” links for now.
+- React Forms: Use the shared FormRenderer (react-hook-form + zod) with API submission via TanStack Query + Axios. See below.
 
 ## Deals Dashboard (React)
 - Module: `src/pages/deals_dashboard.tsx` mounts at `#deals-dashboard-root` on body `#_deals-dashboard`.
@@ -37,6 +37,7 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
 ## Dependencies
 - Runtime: `react`, `react-dom`.
 - Charts: `chart.js@^4`, `react-chartjs-2@^5` (installed in `brain/package.json`).
+- Forms/API: `react-hook-form`, `@hookform/resolvers`, `zod@^4`, `@tanstack/react-query`, `axios`.
 
 ## Tailwind CSS (v4)
 - Installed: `tailwindcss` and `@tailwindcss/vite` (devDependencies).
@@ -47,3 +48,21 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
   - `@source "../apps";`
   This ensures classes used in Django templates are generated without a Tailwind config file.
 - Preflight: enabled (default). If conflicting with legacy CSS, consider scoping or disabling selectively.
+
+## React Forms (API mode)
+- Component: `src/components/forms/FormRenderer.tsx` (react-hook-form + zod, API submit via TanStack Query + Axios).
+- Provider: Wrap mounts in `QueryClientProvider` using `src/lib/queryClient.ts`.
+- HTTP: Axios instance is configured in `src/lib/http.ts` with CSRF and DRF error normalization.
+- Mount contract (example in Django template):
+  ```html
+  <div id="grant-form-root"
+       data-api-endpoint="/companies/grants/"
+       data-company="{{ company.uuid }}"
+       data-action="{{ request.path }}"
+       data-csrf="{{ csrf_token }}"
+       data-fields='[{"name":"name","label":"Name","type":"text","required":true}]'
+       data-initial='{}'
+       data-cancel="{{ request.GET.next|default:'/' }}"></div>
+  ```
+- Page id: set `{% block body_id %}_grant-create{% endblock %}` to load the page module.
+- Behavior: On success, redirects to `data-cancel` or `?next=`. DRF field errors are shown inline; `non_field_errors` become a top-level error.
