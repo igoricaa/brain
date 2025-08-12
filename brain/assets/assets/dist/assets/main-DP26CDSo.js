@@ -1,1 +1,0 @@
-document.addEventListener("DOMContentLoaded",()=>{Array.from(document.querySelectorAll(".toast.site-message")).forEach(t=>{t.style.opacity="1",setTimeout(()=>{t.style.transition="opacity 0.5s",t.style.opacity="0",setTimeout(()=>t.remove(),600)},6e3)})});
