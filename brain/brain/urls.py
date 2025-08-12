@@ -30,6 +30,7 @@ urlpatterns = [
     # Server-rendered apps
     path('companies/', include(('companies.urls', 'companies'), namespace='companies')),
     path('deals/', include(('deals.urls', 'deals'), namespace='deals')),
+    path('dual-use/', include(('dual_use.urls', 'dual-use'), namespace='dual-use')),
     path("api/", include((api_router.urls, 'api'))),
     path("api/oauth/", include('oauth2_provider.urls', namespace='oauth2_provider')),
     path("api/schema/", SpectacularAPIView.as_view(), name="openapi-schema"),

@@ -76,8 +76,15 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
         data-cancel="{{ request.GET.next|default:'/' }}"
     ></div>
     ```
-- Page id: set `{% block body_id %}_grant-create{% endblock %}` to load the page module.
-- Behavior: On success, redirects to `data-cancel` or `?next=`. DRF field errors are shown inline; `non_field_errors` become a top-level error.
+  - Page id: set `{% block body_id %}_grant-create{% endblock %}` to load the page module.
+  - Behavior: On success, redirects to `data-cancel` or `?next=`. DRF field errors are shown inline; `non_field_errors` become a top-level error.
+
+## Deal Assessment (v2)
+- Page: `src/pages/deal_assessment.tsx`, mounted on `body#_deal-assessment` into `#deal-assessment-root`.
+- API: Uses `/api/deals/assessments/` to create or update the latest assessment for a deal, and `/api/deals/deals/{uuid}/` to toggle `sent_to_affinity`.
+- Choices: Quality percentile options are currently hardcoded in the frontend for speed (Most interesting/Top 1%, Very interesting/Top 5%, etc.). Plan to centralize via a small choices endpoint later.
+- HTTP rule: Use axios (`http` from `src/lib/http.ts`) for all network calls instead of `fetch` to keep consistent error handling and CSRF behavior.
+- Validation: Async validation hooks exist in `src/lib/asyncValidation.ts`, but deal assessment async validation is handled elsewhere and not implemented here.
 
 ### Async Validation Support (2025)
 
@@ -173,3 +180,13 @@ const asyncValidationConfig = {
 - Dependencies trigger immediate re-validation
 - Failed validations don't retry automatically
 - Background validation doesn't block UI interaction
+
+## Deal Detail — Refresh UX (T-0304)
+
+- Module: `src/pages/deal_detail.tsx`, mounted on `body#_deal-detail` into `#deal-detail-root`.
+- Behavior: A top row shows “Last status” and a “Refresh Data” button.
+  - On click, POSTs to `/deals/<uuid>/refresh/` (uses a small local CSRF helper) and polls `/deals/<uuid>/processing-status/` with exponential backoff (0.5s → cap 5s, up to 8 attempts).
+  - When ready, re-fetches the deal, decks, and papers; the button/status row remains visible and stable to avoid flashing. Only the content panels update.
+  - On timeout, shows a non-blocking amber warning.
+- Loading Strategy: Full-page skeleton only on first load; re-fetches keep stale content visible (panels may show small inline loaders).
+- Note on HTTP: This page uses `fetch` for small server actions to avoid pulling axios into the entry; the broader codebase standardizes on Axios via `src/lib/http.ts`.

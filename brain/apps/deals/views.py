@@ -8,6 +8,7 @@ from django.db.models.functions import TruncDate
 
 from .models import Deal
 from .models import DealAssessment
+from common.models import ProcessingStatus
 
 
 def deals_dashboard(request: HttpRequest) -> HttpResponse:
@@ -52,13 +53,60 @@ def deck_create(request: HttpRequest, uuid) -> HttpResponse:
 
 
 def deal_refresh(request: HttpRequest, uuid) -> JsonResponse:
-    # Stub endpoint; T-0304 will implement actual refresh + background processing
-    return JsonResponse({"ok": True, "uuid": str(uuid)})
+    """Trigger a refresh for a deal's derived data.
+
+    For now, this sets the deal's processing_status to STARTED and, if there are no
+    pending files to process, marks it SUCCESS immediately. Background processing is
+    out of scope here; the frontend will poll processing-status until ready.
+    """
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "Method not allowed"}, status=405)
+
+    deal = get_object_or_404(Deal.all_objects.select_related("company"), uuid=uuid)
+
+    # Kick off processing
+    deal.processing_status = ProcessingStatus.STARTED
+    deal.save(update_fields=["processing_status", "updated_at"])
+
+    # If files are already ready, immediately flip to SUCCESS to avoid unnecessary polling
+    has_pending_files = deal.files.filter(
+        processing_status__in=[
+            ProcessingStatus.PENDING,
+            ProcessingStatus.STARTED,
+            ProcessingStatus.RETRY,
+        ]
+    ).exists()
+
+    if not has_pending_files:
+        deal.processing_status = ProcessingStatus.SUCCESS
+        deal.save(update_fields=["processing_status", "updated_at"])
+
+    return JsonResponse({"ok": True, "uuid": str(deal.uuid), "status": deal.processing_status})
 
 
 def deal_processing_status(request: HttpRequest, uuid) -> JsonResponse:
-    # Stub processing status; T-0304 will implement actual status checks
-    return JsonResponse({"uuid": str(uuid), "ready": False})
+    """Return readiness of a deal for UI refresh.
+
+    A deal is ready when its own processing_status is not in a pending state
+    and none of its files are in a pending state.
+    """
+    deal = get_object_or_404(Deal.all_objects, uuid=uuid)
+
+    pending_statuses = {ProcessingStatus.PENDING, ProcessingStatus.STARTED, ProcessingStatus.RETRY}
+
+    deal_pending = deal.processing_status in pending_statuses
+    pending_files_count = deal.files.filter(processing_status__in=list(pending_statuses)).count()
+
+    ready = (not deal_pending) and pending_files_count == 0
+
+    return JsonResponse(
+        {
+            "uuid": str(deal.uuid),
+            "ready": bool(ready),
+            "deal_status": deal.processing_status or "",
+            "pending_files": int(pending_files_count),
+        }
+    )
 
 
 def _parse_date(s: str | None):

@@ -17,6 +17,7 @@ const pageModules = {
     // Future migrations:
     '_deals-dashboard': () => import('./pages/deals_dashboard'),
     '_deal-detail': () => import('./pages/deal_detail'),
+    '_deal-assessment': () => import('./pages/deal_assessment'),
     // '_du-dashboard': () => import('./pages/du_dashboard'),
 } as const;
 

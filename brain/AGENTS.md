@@ -19,6 +19,9 @@ This is the v2 Django project and API. Frontend moves here using a hybrid Django
 - Asset tags: `{% load django_vite %}{% vite_hmr_client %}{% vite_asset 'src/main.tsx' %}` in base template only.
 - Legacy entries (being phased out): `deals_dashboard`, `deal_detail`, `du_dashboard`.
 
+### HTTP Client Rule
+- Use axios via `assets/src/lib/http.ts` for all network calls instead of `fetch` to ensure consistent CSRF handling and unified error normalization (`normalizeDrfErrors`).
+
 ### React Forms Standard (2025)
 - We are standardizing on React forms across v2 to avoid server-side widget styling and to enable a smooth migration to a full SPA later.
 - Form engine: `react-hook-form` + `@hookform/resolvers` + `zod` (v4) for schema validation.
@@ -88,10 +91,19 @@ This is the v2 Django project and API. Frontend moves here using a hybrid Django
 - T-0204 Deals: Built React dashboard (charts + metrics) loaded via single-entry router on `#_deals-dashboard`; added Chart.js + react-chartjs-2 with legacy color palette.
 - Bugfix: Reverse lookups in dashboard JSON use `related_query_name` (`company__grant__isnull=False`, `company__clinical_study__isnull=False`) to avoid FieldError.
 - **2024-12 Single-Entry Migration**: Solved React preamble errors by implementing dynamic import router in `main.tsx`.
+- T-0301 Deals: Deal detail SSR header + Tailwind breadcrumb added; single-entry router wired for `_deal-detail`.
+- T-0302 Deals: React Deal Detail page renders summary, industries, signals, decks/papers using axios; loading/error states.
+- T-0303 Deals: Added DRF assessments endpoint and React assessment page (FormRenderer + axios). Choices hardcoded (documented); success banner with back-to-detail button.
 
 ## Server Views (Deals)
 - URLs: `brain/apps/deals/urls.py` with names: `dashboard`, `fresh_deals`, `reviewed_deals`, `missed_deals`, `deal_detail`, `deal_update`, `deal_assessment`, `deal_confirm_delete`, `deck_create`, `processing_status`, and `dashboard_data`.
 - Templates: shells in `brain/templates/deals/` render mounts like `#deals-dashboard-root` and `#deal-detail-root` for React.
+
+## Deals Assessment (v2 specifics)
+- Frontend page: `assets/src/pages/deal_assessment.tsx` (Tailwind UI, FormRenderer + axios) mounted on `body#_deal-assessment`.
+- API: `/api/deals/assessments/` upserts a single active assessment per deal (fetch latest by `deal=<uuid>`, create if none, otherwise PATCH), and `/api/deals/deals/{uuid}/` toggles `sent_to_affinity`.
+- Choices: Quality percentile options are currently hardcoded client-side to move fast; plan to centralize or serve from the backend later.
+- UX: On save, show an inline success banner with a button returning to `/deals/<uuid>/`.
 
 ## Single-Entry React Architecture (Implemented 2024)
 

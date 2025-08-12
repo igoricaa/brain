@@ -26,12 +26,29 @@ Purpose: deals domain (Deal, DraftDeal, files, decks, papers, dual-use signals).
 - [done] Add URLs and thin function views that render shells.
 - [done] Port templates and prepare React mount points.
 - [done T-0203] Implemented `dashboard_data` JSON aggregations (trend, stages, industries, DU signals, counts).
-- [todo T-0304] Flesh out `processing_status` and `deal_refresh` behavior.
+- [done T-0304] Refresh + processing status implemented.
+
+### T-0304 — Refresh + Processing Status (Completed)
+- Backend:
+  - `views.deal_refresh` (POST-only): sets `Deal.processing_status=STARTED`; if no related files are pending, flips to `SUCCESS` immediately to avoid unnecessary polling.
+  - `views.deal_processing_status`: returns `{ ready, deal_status, pending_files }`, where `ready` is true if the deal status is not pending and no files have pending `processing_status`.
+  - Bugfix: `Deal.decks_ready` now correctly checks `files.processing_status` (replaces old `ingestion_status`).
+- Frontend (Deal Detail):
+  - Added a “Refresh Data” button row with live status and disabled state while refreshing.
+  - Implements exponential backoff polling of `/deals/<uuid>/processing-status/` (0.5s → capped at 5s, up to 8 attempts). On `ready`, re-fetches deal, decks, and papers.
+  - UX: Only the content panels re-render; the button/status row remains stable (no flashing). Initial page load still shows a full skeleton; subsequent refreshes keep existing content visible.
+  - Timeout: If readiness isn’t reached after the attempts, shows a non-blocking warning: “Processing is taking longer than expected. Try again later.”
 
 ## React Migration (Phase 2)
 - Replace Vue dashboard with React charts (react-chartjs-2) calling `deals/dash/data/`.
 - Deal Detail/Assessment: React form with optimistic UI and API updates; Affinity send flow via existing endpoints.
 - Mount points: `#deals-dashboard-root`, `#deal-detail-root`, `#deal-assessment-root`.
+
+### Deal Assessment (v2 specifics)
+- Endpoint: `/api/deals/assessments/` (create/update latest by `deal=<uuid>`).
+- Frontend: `assets/src/pages/deal_assessment.tsx` uses the shared FormRenderer and axios (`lib/http.ts`).
+- Choices: Quality percentile options are currently hardcoded client-side; centralize later.
+- Success UX: Inline banner with a button back to `/deals/<uuid>/`.
 
 ### Deals Dashboard (T-0204)
 - Page module: `assets/src/pages/deals_dashboard.tsx`; initialized via single-entry router (`body#_deals-dashboard`).

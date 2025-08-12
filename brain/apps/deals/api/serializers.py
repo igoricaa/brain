@@ -8,7 +8,7 @@ from companies.api.serializers import (
 )
 from companies.models import Company, FundingStage, FundingType, Industry
 
-from ..models import Deal, DealFile, Deck, DraftDeal, DualUseCategory, DualUseSignal, Paper
+from ..models import Deal, DealFile, Deck, DraftDeal, DualUseCategory, DualUseSignal, Paper, DealAssessment
 
 __all__ = [
     'RelatedDualUseSignalSerializer',
@@ -21,6 +21,8 @@ __all__ = [
     'DeckSerializer',
     'PaperSerializer',
     'DualUseSignalSerializer',
+    'DealAssessmentSerializer',
+    'DealAssessmentReadSerializer',
 ]
 
 
@@ -158,3 +160,24 @@ class DualUseSignalSerializer(serializers.ModelSerializer):
     class Meta:
         model = DualUseSignal
         exclude = ['id']
+
+
+class DealAssessmentSerializer(serializers.ModelSerializer):
+    deal = serializers.SlugRelatedField(
+        slug_field='uuid', queryset=Deal.objects.all(), required=True
+    )
+
+    class Meta:
+        model = DealAssessment
+        fields = [
+            'uuid',
+            'deal',
+            'quality_percentile',
+            'investment_rationale',
+            'pros',
+            'cons',
+        ]
+
+
+class DealAssessmentReadSerializer(DealAssessmentSerializer):
+    deal = RelatedDealSerializer(read_only=True)

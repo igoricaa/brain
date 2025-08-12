@@ -34,6 +34,7 @@ This monorepo hosts: (1) `aindex/` a standalone Python backend (do not modify), 
 ## V2 Frontend Adaptation Roadmap (brain)
 - Companies: keep existing server views (detail, grant/patent CRUD). Ensure `companies/company_detail.html` loads charts/widgets and maps to APIs: `/api/companies/companies`, `.../grants`, `.../patent-applications` (lookup by `uuid`). Company detail grants/patents panels are paginated with “View all” links; CRUD flows preserve `next` redirect back to the same paginated view; patent bulk delete uses a single server-side POST form.
 - Deals: URLs and shell templates added under `brain/apps/deals` and `brain/templates/deals`. Next: data JSON aggregation and React dashboard.
+- Deals: URLs and shell templates added under `brain/apps/deals` and `brain/templates/deals`. Dashboard JSON and React charts completed. Deal Detail and Assessment React islands live. Refresh+status flow implemented (see `brain/apps/deals/AGENTS.md`).
 - Dual-use: port `dual_use/*` templates and add URLs/views in `brain/apps/dual_use`; back with `/api/deals/du-signals` and related.
 - People: map aindex-web `talents/*` to brain models (`socialgraph.Profile`, `companies.Founder/Advisor`). Replace talent forms with API-driven UIs.
 - Assets: add `brain/assets` + Vite (entries for `main`, `deals_dashboard`, `deal_detail`, `company_detail`, `du_dashboard`) building to `brain/assets/dist` (already in `STATICFILES_DIRS`).

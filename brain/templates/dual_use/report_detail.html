@@ -1,0 +1,10 @@
+{% extends 'dual_use/base.html' %}
+{% load i18n %}
+
+{% block body_id %}_du-report-detail{% endblock %}
+{% block du_title %}{% trans 'Dual-use Report Detail' %}{% endblock %}
+
+{% block du_content %}
+<div class="text-sm text-gray-700">Report detail shell for {{ uuid }}</div>
+{% endblock %}
+

@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from ..models import Deal, DealFile, Deck, DraftDeal, DualUseSignal, Paper
+from ..models import Deal, DealFile, Deck, DraftDeal, DualUseSignal, Paper, DealAssessment
 from .filters import DealFileFilter, DealFilter, DeckFilter, DualUseSignalFilter, PaperFilter
 from .serializers import (
     DealFileReadSerializer,
@@ -17,6 +17,8 @@ from .serializers import (
     DraftDealSerializer,
     DualUseSignalSerializer,
     PaperSerializer,
+    DealAssessmentSerializer,
+    DealAssessmentReadSerializer,
 )
 
 
@@ -237,3 +239,45 @@ class DualUseSignalViewSet(ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return DualUseSignal.objects.select_related('category')
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary=_('List Deal Assessments'),
+        description=_('Retrieve a list of deal assessments.'),
+    ),
+    retrieve=extend_schema(
+        summary=_('Deal Assessment Details'),
+        description=_('Retrieve a specific deal assessment.'),
+    ),
+    create=extend_schema(
+        summary=_('Create Deal Assessment'),
+        description=_('Create a new deal assessment for a deal.'),
+    ),
+    update=extend_schema(
+        summary=_('Update Deal Assessment'),
+        description=_('Update a deal assessment.'),
+    ),
+    partial_update=extend_schema(
+        summary=_('Partially Update Deal Assessment'),
+        description=_('Partially update a deal assessment.'),
+    ),
+)
+class DealAssessmentViewSet(ModelViewSet):
+
+    lookup_field = 'uuid'
+    ordering_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+    required_scopes = ['default']
+
+    def get_queryset(self):
+        qs = DealAssessment.objects.select_related('deal')
+        deal_uuid = self.request.query_params.get('deal')
+        if deal_uuid:
+            qs = qs.filter(deal__uuid=deal_uuid)
+        return qs
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return DealAssessmentReadSerializer
+        return DealAssessmentSerializer

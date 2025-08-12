@@ -38,7 +38,7 @@ type DealFile = {
     deal?: { uuid: string };
 };
 
-function useDeal(uuid: string | null) {
+function useDeal(uuid: string | null, reloadKey = 0) {
     const [data, setData] = useState<Deal | null>(null);
     const [loading, setLoading] = useState<boolean>(!!uuid);
     const [error, setError] = useState<string | null>(null);
@@ -68,12 +68,17 @@ function useDeal(uuid: string | null) {
         return () => {
             cancelled = true;
         };
-    }, [uuid]);
+    }, [uuid, reloadKey]);
 
     return { data, loading, error };
 }
 
-function useDealFiles(kind: 'decks' | 'papers', dealUuid: string | null, pageSize = 10) {
+function useDealFiles(
+    kind: 'decks' | 'papers',
+    dealUuid: string | null,
+    pageSize = 10,
+    reloadKey = 0,
+) {
     const [data, setData] = useState<DealFile[]>([]);
     const [loading, setLoading] = useState<boolean>(!!dealUuid);
     const [error, setError] = useState<string | null>(null);
@@ -105,7 +110,7 @@ function useDealFiles(kind: 'decks' | 'papers', dealUuid: string | null, pageSiz
         return () => {
             cancelled = true;
         };
-    }, [kind, dealUuid, pageSize]);
+    }, [kind, dealUuid, pageSize, reloadKey]);
 
     return { data, loading, error };
 }
@@ -283,44 +288,148 @@ function ErrorBox({ message }: { message: string }) {
 }
 
 function DealDetailApp({ uuid }: { uuid: string }) {
-    const { data: deal, loading, error } = useDeal(uuid);
-    const { data: decks, loading: decksLoading } = useDealFiles('decks', uuid, 10);
-    const { data: papers, loading: papersLoading } = useDealFiles('papers', uuid, 10);
+    const [reloadKey, setReloadKey] = useState(0);
+    const { data: deal, loading, error } = useDeal(uuid, reloadKey);
+    const { data: decks, loading: decksLoading } = useDealFiles('decks', uuid, 10, reloadKey);
+    const { data: papers, loading: papersLoading } = useDealFiles('papers', uuid, 10, reloadKey);
 
-    const content = useMemo(() => {
-        if (loading) return <LoadingBox />;
-        if (error) return <ErrorBox message={error} />;
-        if (!deal) return null;
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [refreshError, setRefreshError] = useState<string | null>(null);
+    const [lastStatus, setLastStatus] = useState<string | null>(null);
 
-        return (
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                    <div className="sm:col-span-2">
-                        <Summary deal={deal} />
-                    </div>
-                    <div className="sm:col-span-1 space-y-6">
-                        <Industries items={deal.industries} />
-                        <Signals items={deal.dual_use_signals} />
-                    </div>
+    function getCookie(name: string) {
+        const match = document.cookie.match('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)');
+        return match ? decodeURIComponent(match[1]) : null;
+    }
+
+    async function postRefresh() {
+        const token = getCookie('csrftoken');
+        const resp = await fetch(`/deals/${uuid}/refresh/`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                ...(token ? { 'X-CSRFToken': token } : {}),
+            },
+            body: JSON.stringify({}),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const json = (await resp.json()) as { status?: string } | undefined;
+        if (json?.status) setLastStatus(json.status);
+    }
+
+    async function pollStatusWithBackoff() {
+        let attempt = 0;
+        const maxAttempts = 8;
+        let delay = 500; // ms
+        while (attempt < maxAttempts) {
+            try {
+                const resp = await fetch(`/deals/${uuid}/processing-status/`, {
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' },
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const json = (await resp.json()) as {
+                    ready?: boolean;
+                    deal_status?: string;
+                    pending_files?: number;
+                };
+                if (json.deal_status) setLastStatus(json.deal_status);
+                if (json.ready) {
+                    return true;
+                }
+            } catch (e: unknown) {
+                // Surface but continue with backoff unless final attempt
+                setRefreshError(e instanceof Error ? e.message : 'Status check failed');
+            }
+            attempt += 1;
+            await new Promise((r) => setTimeout(r, delay));
+            delay = Math.min(delay * 2, 5000);
+        }
+        return false;
+    }
+
+    async function onRefreshClick() {
+        setIsRefreshing(true);
+        setRefreshError(null);
+        setLastStatus(null);
+        try {
+            await postRefresh();
+            const ready = await pollStatusWithBackoff();
+            console.log('Ready:', ready);
+            if (!ready) {
+                console.log('Not ready');
+                setRefreshError('Processing is taking longer than expected. Try again later.');
+            } else {
+                // Trigger reload of data
+                setReloadKey((k) => k + 1);
+            }
+        } catch (e: unknown) {
+            setRefreshError(e instanceof Error ? e.message : 'Refresh failed');
+        } finally {
+            setIsRefreshing(false);
+        }
+    }
+
+    const initialLoading = loading && !deal;
+    if (initialLoading) return <LoadingBox />;
+    if (error) return <ErrorBox message={error} />;
+    if (!deal) return null;
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-gray-500">
+                    {isRefreshing ? (
+                        <span>Refreshing… {lastStatus ? `(status: ${lastStatus})` : ''}</span>
+                    ) : lastStatus ? (
+                        <span>Last status: {lastStatus}</span>
+                    ) : (
+                        <span className="invisible">placeholder</span>
+                    )}
                 </div>
-
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    {decksLoading ? (
-                        <LoadingBox label="Loading decks…" />
-                    ) : (
-                        <FileList title="Decks" files={decks} />
-                    )}
-                    {papersLoading ? (
-                        <LoadingBox label="Loading papers…" />
-                    ) : (
-                        <FileList title="Papers" files={papers} />
-                    )}
+                <button
+                    onClick={onRefreshClick}
+                    disabled={isRefreshing}
+                    className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                        isRefreshing
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+                    }`}
+                >
+                    {isRefreshing ? 'Refreshing…' : 'Refresh Data'}
+                </button>
+            </div>
+            {refreshError && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                    {refreshError}
+                </div>
+            )}
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                <div className="sm:col-span-2">
+                    <Summary deal={deal} />
+                </div>
+                <div className="sm:col-span-1 space-y-6">
+                    <Industries items={deal.industries} />
+                    <Signals items={deal.dual_use_signals} />
                 </div>
             </div>
-        );
-    }, [loading, error, deal, decksLoading, papersLoading, decks, papers]);
 
-    return content;
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {decksLoading ? (
+                    <LoadingBox label="Loading decks…" />
+                ) : (
+                    <FileList title="Decks" files={decks} />
+                )}
+                {papersLoading ? (
+                    <LoadingBox label="Loading papers…" />
+                ) : (
+                    <FileList title="Papers" files={papers} />
+                )}
+            </div>
+        </div>
+    );
 }
 
 export function initialize() {

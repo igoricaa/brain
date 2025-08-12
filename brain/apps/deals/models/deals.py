@@ -210,8 +210,10 @@ class Deal(models.Model):
 
     @property
     def decks_ready(self):
+        # A deal is "decks ready" if none of its files are in a pending/started/retry state.
+        # DealFile inherits from library.File which uses the `processing_status` field.
         return not self.files.filter(
-            ingestion_status__in=[
+            processing_status__in=[
                 ProcessingStatus.PENDING,
                 ProcessingStatus.STARTED,
                 ProcessingStatus.RETRY,
