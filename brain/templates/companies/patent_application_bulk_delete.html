@@ -10,8 +10,8 @@
   <input type="hidden" name="confirmed" value="1">
   <input type="hidden" name="next" value="{{ request.GET.next }}">
   <p>{% trans 'Are you sure you want to delete selected patent applications?' %}</p>
-  <button class="btn btn-danger" type="submit">{% trans 'Delete Selected' %}</button>
-  <a class="btn btn-secondary" href="{{ object.get_absolute_url|default:'/' }}">{% trans 'Cancel' %}</a>
+  <button class="inline-flex items-center rounded-md border border-red-600 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 focus:outline-hidden focus:ring-2 focus:ring-red-600/50" type="submit">{% trans 'Delete Selected' %}</button>
+  <a class="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-gray-300/50" href="{{ object.get_absolute_url|default:'/' }}">{% trans 'Cancel' %}</a>
 </form>
 {% endblock %}
 

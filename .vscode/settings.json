@@ -1,0 +1,21 @@
+{
+  "files.associations": {
+    "*.html": "django-html"
+  },
+
+  "[django-html]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  },
+
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "emmet.includeLanguages": {
+    "django-html": "html"
+  },
+
+  "prettier.documentSelectors": ["**/*.{js,jsx,ts,tsx,json,css,scss,md}"],
+  "prettier.ignorePath": ".prettierignore"
+}

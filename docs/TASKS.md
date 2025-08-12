@@ -72,13 +72,13 @@ This document tracks epics and granular tickets for adapting the legacy UI into 
   - Acceptance: `/deals/dash/data/` returns expected JSON; used by dashboard.
   - Deps: T-0201.
   - Estimate: 0.75d
-  - Status: Completed
+  - Status: Completed (added counts and trends; fixed reverse lookup bug using related_query_name)
 - T-0204 React dashboard (charts + tables)
   - Scope: Add `deals_dashboard` entry; implement charts with react-chartjs-2 using the JSON view; filter/query params persisted in URL.
   - Acceptance: Charts render and update on filter changes; share color palette with legacy.
   - Deps: T-0203, T-0001.
   - Estimate: 1–1.5d
-  - Status: Completed (charts render from JSON, URL filters persist, legacy palette applied)
+  - Status: Completed (charts render from JSON, URL filters persist, legacy palette applied; category x-axis used, time adapter optional)
 
 ## Epic 3 — Deals Detail & Assessment
 - T-0301 Deal detail shell + template

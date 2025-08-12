@@ -4,24 +4,24 @@
 {% load humanize %}
 {% load brain %}
 {% load django_vite %}
-{% block content_class %}container-fluid{% endblock %}
+{% block content_class %}mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8{% endblock %}
 {% block body_id %}_company-detail{% endblock %}
 {% block page_title %}
-<div class="d-sm-flex">
-    <div class="me-sm-5">
+<div class="sm:flex sm:items-center sm:justify-between sm:gap-6">
+    <div class="sm:mr-5">
         {% if company.image_sm %}
-        <img src="{{ company.image_sm.url }}" class="img-fluid" />
+        <img src="{{ company.image_sm.url }}" class="max-w-full h-auto rounded-md" />
         {% else %}
-        <img src="{% static 'favicon.ico' %}" />
+        <img src="{% static 'favicon.ico' %}" class="max-w-full h-auto rounded-md" />
         {% endif %}
     </div>
-    <div class="flex-grow-1 d-flex align-items-center">
-        <h1 class="page-title align-middle py-3 py-sm-0">{{ page_title }}</h1>
+    <div class="flex-1 flex items-center">
+<h1 class="py-3 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">{{ page_title }}</h1>
     </div>
 
-    <div class="d-flex align-items-end justify-content-sm-end">
+    <div class="flex items-end sm:justify-end">
         <div>
-            <a href="" class="btn btn-outline-primary me-2">
+            <a href="" class="inline-flex items-center gap-2 rounded-md border border-blue-600 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 focus:outline-hidden focus:ring-2 focus:ring-blue-600/50">
                 <i class="fas fa-pencil"></i>
                 {% trans 'Edit' %}
             </a>
@@ -29,30 +29,28 @@
     </div>
 </div>
 {% endblock page_title %} {% block content %}
-<div class="">
-    <div class="row">
+<div class=" space-y-6">
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {# basic info #}
-        <div class="col-sm-6 d-flex mt-4">
-            <div class="details-container flex-grow-1">
+        <div class="mt-4 sm:col-span-1 flex">
+            <div class="flex-grow overflow-x-auto rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
                 <div id="company-about-root" data-uuid="{{ company.uuid }}"></div>
             </div>
         </div>
         {# end basic info #} {# funding info #}
-        <div class="col-sm-6 d-flex mt-4">
-            <div class="details-container flex-grow-1">
-                <div class="row">
-                    <div class="col-sm-6">
-                        <div class="field">
-                            <div class="label">
-                                <i class="fas fa-sack-dollar text-muted"></i> {% trans 'Total
-                                Funding' %}
+        <div class="mt-4 sm:col-span-1 flex">
+            <div class="flex-grow overflow-x-auto rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <div class="py-4">
+                            <div class="mb-1 pr-4 text-sm font-semibold text-gray-500">
+                                <i class="fas fa-sack-dollar text-muted text-gray-500"></i> {% trans 'Total Funding' %}
                             </div>
-                            <div class="value ms-4">
-                                <div class="lead">
-                                    {{ company.total_funding_amount|intword_usd|default_if_none:'-'
-                                    }}
+                            <div class="ms-4 ml-4 text-gray-900">
+                                <div class="lead text-lg font-semibold">
+                                    {{ company.total_funding_amount|intword_usd|default_if_none:'-' }}
                                 </div>
-                                <div class="text-muted">
+                                <div class="text-muted text-gray-500">
                                     {% if company.funding_rounds_count %}
                                     {% blocktrans count counter=company.funding_rounds_count %}
                                     {{ counter }} funding round
@@ -65,21 +63,19 @@
                         </div>
                     </div>
 
-                    <div class="col-sm-6">
-                        <div class="field">
-                            <div class="label">
-                                <i class="fas fa-sack-dollar text-muted"></i> {% trans 'Last
-                                funding' %}
+                    <div class="sm:col-span-1">
+                        <div class="py-4">
+                            <div class="mb-1 pr-4 text-sm font-semibold text-gray-500">
+                                <i class="fas fa-sack-dollar text-muted text-gray-500"></i> {% trans 'Last funding' %}
                             </div>
-                            <div class="value ms-4">
-                                <div class="small fw-bold text-muted">
+                            <div class="ms-4 ml-4 text-gray-900">
+                                <div class="small fw-bold text-muted text-xs font-semibold text-gray-500">
                                     {{ company.last_funding_type.name|default:'-' }}
                                 </div>
-                                <div class="lead">
-                                    {{ company.last_funding_amount|intword_usd|default_if_none:'-'
-                                    }}
+                                <div class="lead text-lg font-semibold">
+                                    {{ company.last_funding_amount|intword_usd|default_if_none:'-' }}
                                 </div>
-                                <div class="text-muted">
+                                <div class="text-muted text-gray-500">
                                     {{ company.last_funding_date|date:'M Y'|default:'' }}
                                 </div>
                             </div>
@@ -87,27 +83,25 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-sm-6">
-                        <div class="field">
-                            <div class="label">
-                                <i class="fas fa-temperature-half text-muted"></i> {% trans 'Funding
-                                status' %}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <div class="py-4">
+                            <div class="mb-1 pr-4 text-sm font-semibold text-gray-500">
+                                <i class="fas fa-temperature-half text-muted text-gray-500"></i> {% trans 'Funding status' %}
                             </div>
-                            <div class="value fw-light ms-3">
+                            <div class="fw-light ms-3 ml-3 font-light text-gray-900">
                                 {{ company.funding_stage.name|default:'-' }}
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-sm-6">
-                        <div class="field">
-                            <div class="label">
-                                <i class="fas fa-dollar-sign text-muted"></i> {% trans 'Most recent
-                                valuation' %}
+                    <div class="sm:col-span-1">
+                        <div class="py-4">
+                            <div class="mb-1 pr-4 text-sm font-semibold text-gray-500">
+                                <i class="fas fa-dollar-sign text-muted text-gray-500"></i> {% trans 'Most recent valuation' %}
                             </div>
-                            <div class="value ms-3">
-                                <div class="fw-light">
+                            <div class="ms-3 ml-3 text-gray-900">
+                                <div class="fw-light font-light">
                                     {% if company.valuation_range %}
                                     {{ company.valuation_range.lower|intword_usd }} - {{ company.valuation_range.upper|intword_usd }}
                                     {% else %}
@@ -120,26 +114,26 @@
                     </div>
                 </div>
 
-                <div class="field">
-                    <div class="label">
-                        <i class="fas fa-money-bills text-muted"></i> {% trans 'Investors' %}
+                <div class="py-4">
+                    <div class="mb-1 pr-4 text-sm font-semibold text-gray-500">
+                        <i class="fas fa-money-bills text-muted text-gray-500"></i> {% trans 'Investors' %}
                     </div>
-                    <div class="value fw-light">{{ company.investors_names|default:'-' }}</div>
+                    <div class="value fw-light font-light text-gray-900">{{ company.investors_names|default:'-' }}</div>
                 </div>
             </div>
         </div>
         {# end funding info #}
     </div>
 
-    <div class="row">
-        <div class="col-md-6 d-flex mt-4">
-            <div class="details-container flex-grow-1">
-                <div class="label">
-                    <i class="fa-regular fa-building text-muted"></i> {% trans 'Company' %}
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div class="mt-4 md:col-span-1 flex">
+            <div class="flex-grow overflow-x-auto rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+                <div class="mb-1 pr-4 text-sm font-semibold text-gray-500">
+                    <i class="fa-regular fa-building text-gray-500"></i> {% trans 'Company' %}
                 </div>
-                <div class="value fw-light">
-                    <div class="row">
-                        <div class="col-sm-6">
+                <div class="font-light text-gray-900">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div class="sm:col-span-1">
                             <div>
                                 <span class="fw-bold">{% trans 'Technology type' %}: </span>
                                 <span>{{ company.technology_type.name|default:'-' }}</span>
@@ -147,7 +141,7 @@
                             <div>
                                 <span class="fw-bold">{% trans 'Industries' %}: </span>
                                 {% for industry in company.industries.all %}
-                                <span class="badge text-bg-secondary">{{ industry.name }}</span>
+                                <span class="inline-flex items-center rounded-full bg-gray-200/80 px-2 py-0.5 text-xs font-medium text-gray-700">{{ industry.name }}</span>
                                 {% empty %} - {% endfor %}
                             </div>
                             <div>
@@ -160,7 +154,7 @@
                             </div>
                         </div>
 
-                        <div class="col-sm-6">
+                        <div class="sm:col-span-1">
                             <div>
                                 <span class="fw-bold">{% trans 'Employees' %}: </span>
                                 <span>{{ company.num_employees_range|default:'-' }}</span>
@@ -183,34 +177,34 @@
             </div>
         </div>
 
-        <div class="col-md-6 d-flex mt-4">
-            <div class="details-container flex-grow-1">
-                <div class="label">
-                    <i class="far fa-star text-muted"></i> {% trans 'Founders & Advisors' %}
+        <div class="mt-4 md:col-span-1 flex">
+            <div class="flex-grow overflow-x-auto rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+                <div class="mb-1 pr-4 text-sm font-semibold text-gray-500">
+                    <i class="far fa-star text-gray-500"></i> {% trans 'Founders & Advisors' %}
                 </div>
-                <div class="value">
+                <div class="text-gray-900">
                     {% if company.founders.all %}
                     <div class="mb-3">
-                        <div class="h5">{% trans 'Founders' %}</div>
+                        <div class="text-base font-semibold">{% trans 'Founders' %}</div>
                         {% for founding in company.foundings.all %}
                         <div>
                             {{ founding.founder.name }}
-                            <span class="text-muted small">{{ founding.title }}</span>
+                            <span class="text-gray-500 text-xs">{{ founding.title }}</span>
                         </div>
                         {% empty %}
-                        <div class="text-secondary">{% trans 'No founders listed.' %}</div>
+                        <div class="text-gray-500">{% trans 'No founders listed.' %}</div>
                         {% endfor %}
                     </div>
                     {% endif %} {% if company.company_advisors.all %}
                     <div>
-                        <div class="h5">{% trans 'Advisors' %}</div>
+                        <div class="text-base font-semibold">{% trans 'Advisors' %}</div>
                         {% for ca in company.company_advisors.all %}
                         <div>
                             {{ ca.advisor.name }}
-                            <span class="text-muted small">{{ ca.title }}</span>
+                            <span class="text-gray-500 text-xs">{{ ca.title }}</span>
                         </div>
                         {% empty %}
-                        <div class="text-secondary">{% trans 'No advisors listed.' %}</div>
+                        <div class="text-gray-500">{% trans 'No advisors listed.' %}</div>
                         {% endfor %}
                     </div>
                     {% endif %}
@@ -219,24 +213,24 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-6 d-flex mt-4">
-            <div class="details-container flex-grow-1">
-                <div class="label">
-                    <i class="fas fa-microscope text-muted"></i> {% trans 'Clinical studies' %}
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div class="mt-4 md:col-span-1 flex">
+            <div class="flex-grow overflow-x-auto rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+                <div class="mb-1 pr-4 text-sm font-semibold text-gray-500">
+                    <i class="fas fa-microscope text-gray-500"></i> {% trans 'Clinical studies' %}
                 </div>
-                <div class="value">
+                <div class="text-gray-900">
                     {% if company.clinical_studies.count %}
-                    <ul>
+                    <ul class="list-disc list-inside space-y-1">
                         {% for cs in company.clinical_studies.all %}
                         <li>
                             {{ cs.title }}
-                            <span class="text-muted small">{{ cs.status }}</span>
+                            <span class="text-muted small text-gray-500 text-xs">{{ cs.status }}</span>
                         </li>
                         {% endfor %}
                     </ul>
                     {% else %}
-                    <div class="text-secondary">
+                    <div class="text-gray-500 text-sm">
                         {% trans 'No clinical studies information found.' %}
                     </div>
                     {% endif %}
@@ -244,14 +238,14 @@
             </div>
         </div>
 
-        <div class="col-md-6 d-flex mt-4">
-            <div class="details-container flex-grow-1">
-                <div class="label">
-                    <i class="far fa-copyright text-muted"></i> {% trans 'Patents & Trademarks' %}
+        <div class="mt-4 md:col-span-1 flex">
+            <div class="flex-grow rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <div class="mb-1 text-sm font-medium text-gray-500">
+                    <i class="far fa-copyright text-gray-500"></i> {% trans 'Patents & Trademarks' %}
                 </div>
-                <div class="value">
-                    <div class="row">
-                        <div class="col-sm-6">
+                <div class="text-gray-900">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div class="sm:col-span-1">
                             <div>
                                 <span class="fw-bold">{% trans 'Patents granted' %}: </span>
                                 <span>{{ company.patents_granted_count|default:'-' }}</span>
@@ -262,7 +256,7 @@
                             </div>
                         </div>
 
-                        <div class="col-sm-6">
+                        <div class="sm:col-span-1">
                             <div>
                                 <span class="fw-bold">{% trans 'Popular patent class' %}: </span>
                                 <span
@@ -272,8 +266,7 @@
                             <div>
                                 <span class="fw-bold">{% trans 'Popular trademark class' %}: </span>
                                 <span
-                                    >{{ company.popular_trademark_class|join:', '|default:'-'
-                                    }}</span
+                                    >{{ company.popular_trademark_class|join:', '|default:'-' }}</span
                                 >
                             </div>
                         </div>
@@ -283,23 +276,23 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-6 d-flex mt-4">
-            <div class="details-container flex-grow-1">
-                <div class="label d-flex align-items-center justify-content-between">
-                    <span><i class="far fa-bookmark text-muted"></i> {% trans 'Grants' %}</span>
-                    <span class="small">
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div class="mt-4 md:col-span-1 flex">
+            <div class="flex-grow overflow-x-auto rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+                <div class="mb-1 flex items-center justify-between pr-4 text-sm font-semibold text-gray-500">
+                    <span><i class="far fa-bookmark text-muted text-gray-500"></i> {% trans 'Grants' %}</span>
+                    <span class="small text-xs">
                         <a
-                            class="text-decoration-none"
+                            class="text-decoration-none no-underline hover:underline text-blue-700"
                             href="{{ request.path }}?g_all=1{% if request.GET.p_page %}&p_page={{ request.GET.p_page }}{% endif %}{% if request.GET.p_size %}&p_size={{ request.GET.p_size }}{% endif %}{% if request.GET.p_all %}&p_all={{ request.GET.p_all }}{% endif %}"
                             >{% trans 'View all' %}</a
                         >
                     </span>
                 </div>
-                <div class="value">
+                <div class="text-gray-900">
                     <a
                         href="{% url 'companies:company-create-grant' company.uuid %}?next={{ request.get_full_path|urlencode }}"
-                        class="btn btn-sm btn-outline-secondary"
+                        class="btn btn-sm btn-outline-secondary inline-flex items-center gap-2 rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-gray-300/50"
                     >
                         <i class="fas fa-plus"></i>
                         {% trans 'Add' %}
@@ -312,7 +305,7 @@
                             {% if g.award_url %}
                             <a href="{{ g.award_url }}" target="_blank">{{ g.name }}</a>
                             {% else %} {{ g.name }} {% endif %}
-                            <span class="small text-muted"
+                            <span class="small text-muted text-xs text-gray-500"
                                 >{{ g.award_date_display|default:'' }}</span
                             >
                         </li>
@@ -321,7 +314,7 @@
                             {% if g.award_url %}
                             <a href="{{ g.award_url }}" target="_blank">{{ g.name }}</a>
                             {% else %} {{ g.name }} {% endif %}
-                            <span class="small text-muted"
+                            <span class="small text-muted text-xs text-gray-500"
                                 >{{ g.award_date_display|default:'' }}</span
                             >
                         </li>
@@ -330,7 +323,7 @@
                             {% if g.award_url %}
                             <a href="{{ g.award_url }}" target="_blank">{{ g.name }}</a>
                             {% else %} {{ g.name }} {% endif %}
-                            <span class="small text-muted"
+                            <span class="small text-muted text-xs text-gray-500"
                                 >{{ g.award_date_display|default:'' }}</span
                             >
                         </li>
@@ -338,64 +331,63 @@
                     </ul>
 
                     {% if grants_page %}
-                    <div class="d-flex align-items-center justify-content-end gap-2 small">
-                        <span class="text-muted">
+                    <div class="flex items-center justify-end gap-2 text-xs">
+                        <span class="text-muted text-gray-600">
                             {% blocktrans %} Showing {{ grants_page.start_index }}–{{
                             grants_page.end_index }} of {{ grants_total }} {% endblocktrans %}
                         </span>
-                        <div class="btn-group btn-group-sm" role="group">
+                        <div class="flex items-center gap-2" role="group">
                             {% if grants_page.has_previous %}
                             <a
-                                class="btn btn-outline-secondary"
+                                class="btn btn-outline-secondary inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                                 href="{{ request.path }}?g_page={{ grants_page.previous_page_number }}&g_size={{ g_size|default:5 }}{% if request.GET.p_page %}&p_page={{ request.GET.p_page }}{% endif %}{% if request.GET.p_size %}&p_size={{ request.GET.p_size }}{% endif %}{% if request.GET.p_all %}&p_all={{ request.GET.p_all }}{% endif %}"
                             >
                                 {% trans 'Prev' %}
                             </a>
                             {% else %}
-                            <span class="btn btn-outline-secondary disabled"
+                            <span class="btn btn-outline-secondary disabled inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-400 opacity-50 pointer-events-none select-none"
                                 >{% trans 'Prev' %}</span
                             >
                             {% endif %} {% if grants_page.has_next %}
                             <a
-                                class="btn btn-outline-secondary"
+                                class="btn btn-outline-secondary inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                                 href="{{ request.path }}?g_page={{ grants_page.next_page_number }}&g_size={{ g_size|default:5 }}{% if request.GET.p_page %}&p_page={{ request.GET.p_page }}{% endif %}{% if request.GET.p_size %}&p_size={{ request.GET.p_size }}{% endif %}{% if request.GET.p_all %}&p_all={{ request.GET.p_all }}{% endif %}"
                             >
                                 {% trans 'Next' %}
                             </a>
                             {% else %}
-                            <span class="btn btn-outline-secondary disabled"
+                            <span class="btn btn-outline-secondary disabled inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-400 opacity-50 pointer-events-none select-none"
                                 >{% trans 'Next' %}</span
                             >
                             {% endif %}
                         </div>
                     </div>
                     {% endif %} {% else %}
-                    <div class="text-secondary">{% trans 'No grants information found.' %}</div>
+                    <div class="text-secondary text-gray-500">{% trans 'No grants information found.' %}</div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <div class="col-md-6 d-flex mt-4">
-            <div class="details-container flex-grow-1">
-                <div class="label d-flex align-items-center justify-content-between">
+        <div class="mt-4 md:col-span-1 flex">
+            <div class="flex-grow overflow-x-auto rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+                <div class="mb-1 flex items-center justify-between pr-4 text-sm font-semibold text-gray-500">
                     <span
-                        ><i class="far fa-copyright text-muted"></i> {% trans 'Patent Applications'
-                        %}</span
+                        ><i class="far fa-copyright text-muted text-gray-500"></i> {% trans 'Patent Applications' %}</span
                     >
-                    <span class="small">
+                    <span class="small text-xs">
                         <a
-                            class="text-decoration-none"
+                            class="text-decoration-none no-underline hover:underline text-blue-700"
                             href="{{ request.path }}?p_all=1{% if request.GET.g_page %}&g_page={{ request.GET.g_page }}{% endif %}{% if request.GET.g_size %}&g_size={{ request.GET.g_size }}{% endif %}{% if request.GET.g_all %}&g_all={{ request.GET.g_all }}{% endif %}"
                             >{% trans 'View all' %}</a
                         >
                     </span>
                 </div>
-                <div class="value">
-                    <div class="d-flex flex-wrap align-items-center">
+                <div class="text-gray-900">
+                    <div class="flex items-center flex-wrap gap-2">
                         <a
                             href="{% url 'companies:company-create-patent-application' company.uuid %}?next={{ request.get_full_path|urlencode }}"
-                            class="btn btn-sm btn-outline-secondary"
+                            class="btn btn-sm btn-outline-secondary inline-flex items-center gap-2 rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-gray-300/50"
                         >
                             <i class="fas fa-plus"></i>
                             {% trans 'Add' %}
@@ -406,7 +398,7 @@
                     <form
                         class="mt-3"
                         method="POST"
-                        onsubmit="return confirm('{% trans 'Are you sure you want to delete selected patent applications?' %}')"
+                        onsubmit="return confirm('{% trans "Are you sure you want to delete selected patent applications?" %}')"
                         action="{% url 'companies:company-delete-patent-applications' company.uuid %}"
                     >
                         {% csrf_token %}
@@ -417,7 +409,7 @@
                             {% include 'companies/includes/company_patent_application_list.html' with patent_applications=patent_applications next=request.get_full_path company=company %}
                         </div>
                         <div class="mt-2">
-                            <button class="btn btn-sm btn-outline-danger" type="submit">
+                            <button class="btn btn-sm btn-outline-danger inline-flex items-center gap-2 rounded-md border border-red-600 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 focus:outline-hidden focus:ring-2 focus:ring-red-600/50" type="submit">
                                 <i class="far fa-circle-xmark"></i>
                                 {% trans 'Delete Selected' %}
                             </button>
@@ -426,32 +418,32 @@
                     
 
                     {% if patents_page %}
-                    <div class="d-flex align-items-center justify-content-end gap-2 small">
-                        <span class="text-muted">
+                    <div class="d-flex align-items-center justify-content-end small flex items-center justify-end gap-2 text-xs">
+                        <span class="text-muted text-gray-600">
                             {% blocktrans %} Showing {{ patents_page.start_index }}–{{
                             patents_page.end_index }} of {{ patents_total }} {% endblocktrans %}
                         </span>
-                        <div class="btn-group btn-group-sm" role="group">
+                        <div class="btn-group btn-group-sm flex items-center gap-2" role="group">
                             {% if patents_page.has_previous %}
                             <a
-                                class="btn btn-outline-secondary"
+                                class="btn btn-outline-secondary inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                                 href="{{ request.path }}?p_page={{ patents_page.previous_page_number }}&p_size={{ p_size|default:5 }}{% if request.GET.g_page %}&g_page={{ request.GET.g_page }}{% endif %}{% if request.GET.g_size %}&g_size={{ request.GET.g_size }}{% endif %}{% if request.GET.g_all %}&g_all={{ request.GET.g_all }}{% endif %}"
                             >
                                 {% trans 'Prev' %}
                             </a>
                             {% else %}
-                            <span class="btn btn-outline-secondary disabled"
+                            <span class="btn btn-outline-secondary disabled inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-400 opacity-50 pointer-events-none select-none"
                                 >{% trans 'Prev' %}</span
                             >
                             {% endif %} {% if patents_page.has_next %}
                             <a
-                                class="btn btn-outline-secondary"
+                                class="btn btn-outline-secondary inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                                 href="{{ request.path }}?p_page={{ patents_page.next_page_number }}&p_size={{ p_size|default:5 }}{% if request.GET.g_page %}&g_page={{ request.GET.g_page }}{% endif %}{% if request.GET.g_size %}&g_size={{ request.GET.g_size }}{% endif %}{% if request.GET.g_all %}&g_all={{ request.GET.g_all }}{% endif %}"
                             >
                                 {% trans 'Next' %}
                             </a>
                             {% else %}
-                            <span class="btn btn-outline-secondary disabled"
+                            <span class="btn btn-outline-secondary disabled inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-400 opacity-50 pointer-events-none select-none"
                                 >{% trans 'Next' %}</span
                             >
                             {% endif %}
@@ -464,9 +456,9 @@
     </div>
 
     {# React mounts for islands #}
-    <div class="row">
-        <div class="col-md-12 d-flex mt-4">
-            <div class="details-container flex-grow-1">
+    <div>
+        <div class="mt-4">
+            <div class="flex-grow rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                 <div id="company-library-root" data-uuid="{{ company.uuid }}"></div>
             </div>
         </div>

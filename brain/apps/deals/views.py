@@ -156,8 +156,9 @@ def deals_dashboard_data(request: HttpRequest) -> JsonResponse:
     current_year_count = count_between(start_of_year, now)
 
     # Deals whose companies have grants / clinical studies
-    deals_with_grant_count = deals_qs.filter(company__grants__isnull=False).distinct().count()
-    deals_with_clinical_study_count = deals_qs.filter(company__clinical_studies__isnull=False).distinct().count()
+    # Use related_query_name for reverse lookups: 'grant' and 'clinical_study'
+    deals_with_grant_count = deals_qs.filter(company__grant__isnull=False).distinct().count()
+    deals_with_clinical_study_count = deals_qs.filter(company__clinical_study__isnull=False).distinct().count()
 
     # Quality percentile distribution (based on assessments)
     qp_rows = (

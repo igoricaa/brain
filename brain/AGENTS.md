@@ -34,6 +34,9 @@ This is the v2 Django project and API. Frontend moves here using a hybrid Django
 - T-0104 Library: Company-scoped Library panel island (`#company-library-root`) with source filter + pagination; backend filter `?company=<uuid>` added.
 - T-0201 Deals: Added server URLs and thin views; included under `path('deals/', ...)` in project `urls.py`.
 - T-0202 Deals: Ported shell templates with React mounts (dashboard, lists, detail, assessment, delete, deck create).
+- T-0203 Deals: Implemented dashboard JSON aggregations at `/deals/dash/data/` (trend, distributions, counts).
+- T-0204 Deals: Built React dashboard (charts + metrics) loaded via single-entry router on `#_deals-dashboard`; added Chart.js + react-chartjs-2 with legacy color palette.
+- Bugfix: Reverse lookups in dashboard JSON use `related_query_name` (`company__grant__isnull=False`, `company__clinical_study__isnull=False`) to avoid FieldError.
 - **2024-12 Single-Entry Migration**: Solved React preamble errors by implementing dynamic import router in `main.tsx`.
 
 ## Server Views (Deals)
