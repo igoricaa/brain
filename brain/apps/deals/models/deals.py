@@ -266,19 +266,42 @@ class Deal(models.Model):
             query |= Q(**{k: v})
 
         try:
-            company = Company.objects.filter(query).get()
+            # Try to find exact match first (both name AND website if available)
+            exact_query = Q()
+            if self.website and self.name:
+                exact_query = Q(website=self.website) & Q(name=self.name)
+                exact_matches = Company.objects.filter(exact_query)
+                if exact_matches.exists():
+                    company = exact_matches.first()
+                else:
+                    # No exact match, fall back to OR query but handle multiple results
+                    matches = Company.objects.filter(query)
+                    if matches.count() > 1:
+                        # Multiple matches: prefer website match over name match
+                        website_match = matches.filter(website=self.website).first()
+                        if website_match:
+                            company = website_match
+                        else:
+                            company = matches.first()  # Take first match
+                    else:
+                        company = matches.get()
+            else:
+                # Only one criteria available, use the simpler approach
+                company = Company.objects.filter(query).get()
+            
+            # Update the found company
             for k, v in resolve_callables(update_attrs):
                 setattr(company, k, v)
             company.save(update_fields=[*update_attrs.keys(), 'updated_at'])
+            
         except Company.DoesNotExist:
             company = Company.objects.create(**attrs)
         except Company.MultipleObjectsReturned:
-            # probably due to not enough info related to a company.
-            # For example when a deal was just created from a deck
-            if not kwargs and not or_kwargs:
-                company = Company.objects.create(**{'name': str(self.uuid)})
-            else:
-                raise
+            # Last resort: if we still get multiple objects, take the first one
+            company = Company.objects.filter(query).first()
+            for k, v in resolve_callables(update_attrs):
+                setattr(company, k, v)
+            company.save(update_fields=[*update_attrs.keys(), 'updated_at'])
 
         self.company = company
 

@@ -9,17 +9,17 @@ Purpose: deals domain (Deal, DraftDeal, files, decks, papers, dual-use signals).
 
 ## APIs (DRF)
 - Base: `/api/deals/`
-- Endpoints: `deals`, `drafts`, `files`, `decks`, `papers`, `du-signals`.
+- Endpoints: `deals`, `drafts`, `files`, `decks` (list/retrieve + create/upload), `papers`, `du-signals`.
 - List/detail via `uuid`; filters available (see `api/filters.py`).
 
 ## Server Views & Templates
 - URLs: `brain/apps/deals/urls.py` added with names:
-  - `dashboard`, `fresh_deals`, `reviewed_deals`, `missed_deals`
+  - `dashboard`, `fresh_deals`, `reviewed_deals`, `missed_deals`, `deal_upload`
   - `deal_detail`, `deal_update`, `deal_assessment`, `deal_confirm_delete`, `deck_create`
   - `processing_status` (polling stub), `dashboard_data` (JSON data)
 - Templates (ported shells) in `brain/templates/deals/`:
   - `base.html`, `deals_dashboard.html`, `fresh_deals.html`, `reviewed_deals.html`, `missed_deal_list.html`,
-    `deal_detail.html`, `deal_assessment.html`, `deal_confirm_delete.html`, `deck_create.html`.
+    `deal_detail.html`, `deal_assessment.html`, `deal_confirm_delete.html`, `deck_create.html`, `deal_upload.html`.
 - Project URLs include `path('deals/', include(('deals.urls','deals'), namespace='deals')))`.
 
 ## Adaptation Checklist (Phase 1)
@@ -88,3 +88,248 @@ Purpose: deals domain (Deal, DraftDeal, files, decks, papers, dual-use signals).
 - Params: URL state uses the `dl_` prefix to avoid collisions with other sections: `dl_page`, `dl_size`, `dl_all` (view all = 100), `dl_source`.
 - Implementation: `assets/src/components/library/RelatedDocumentsPanel.tsx`; mounted from `assets/src/pages/deal_detail.tsx` below the Decks/Papers row when `deal.company` is present.
 - Company Page: A separate Bootstrap-styled Library panel already exists; this change does not modify company templates.
+
+## Upload New Deal (T-0501)
+
+- Purpose: Allow users to upload a PDF deck to create a new Deal in one step.
+- Route: `GET /deals/upload/` renders a React island at `#deal-upload-root` on body id `#_deal-upload`.
+- API: `POST /api/deals/decks/` (multipart form-data) with `file` only.
+  - If `deal` UUID is not provided, a new `Deal` is created (status `new`) with name derived from the PDF filename stem, and a `Company` is auto-created via `Deal.save()`.
+  - Response: `{ deck_uuid, deal_uuid, redirect_url }` and client redirects.
+- UI: shadcn/ui `Input` (file) and `Button`; simple card; on success, redirect to Deal Detail.
+- Discovery: “New Deal” button added to Fresh Deals header linking to `/deals/upload/`.
+
+## Deal Detail Redesign (2025-08)
+
+- Goals: Align Deal Detail with the "VC Deal Detail View Redesign" spec; adopt shadcn/ui + Tailwind; simplify header actions.
+- Changes:
+  - Removed top-right actions (Download Deck, Refresh Data, Delete) to match the spec’s clean header.
+  - Added dual assessments row:
+    - AI Assessment (read-only) surfaces `auto_investment_rationale`, `auto_pros`, `auto_cons`, and `auto_quality_percentile` from the latest `DealAssessment`.
+    - Analyst (Final) Assessment mirrors the same layout and supports inline editing for investment rationale, pros, cons, and recommendation (via `quality_percentile`).
+  - Subtle edit affordance: small "Edit" ghost button within the section header; Save/Cancel buttons use shadcn/ui.
+  - JSON/API: extended `DealAssessmentReadSerializer` to expose auto_* read-only fields; write serializer now includes `recommendation` (unused in UI, but available) and `quality_percentile` for recommendation selection.
+- Files:
+  - Frontend: `assets/src/pages/deal_detail.tsx` — new assessment panels and removal of refresh UI.
+  - Backend: `apps/deals/api/serializers.py` — appended auto_* fields in read serializer; exposed `recommendation`.
+- Data seeding from Figma:
+  - Management command: `python manage.py import_figma_deal brain/seed_data/figma_vc_deal_example.json` (seed_data is gitignored)
+  - JSON shape supports `company`, `deal`, `ai_assessment`, `analyst_assessment` keys. Use `--update` with `deal.uuid` to patch.
+- Outstanding:
+  - If the Figma “app” exports a different schema, adjust the importer mapping accordingly.
+  - If we want live refresh, reintroduce status-only indicator without actions (kept out per spec).
+
+## Dev Utilities
+
+- `create_dummy_deal`: Create one or more fully-populated deals with company, funding, industries, dual-use signals, real PDF deck attachments, a paper (with PDF), and both AI/Analyst assessment fields filled.
+  - Run: `python manage.py create_dummy_deal [--count 3]`
+  - Output prints created deal UUIDs. Visit `/deals/<uuid>/`.
+  - Decks and Papers attach small in-memory PDF files; no external downloads required.
+- `import_figma_deal`: Import a Deal from a Figma-style JSON export (company + deal + assessments).
+  - Run: `python manage.py import_figma_deal <path/to/file.json> [--update]`
+  - Suggested path: `brain/seed_data/figma_vc_deal_example.json` (gitignored). See `brain/seed_data/README.md`.
+
+## File Management System (T-0801 - Aug 2025)
+
+### Overview
+Complete rewrite of the deal upload workflow with comprehensive file management capabilities. Supports three distinct workflows:
+1. **Draft Deal Files** - Multi-file uploads staged before deal submission  
+2. **Existing Deal Files** - File management for live deals
+3. **Knowledge Base Files** - General library uploads
+
+### Architecture
+
+#### Frontend Components
+- **FileManager** (`components/file-manager/FileManager.tsx`) - Main orchestration component with three modes
+- **FileUpload** (`components/file-manager/FileUpload.tsx`) - Drag-and-drop upload with validation
+- **FileTable** (`components/file-manager/FileTable.tsx`) - TanStack Table with bulk operations
+- **FileMetadataForm** (`components/file-manager/FileMetadataForm.tsx`) - React Hook Form + Zod validation
+- **BulkOperations** - BulkMetadataDialog, BulkDeleteConfirmDialog for batch file management
+
+#### API Integration Hooks
+- **useDraftDeals** (`hooks/useDraftDeals.ts`) - Draft deal CRUD operations
+- **useFileManagement** (`hooks/useFileManagement.ts`) - File operations for existing deals and library
+- **useDraftPersistence** (`hooks/useDraftPersistence.ts`) - localStorage auto-save with conflict detection
+
+#### Key Features
+- **Multi-file upload** with drag-and-drop interface
+- **File validation** (type, size, duplicate detection)
+- **Metadata management** per file (category, document_type, proprietary, tldr, tags)
+- **Bulk operations** (delete, update metadata, reprocess)
+- **Inline editing** with Popover components
+- **Draft persistence** with localStorage auto-save and conflict resolution
+- **Progress tracking** for uploads and processing status
+- **Row selection** with TanStack Table for batch operations
+
+### Draft Deal Workflow
+
+#### Backend APIs (DRF)
+- `POST /api/deals/draft_deals/` - Create draft deal
+- `PATCH /api/deals/draft_deals/{uuid}/` - Update draft metadata  
+- `POST /api/deals/deal_files/` - Upload files to draft deal
+- `POST /api/deals/draft_deals/{uuid}/finalize/` - Convert draft to live deal
+
+#### Frontend Flow
+1. **File Upload Tab** - Users drag/drop multiple files
+2. **Metadata Tab** - Configure deal info and per-file metadata
+3. **Draft Persistence** - Auto-save to localStorage every 30 seconds
+4. **Submission** - Upload files with metadata, then finalize draft
+5. **Cleanup** - Remove localStorage draft on successful submission
+
+#### Draft State Management
+```typescript
+interface DraftState {
+  draftId: string;
+  dealName: string;
+  description?: string;
+  website?: string;
+  fundingTarget?: string;
+  files: FileMetadata[];
+  lastSaved: number;
+  version: number;
+}
+```
+
+### Existing Deal File Management
+
+#### Features
+- View all files in paginated table with sorting/filtering
+- Upload additional files to existing deals
+- Bulk operations: delete, update metadata, reprocess files
+- Inline editing of file metadata
+- Download files with proper filename handling
+
+#### API Endpoints
+- `GET /api/deals/deal_files/?deal={uuid}` - List deal files
+- `POST /api/deals/deal_files/` - Upload new file to deal
+- `PATCH /api/deals/deal_files/{uuid}/` - Update file metadata
+- `DELETE /api/deals/deal_files/{uuid}/` - Delete file
+- `POST /api/deals/deal_files/{uuid}/reprocess/` - Reprocess file
+- `POST /api/deals/deal_files/bulk_*` - Bulk operations
+
+### Library File Management
+
+Similar to deal files but for general knowledge base:
+- `GET /api/library/files/` - List library files
+- `POST /api/library/files/` - Upload to library
+- Bulk operations and metadata management
+
+### Form Validation (Zod Schema)
+
+```typescript
+const dealFormSchema = z.object({
+  name: z.string().min(1, "Deal name is required"),
+  description: z.string().optional(),
+  website: z.string().url().optional().or(z.literal("")),
+  fundingTarget: z.string().optional(),
+  files: z.array(fileMetadataSchema).min(1, "At least one file is required")
+});
+
+const fileMetadataSchema = z.object({
+  id: z.string(),
+  category: z.string().min(1, "Category is required"),
+  documentType: z.string().optional(),
+  proprietary: z.boolean().default(false),
+  tldr: z.string().optional(),
+  tags: z.array(z.string()).default([])
+});
+```
+
+### File Upload Integration
+
+#### Replaced Legacy Upload
+- **Old**: `deal_upload.tsx` with single PDF upload
+- **New**: `FileManager` component with multi-file support
+- **URL**: `/deals/upload/` now renders comprehensive file management interface
+
+#### Validation Rules
+- **File Types**: PDF, DOC, DOCX, TXT, MD (configurable)
+- **File Size**: 50MB limit per file (configurable)
+- **File Count**: 1-20 files for draft deals (configurable)
+- **Duplicate Detection**: Prevents same file name + size combinations
+
+### UI/UX Improvements
+
+#### Design System
+- **shadcn/ui components** for consistent styling
+- **Tailwind CSS** with shadow-sm instead of borders
+- **Responsive design** with proper mobile support
+- **Loading states** and progress indicators
+- **Error handling** with inline validation messages
+
+#### Accessibility
+- **ARIA labels** on all form controls and buttons
+- **Keyboard navigation** support
+- **Screen reader** compatible table structure
+- **Focus management** in modals and dialogs
+
+### Conflict Resolution
+
+#### localStorage Conflicts
+- **Detection**: Version tracking prevents data loss from multiple tabs
+- **Resolution**: User choice between local changes or remote state
+- **Recovery**: Auto-discovery of unsaved drafts on page load
+
+#### Error Handling
+- **Network failures**: Retry mechanisms with exponential backoff
+- **Validation errors**: Inline field-level error display
+- **Upload failures**: Per-file error states with retry options
+
+### Performance Optimizations
+
+#### Client-Side
+- **Debounced validation** (300ms) for real-time feedback
+- **Virtual scrolling** for large file lists (TanStack Table)
+- **Lazy loading** of metadata forms
+- **Request batching** for bulk operations
+
+#### Bulk Operations
+- **Client-side loops** for operations not supported by backend
+- **Progress tracking** for long-running batch operations
+- **Optimistic updates** with rollback on failure
+
+### File Processing Status
+
+#### Integration Points
+- **Real-time updates** placeholder for WebSocket integration
+- **Status polling** for processing progress
+- **Visual indicators** for file processing states (pending, processing, completed, error)
+
+### Error Recovery
+
+#### Upload Failures
+- **Per-file retry** without affecting other uploads
+- **Partial success handling** for batch uploads
+- **User-friendly error messages** with actionable guidance
+
+#### Draft Recovery
+- **Auto-save conflicts** resolved with user intervention
+- **Expired draft cleanup** (7-day expiration)
+- **Version mismatch detection** between tabs/windows
+
+## Changelog — Aug/Dec 2025
+
+- **File Management System** - Complete rewrite with multi-file upload, draft workflow, and bulk operations
+- **Draft Deal Persistence** - localStorage auto-save with conflict detection and recovery
+- **TanStack Table Integration** - Advanced table with row selection, sorting, filtering, and pagination
+- **Form Validation** - React Hook Form + Zod with real-time validation and error handling
+- **Bulk Operations** - Comprehensive file management with batch delete, update, and reprocess
+- **UI Redesign** - shadcn/ui components with consistent shadow-sm styling
+- **useFieldArray Bug Fix** (Dec 2025) - Fixed FileMetadataForm display issue caused by ID mismatch
+- Added AI/Analyst assessments panel to Deal Detail page and removed header actions.
+- Extended `DealAssessmentReadSerializer` to include AI `auto_*` fields; write serializer includes `recommendation`.
+- Implemented `import_figma_deal` and `create_dummy_deal` management commands.
+
+## Development Guidelines
+
+### Documentation Standards
+- **Primary Documentation**: AGENTS.md files for detailed implementation guides
+- **Secondary Documentation**: CLAUDE.md for development commands and high-level architecture  
+- **Design Patterns**: docs/design.md for UI/UX patterns and component guidelines
+- **Bug Documentation**: Always document major fixes with root cause analysis
+
+### React Development Best Practices
+- **useFieldArray Pattern**: Use `form.watch(`items.${index}.id`)` for data lookups, not `field.id`
+- **Error Handling**: Parse structured API errors and provide actionable user feedback
+- **State Management**: Prefer form state over component state for form-related data
+- **Component Architecture**: Document complex component interactions and data flow

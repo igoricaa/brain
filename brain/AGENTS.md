@@ -214,3 +214,18 @@ Include in any base template where navigation flash could occur:
 - Lint/format: `npm run lint`, `npm run format` (ESLint + Prettier configured in `brain/package.json`).
 - **Single-entry pages**: Check console logs for loading confirmation during development.
 - **Navigation flash**: Never extract timing-critical code from `loading_overlay_complete.html` - inline is required for perfect timing.
+
+## Changelog — Aug 2025
+
+- Deal Detail redesign:
+  - Added AI Assessment (read-only) and Analyst (Final) Assessment (inline edit) panels on `/deals/<uuid>/` using shadcn/ui + Tailwind.
+  - Removed top-right header actions per spec (no Download/Refresh/Delete).
+- API/Serializers:
+  - `DealAssessmentReadSerializer` now exposes AI `auto_*` fields used by the AI Assessment panel.
+  - `DealAssessmentSerializer` includes `recommendation` and continues to support `quality_percentile` (used as recommendation selector in UI).
+- Data Seeding & Import:
+  - `python manage.py import_figma_deal <json>`: Import company/deal/assessment from Figma-style JSON.
+  - `python manage.py create_dummy_deal [--count N]`: Seed N deals with all fields populated and real PDF attachments (deck + paper).
+- Docs:
+  - `docs/DEAL_DETAIL_REDESIGN_NOTES.md` (implementation/verification)
+  - `docs/FRONTEND_PROJECT_BRAIN_NOTES.md` (scope/plan summary)

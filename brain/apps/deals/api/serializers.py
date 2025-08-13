@@ -127,7 +127,7 @@ class DraftDealSerializer(DealReadSerializer):
 class DealFileSerializer(serializers.ModelSerializer):
     deal = serializers.SlugRelatedField(
         slug_field='uuid',
-        queryset=Deal.objects.all(),
+        queryset=Deal.all_objects.all(),  # Use all_objects to include draft deals
         required=True,
     )
 
@@ -164,7 +164,7 @@ class DualUseSignalSerializer(serializers.ModelSerializer):
 
 class DealAssessmentSerializer(serializers.ModelSerializer):
     deal = serializers.SlugRelatedField(
-        slug_field='uuid', queryset=Deal.objects.all(), required=True
+        slug_field='uuid', queryset=Deal.all_objects.all(), required=True  # Use all_objects to include draft deals
     )
 
     class Meta:
@@ -173,6 +173,7 @@ class DealAssessmentSerializer(serializers.ModelSerializer):
             'uuid',
             'deal',
             'quality_percentile',
+            'recommendation',
             'investment_rationale',
             'pros',
             'cons',
@@ -181,3 +182,26 @@ class DealAssessmentSerializer(serializers.ModelSerializer):
 
 class DealAssessmentReadSerializer(DealAssessmentSerializer):
     deal = RelatedDealSerializer(read_only=True)
+    
+    class Meta(DealAssessmentSerializer.Meta):
+        model = DealAssessment
+        # Expose AI (auto_*) read-only fields alongside manual fields for the redesigned Deal Detail view
+        fields = DealAssessmentSerializer.Meta.fields + [
+            'created_at',
+            'updated_at',
+            # Auto (AI) assessment mirrors
+            'auto_quality_percentile',
+            'auto_recommendation',
+            'auto_investment_rationale',
+            'auto_pros',
+            'auto_cons',
+            # Keeping room for future panels if needed
+            'auto_problem',
+            'auto_solution',
+            'auto_thesis_fit',
+            'auto_traction',
+            'auto_intellectual_property',
+            'auto_business_model',
+            'auto_market_sizing',
+            'auto_competition',
+        ]

@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useMemo, useState } from 'react';
 import RelatedDocumentsPanel from '../components/library/RelatedDocumentsPanel';
+import { Button } from '@/components/ui/button';
 
 type Related = { uuid: string; name?: string | null };
 type RelatedSignal = { uuid: string; name: string; code?: string | null };
@@ -21,6 +22,23 @@ type Deal = {
     customers_names?: string[];
     sent_to_affinity?: boolean | null;
     created_at?: string;
+};
+
+type DealAssessment = {
+    uuid?: string;
+    quality_percentile?: string | null;
+    recommendation?: string | null;
+    investment_rationale?: string | null;
+    pros?: string | null;
+    cons?: string | null;
+    // AI (auto) fields
+    auto_quality_percentile?: string | null;
+    auto_recommendation?: string | null;
+    auto_investment_rationale?: string | null;
+    auto_pros?: string | null;
+    auto_cons?: string | null;
+    created_at?: string;
+    updated_at?: string;
 };
 
 type ApiList<T> = {
@@ -75,7 +93,7 @@ function useDeal(uuid: string | null, reloadKey = 0) {
 }
 
 function useDealFiles(
-    kind: 'decks' | 'papers',
+    kind: 'decks' | 'papers' | 'files',
     dealUuid: string | null,
     pageSize = 10,
     reloadKey = 0,
@@ -288,15 +306,162 @@ function ErrorBox({ message }: { message: string }) {
     );
 }
 
+function smallTextAreaProps() {
+    return {
+        className:
+            'mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500',
+        rows: 4,
+    } as const;
+}
+
+const QUALITY_OPTIONS: { value: string; label: string }[] = [
+    { value: 'top 1%', label: 'Most interesting (Top 1%)' },
+    { value: 'top 5%', label: 'Very interesting (Top 5%)' },
+    { value: 'top 10%', label: 'Interesting (Top 10%)' },
+    { value: 'top 20%', label: 'Potentially interesting (Top 20%)' },
+    { value: 'top 50%', label: 'Not interesting (Top 50%)' },
+];
+
+function AnalystAssessmentCard({
+    data,
+    onSave,
+}: {
+    data: DealAssessment | null;
+    onSave: (patch: Partial<DealAssessment>) => Promise<DealAssessment>;
+}) {
+    const [editing, setEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const [rationale, setRationale] = useState(data?.investment_rationale || '');
+    const [pros, setPros] = useState(data?.pros || '');
+    const [cons, setCons] = useState(data?.cons || '');
+    const [quality, setQuality] = useState<string>(data?.quality_percentile || '');
+
+    // keep state in sync when data changes (e.g., first load)
+    useEffect(() => {
+        setRationale(data?.investment_rationale || '');
+        setPros(data?.pros || '');
+        setCons(data?.cons || '');
+        setQuality(data?.quality_percentile || '');
+    }, [data?.uuid]);
+
+    async function handleSave() {
+        setSaving(true);
+        setError(null);
+        try {
+            await onSave({
+                investment_rationale: rationale,
+                pros,
+                cons,
+                quality_percentile: quality || null,
+            });
+            setEditing(false);
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Failed to save assessment');
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return (
+        <SectionCard title="Analyst (Final) Assessment">
+            <div className="-mt-2 mb-3 flex items-center justify-between">
+                <div className="text-xs text-gray-500">
+                    {data?.updated_at ? `Updated ${new Date(data.updated_at).toLocaleString()}` : ''}
+                </div>
+                {!editing ? (
+                    <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+                        Edit
+                    </Button>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <Button variant="secondary" size="sm" onClick={() => setEditing(false)} disabled={saving}>
+                            Cancel
+                        </Button>
+                        <Button size="sm" onClick={handleSave} disabled={saving}>
+                            {saving ? 'Saving…' : 'Save'}
+                        </Button>
+                    </div>
+                )}
+            </div>
+            {error && (
+                <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                    {error}
+                </div>
+            )}
+            {!editing ? (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="md:col-span-1">
+                        <div className="text-xs font-semibold text-gray-500">Investment Rationale</div>
+                        <p className="mt-1 whitespace-pre-line text-sm text-gray-700">
+                            {data?.investment_rationale || '—'}
+                        </p>
+                    </div>
+                    <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <div className="text-xs font-semibold text-gray-500">Pros</div>
+                            <p className="mt-1 whitespace-pre-line text-sm text-gray-700">{data?.pros || '—'}</p>
+                        </div>
+                        <div>
+                            <div className="text-xs font-semibold text-gray-500">Cons</div>
+                            <p className="mt-1 whitespace-pre-line text-sm text-gray-700">{data?.cons || '—'}</p>
+                        </div>
+                    </div>
+                    <div className="md:col-span-3">
+                        <div className="text-xs font-semibold text-gray-500">Recommendation</div>
+                        <div className="mt-1 inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs text-slate-700 ring-1 ring-slate-600/20">
+                            {data?.quality_percentile || '—'}
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="md:col-span-1">
+                        <label className="text-xs font-semibold text-gray-600">Investment Rationale</label>
+                        <textarea {...smallTextAreaProps()} value={rationale} onChange={(e) => setRationale(e.target.value)} />
+                    </div>
+                    <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label className="text-xs font-semibold text-gray-600">Pros</label>
+                            <textarea {...smallTextAreaProps()} value={pros} onChange={(e) => setPros(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="text-xs font-semibold text-gray-600">Cons</label>
+                            <textarea {...smallTextAreaProps()} value={cons} onChange={(e) => setCons(e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="md:col-span-3">
+                        <label className="text-xs font-semibold text-gray-600">Recommendation</label>
+                        <select
+                            className="mt-1 w-full max-w-sm rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={quality}
+                            onChange={(e) => setQuality(e.target.value)}
+                        >
+                            <option value="">—</option>
+                            {QUALITY_OPTIONS.map((o) => (
+                                <option key={o.value} value={o.value}>
+                                    {o.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            )}
+        </SectionCard>
+    );
+}
+
 function DealDetailApp({ uuid }: { uuid: string }) {
-    const [reloadKey, setReloadKey] = useState(0);
+    const [reloadKey] = useState(0);
     const { data: deal, loading, error } = useDeal(uuid, reloadKey);
     const { data: decks, loading: decksLoading } = useDealFiles('decks', uuid, 10, reloadKey);
     const { data: papers, loading: papersLoading } = useDealFiles('papers', uuid, 10, reloadKey);
+    const { data: files, loading: filesLoading } = useDealFiles('files', uuid, 50, reloadKey);
 
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [refreshError, setRefreshError] = useState<string | null>(null);
-    const [lastStatus, setLastStatus] = useState<string | null>(null);
+    const [assessment, setAssessment] = useState<DealAssessment | null>(null);
+    const [assessLoading, setAssessLoading] = useState<boolean>(true);
+    const [assessError, setAssessError] = useState<string | null>(null);
 
     function getCookie(name: string) {
         const match = document.cookie.match(
@@ -305,73 +470,67 @@ function DealDetailApp({ uuid }: { uuid: string }) {
         return match ? decodeURIComponent(match[1]) : null;
     }
 
-    async function postRefresh() {
-        const token = getCookie('csrftoken');
-        const resp = await fetch(`/deals/${uuid}/refresh/`, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                ...(token ? { 'X-CSRFToken': token } : {}),
-            },
-            body: JSON.stringify({}),
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const json = (await resp.json()) as { status?: string } | undefined;
-        if (json?.status) setLastStatus(json.status);
-    }
-
-    async function pollStatusWithBackoff() {
-        let attempt = 0;
-        const maxAttempts = 8;
-        let delay = 500; // ms
-        while (attempt < maxAttempts) {
+    // Load latest assessment
+    useEffect(() => {
+        let cancel = false;
+        async function run() {
+            if (!uuid) return;
+            setAssessLoading(true);
+            setAssessError(null);
             try {
-                const resp = await fetch(`/deals/${uuid}/processing-status/`, {
+                const sp = new URLSearchParams({ deal: uuid, ordering: '-created_at', page_size: '1' });
+                const resp = await fetch(`/api/deals/assessments/?${sp.toString()}`, {
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json' },
                 });
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const json = (await resp.json()) as {
-                    ready?: boolean;
-                    deal_status?: string;
-                    pending_files?: number;
-                };
-                if (json.deal_status) setLastStatus(json.deal_status);
-                if (json.ready) {
-                    return true;
-                }
+                const json = (await resp.json()) as { results?: DealAssessment[] } | DealAssessment[];
+                const item = Array.isArray(json) ? json[0] : (json.results?.[0] ?? null);
+                if (!cancel) setAssessment(item || null);
             } catch (e: unknown) {
-                // Surface but continue with backoff unless final attempt
-                setRefreshError(e instanceof Error ? e.message : 'Status check failed');
+                if (!cancel)
+                    setAssessError(e instanceof Error ? e.message : 'Failed to load assessment');
+            } finally {
+                if (!cancel) setAssessLoading(false);
             }
-            attempt += 1;
-            await new Promise((r) => setTimeout(r, delay));
-            delay = Math.min(delay * 2, 5000);
         }
-        return false;
-    }
+        run();
+        return () => {
+            cancel = true;
+        };
+    }, [uuid]);
 
-    async function onRefreshClick() {
-        setIsRefreshing(true);
-        setRefreshError(null);
-        setLastStatus(null);
-        try {
-            await postRefresh();
-            const ready = await pollStatusWithBackoff();
-            console.log('Ready:', ready);
-            if (!ready) {
-                console.log('Not ready');
-                setRefreshError('Processing is taking longer than expected. Try again later.');
-            } else {
-                // Trigger reload of data
-                setReloadKey((k) => k + 1);
-            }
-        } catch (e: unknown) {
-            setRefreshError(e instanceof Error ? e.message : 'Refresh failed');
-        } finally {
-            setIsRefreshing(false);
+    async function saveAssessment(patch: Partial<DealAssessment>) {
+        const token = getCookie('csrftoken');
+        const headers: HeadersInit = {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            ...(token ? { 'X-CSRFToken': token } : {}),
+        };
+        const body = JSON.stringify({ ...patch, deal: uuid });
+
+        if (assessment?.uuid) {
+            const resp = await fetch(`/api/deals/assessments/${assessment.uuid}/`, {
+                method: 'PATCH',
+                credentials: 'same-origin',
+                headers,
+                body,
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const json = (await resp.json()) as DealAssessment;
+            setAssessment(json);
+            return json;
+        } else {
+            const resp = await fetch(`/api/deals/assessments/`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers,
+                body,
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const json = (await resp.json()) as DealAssessment;
+            setAssessment(json);
+            return json;
         }
     }
 
@@ -382,33 +541,6 @@ function DealDetailApp({ uuid }: { uuid: string }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between gap-3">
-                <div className="text-sm text-gray-500">
-                    {isRefreshing ? (
-                        <span>Refreshing… {lastStatus ? `(status: ${lastStatus})` : ''}</span>
-                    ) : lastStatus ? (
-                        <span>Last status: {lastStatus}</span>
-                    ) : (
-                        <span className="invisible">placeholder</span>
-                    )}
-                </div>
-                <button
-                    onClick={onRefreshClick}
-                    disabled={isRefreshing}
-                    className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                        isRefreshing
-                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
-                    }`}
-                >
-                    {isRefreshing ? 'Refreshing…' : 'Refresh Data'}
-                </button>
-            </div>
-            {refreshError && (
-                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                    {refreshError}
-                </div>
-            )}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                 <div className="sm:col-span-2">
                     <Summary deal={deal} />
@@ -419,7 +551,46 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {/* Assessments Row */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <SectionCard title="AI Assessment">
+                    {assessLoading ? (
+                        <LoadingBox label="Loading AI assessment…" />
+                    ) : assessError ? (
+                        <ErrorBox message={assessError} />
+                    ) : assessment && (
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div className="md:col-span-1">
+                                <div className="text-xs font-semibold text-gray-500">Investment Rationale</div>
+                                <p className="mt-1 whitespace-pre-line text-sm text-gray-700">
+                                    {assessment.auto_investment_rationale || '—'}
+                                </p>
+                            </div>
+                            <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <div className="text-xs font-semibold text-gray-500">Pros</div>
+                                    <p className="mt-1 whitespace-pre-line text-sm text-gray-700">
+                                        {assessment.auto_pros || '—'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <div className="text-xs font-semibold text-gray-500">Cons</div>
+                                    <p className="mt-1 whitespace-pre-line text-sm text-gray-700">
+                                        {assessment.auto_cons || '—'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </SectionCard>
+
+                <AnalystAssessmentCard
+                    data={assessment}
+                    onSave={saveAssessment}
+                />
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {decksLoading ? (
                     <LoadingBox label="Loading decks…" />
                 ) : (
@@ -429,6 +600,11 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                     <LoadingBox label="Loading papers…" />
                 ) : (
                     <FileList title="Papers" files={papers} />
+                )}
+                {filesLoading ? (
+                    <LoadingBox label="Loading files…" />
+                ) : (
+                    <FileList title="Files" files={files} />
                 )}
             </div>
 

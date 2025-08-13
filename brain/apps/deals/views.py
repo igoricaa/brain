@@ -52,6 +52,15 @@ def deck_create(request: HttpRequest, uuid) -> HttpResponse:
     return render(request, "deals/deck_create.html", {"uuid": uuid})
 
 
+def deal_upload(request: HttpRequest) -> HttpResponse:
+    """Render the Upload New Deal page (React island).
+
+    This page allows uploading a PDF deck to create a new Deal and redirect
+    to the created deal's detail page. The React app posts to /api/deals/decks/.
+    """
+    return render(request, "deals/deal_upload.html", {})
+
+
 def deal_refresh(request: HttpRequest, uuid) -> JsonResponse:
     """Trigger a refresh for a deal's derived data.
 

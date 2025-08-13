@@ -3,9 +3,10 @@
 This document details the complete implementation of modern React pages in the brain application, focusing on consistent design patterns, component architecture, and user experience.
 
 ## Overview
-This document covers two major page redesign implementations:
+This document covers major page redesign implementations:
 1. **Fresh Deals Page** (T-0205) - Search functionality fixes and design overhaul
 2. **Company Detail Page** (T-0402) - Complete redesign with modern metric cards and responsive layout
+3. **File Management System** (T-0801) - Comprehensive upload and management interface with modern design patterns
 
 ## Project Context
 - **Framework**: React 19 + TypeScript with Vite 7.1.1 build system
@@ -652,3 +653,681 @@ brain/
 The company detail page redesign successfully modernizes a critical application interface while maintaining full functionality and improving user experience across all device types. The implementation establishes clear patterns for future development and demonstrates effective integration of modern React practices with existing Django architecture.
 
 The project balances immediate user experience improvements with long-term maintainability goals, creating a foundation for continued UI evolution throughout the application. The consistent design patterns and component architecture provide a blueprint for similar page redesigns across the platform.
+
+---
+
+# 3. Research Agent Dashboard Implementation (T-0407)
+
+## Overview
+The Research Agent represents a comprehensive investment analysis dashboard that demonstrates advanced React component architecture and sophisticated data visualization patterns. This implementation showcases a complete redesign approach for complex analytical interfaces within the brain application.
+
+## Design Philosophy
+
+### Information Architecture
+The Research Agent follows a hierarchical information structure designed for investment professionals:
+1. **Executive Summary Level**: Key metrics and ratings for quick decision-making
+2. **Detailed Analysis Level**: Comprehensive research with expandable sections
+3. **Supporting Evidence Level**: Academic papers and team member profiles
+4. **Progressive Disclosure**: Complex information revealed through interactive elements
+
+### Visual Design Principles
+- **Color-Coded Intelligence**: Green (positive), blue (neutral), orange (caution), red (risk)
+- **Typography Hierarchy**: Clear information scanning with appropriate font weights
+- **Card-Based Architecture**: Modular content organization with consistent spacing
+- **Responsive Grid System**: Mobile-first design with desktop optimization
+
+## Implementation Details
+
+### 1. Component Architecture
+
+#### Hierarchical Structure
+```
+ResearchAgentApp (brain/assets/src/pages/research_agent.tsx)
+├── MetricsHeader (4-column KPI summary)
+├── Main Content Grid (lg:grid-cols-3)
+│   ├── EnhancedResearchAnalysis (lg:col-span-2)
+│   └── EnhancedTeamAnalysis (lg:col-span-1)  
+└── Supporting Data Grid (lg:grid-cols-2)
+    ├── EnhancedPapersList
+    └── EnhancedTeamMembersList
+```
+
+#### Key Design Patterns
+- **Progressive Enhancement**: Basic layout works without JavaScript, React adds interactivity
+- **Component Composition**: Small, focused components composed into larger interfaces
+- **Props Interface Design**: TypeScript interfaces for all data structures
+- **State Colocation**: UI state managed closest to where it's needed
+
+### 2. Enhanced Research Analysis Component
+
+#### Executive Summary Design
+```tsx
+<div className="bg-green-50 border border-green-200 rounded-lg p-4">
+    <p className="text-sm text-gray-700 leading-relaxed">
+        {data.executiveSummary}
+    </p>
+</div>
+```
+
+#### Key Insights System
+```tsx
+{data.keyInsights.map((insight, idx) => {
+    const colors = getInsightColors(insight.type);
+    return (
+        <div className={`p-4 rounded-lg border ${colors.bg} ${colors.border}`}>
+            <div className="flex items-start gap-3">
+                {getInsightIcon(insight.type)}
+                <div className="flex-1 space-y-2">
+                    <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-gray-900">{insight.title}</h4>
+                        {getImpactBadge(insight.impact)}
+                    </div>
+                    <p className="text-sm text-gray-600">{insight.description}</p>
+                </div>
+            </div>
+        </div>
+    );
+})}
+```
+
+#### Color-Coding Logic
+| Insight Type | Background | Border | Icon |
+|-------------|------------|--------|------|
+| Positive | `bg-green-50` | `border-green-200` | CheckCircle (green) |
+| Risk | `bg-red-50` | `border-red-200` | AlertCircle (red) |
+| Neutral | `bg-blue-50` | `border-blue-200` | TrendingUp (blue) |
+
+### 3. Enhanced Team Analysis Component
+
+#### Team Rating System
+- **A+ Grade Scale**: Letter grades with visual color coding
+- **Metric Highlights**: Combined experience, publications, exits, patents
+- **Strength Categories**: Technical leadership, execution, industry recognition
+- **Risk Assessment**: Commercial experience gaps and scaling challenges
+
+#### Data Visualization Patterns
+```tsx
+<div className="flex items-center gap-2">
+    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100">
+        <Award className="h-4 w-4 text-green-600" />
+    </div>
+    <div>
+        <p className="text-sm font-semibold text-gray-900">{value}</p>
+        <p className="text-xs text-gray-500">{label}</p>
+    </div>
+</div>
+```
+
+### 4. Enhanced Team Members List
+
+#### Profile Card Design
+- **Avatar System**: Gradient backgrounds with initials fallback
+- **Rating Badges**: A+/A/B+ grades with appropriate color coding
+- **Metrics Grid**: Publications, patents, exits, experience percentage
+- **Expandable Analysis**: Detailed leadership assessment with markdown support
+
+#### Experience Level Calculation
+```tsx
+const getExperienceLevel = (years: number) => {
+    if (years >= 15) return { label: 'Senior', color: 'text-green-600', score: 90 };
+    if (years >= 10) return { label: 'Experienced', color: 'text-blue-600', score: 75 };
+    if (years >= 5) return { label: 'Mid-Level', color: 'text-orange-600', score: 60 };
+    return { label: 'Junior', color: 'text-gray-600', score: 40 };
+};
+```
+
+### 5. Enhanced Papers List Component
+
+#### Academic Paper Evaluation
+```tsx
+{papers.map((paper) => (
+    <div className="border border-gray-200 rounded-lg p-6 bg-white hover:shadow-md transition-shadow">
+        <div className="flex items-start justify-between mb-3">
+            <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                {paper.title}
+            </h3>
+            <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                {getRelevanceBadge(paper.relevance)}
+                {getTechnicalMeritBadge(paper.technicalMerit)}
+            </div>
+        </div>
+        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+            <span>{paper.authors}</span>
+            <span>•</span>
+            <span>{paper.year}</span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+                <Quote className="h-3 w-3" />
+                {paper.citations} citations
+            </span>
+        </div>
+    </div>
+))}
+```
+
+#### Evaluation Badge System
+- **Relevance**: High/Medium/Low with color-coded backgrounds
+- **Technical Merit**: Excellent/Good/Fair with appropriate visual weight
+- **Impact Assessment**: Investment implications clearly highlighted
+
+### 6. Responsive Design Implementation
+
+#### Grid System Architecture
+```css
+/* Mobile First (320px+) */
+.grid.grid-cols-1     /* Stacked layout */
+
+/* Tablet (768px+) */  
+.md:grid-cols-2       /* Two-column supporting data */
+
+/* Desktop (1024px+) */
+.lg:grid-cols-3       /* Main content + sidebar */
+.lg:grid-cols-4       /* Four metric cards */
+```
+
+#### Breakpoint Strategy
+| Screen Size | Layout | Metric Cards | Team Grid |
+|-------------|--------|-------------|-----------|
+| Mobile | Stacked | 1 column | Single column |
+| Tablet | Stacked | 2 columns | Single column |
+| Desktop | 2/3 + 1/3 | 4 columns | 2 columns |
+
+### 7. Mock Data Architecture
+
+#### Comprehensive Type System
+```typescript
+export type ResearchInsight = {
+    type: 'positive' | 'neutral' | 'risk';
+    title: string;
+    description: string;
+    impact: 'high' | 'medium' | 'low';
+};
+
+export type EnhancedTeamMember = {
+    id: number | string;
+    name: string;
+    role?: string;
+    background?: string;
+    rating: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-';
+    experience: number;
+    publications?: number;
+    patents?: number;
+    previousExits?: number;
+    keyStrengths: string[];
+    riskFactors: string[];
+    analysis?: string;
+};
+```
+
+#### Data Structure Organization
+- **Investment Metrics**: Overall rating, recommendation, risk level, market opportunity
+- **Research Analysis**: Executive summary, key insights, recommendation, full analysis
+- **Team Analysis**: Overall rating, strengths, highlights, risk factors, full analysis
+- **Papers Data**: Academic papers with evaluation and investment implications
+- **Team Members**: Individual profiles with detailed assessment
+
+## Technical Architecture
+
+### File Structure
+```
+brain/assets/src/
+├── components/research/
+│   ├── MetricsHeader.tsx                # KPI summary cards
+│   ├── EnhancedResearchAnalysis.tsx     # Investment analysis component
+│   ├── EnhancedTeamAnalysis.tsx         # Team evaluation component
+│   ├── EnhancedPapersList.tsx           # Academic papers component
+│   ├── EnhancedTeamMembersList.tsx      # Team member profiles
+│   └── index.ts                         # Clean exports
+├── lib/mocks/
+│   └── research_agent.ts                # Comprehensive mock data
+├── pages/
+│   └── research_agent.tsx               # Page entry point
+└── components/ui/                       # shadcn/ui components
+    ├── card.tsx                         # Card container
+    ├── badge.tsx                        # Status badges
+    ├── button.tsx                       # Interactive elements
+    ├── avatar.tsx                       # Profile images
+    ├── progress.tsx                     # Metrics visualization
+    ├── scroll-area.tsx                  # Content scrolling
+    └── separator.tsx                    # Content division
+```
+
+### Integration Patterns
+- **Django Template Mount**: `research-agent-root` element for React attachment
+- **Loading Overlay**: Generic system supports research agent mounting
+- **Asset Pipeline**: Vite build system with code splitting
+- **Shared Components**: Consistent UI component library usage
+
+### Performance Optimizations
+- **Progressive Loading**: Expandable sections reduce initial render cost
+- **Component Memoization**: Expensive calculations cached appropriately
+- **Bundle Splitting**: Page-level code splitting for optimal loading
+- **Icon Tree Shaking**: Only used Lucide icons included in bundle
+
+## Results & Impact
+
+### Design System Contributions
+| Component | Pattern Established | Reusability |
+|-----------|-------------------|-------------|
+| **MetricsHeader** | 4-column KPI cards with icons | ✅ High - applicable to dashboards |
+| **Progressive Disclosure** | Expandable analysis sections | ✅ High - complex content display |
+| **Rating Systems** | Letter grades with color coding | ✅ Medium - evaluation interfaces |
+| **Profile Cards** | Team member display patterns | ✅ High - people-focused pages |
+| **Academic Citations** | Research paper presentation | ✅ Medium - research/library pages |
+
+### User Experience Achievements
+- **Information Hierarchy**: Complex investment data organized for quick scanning
+- **Progressive Disclosure**: Detailed analysis available without overwhelming interface
+- **Visual Encoding**: Color and typography guide user attention effectively
+- **Mobile Optimization**: Full functionality preserved across device sizes
+- **Accessibility**: Screen reader support and keyboard navigation throughout
+
+### Technical Achievements
+- **Component Architecture**: Highly reusable patterns for complex interfaces
+- **TypeScript Integration**: Full type safety with comprehensive interfaces
+- **Responsive Design**: Sophisticated grid systems with mobile-first approach
+- **Performance**: Efficient rendering with appropriate state management
+- **Maintainability**: Clear separation of concerns and well-documented patterns
+
+## Future Enhancements
+
+### Potential Extensions
+1. **Interactive Charts**: Funding timeline and market analysis visualizations
+2. **Export Functions**: PDF report generation with branded templates
+3. **Comparison Mode**: Side-by-side analysis of multiple investment opportunities
+4. **Real-time Updates**: Live data integration for market metrics
+5. **Collaborative Features**: Comments and notes on analysis sections
+
+### Design System Evolution
+- **Chart Components**: Standardized data visualization patterns
+- **Export Templates**: Consistent formatting for generated reports
+- **Animation System**: Smooth transitions for expanding/collapsing content
+- **Dark Mode**: Extended color system for alternative themes
+- **Print Optimization**: CSS print styles for physical report generation
+
+---
+
+# 3. File Management System Design Implementation (T-0801)
+
+## Design Requirements
+The File Management System needed to support three distinct workflows with a unified design language:
+1. **Draft Deal Creation** - Multi-file uploads with metadata before deal submission
+2. **Existing Deal Management** - File operations for live deals
+3. **Library Management** - General knowledge base file handling
+
+### Key Design Principles
+- **Clean white backgrounds** (no dark themes or heavy gradients)
+- **Shadow-sm for card elevation** (avoid borders around containers)
+- **Consistent spacing** with enhanced label-to-input relationships
+- **Visual feedback** for all file operations and states
+- **Progressive disclosure** for complex metadata forms
+
+## Implementation Details
+
+### 1. Visual Design System
+
+#### Card Architecture
+```tsx
+// Clean white cards with subtle elevation
+<Card className="shadow-sm">
+  <CardHeader className="border-b">  // Borders only for internal separation
+    <CardTitle className="flex items-center gap-3 text-xl font-semibold">
+      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50">
+        <Building2 className="h-5 w-5 text-blue-600" />
+      </div>
+      Deal Information
+      <Badge variant="secondary" className="ml-auto">New Deal</Badge>
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-6">  // Enhanced spacing throughout
+    // Form content
+  </CardContent>
+</Card>
+```
+
+#### Form Design Patterns
+```tsx
+// Enhanced label spacing and input emphasis
+<FormItem>
+  <FormLabel className="mb-2">Deal Name*</FormLabel>  // Consistent mb-2 spacing
+  <FormControl>
+    <Input 
+      placeholder="Enter deal name" 
+      className="shadow-sm"  // Input emphasis with shadow
+      {...field} 
+    />
+  </FormControl>
+  <FormMessage />
+</FormItem>
+```
+
+### 2. Color-Coded Category System
+
+#### Category Configuration
+```typescript
+const CATEGORY_CONFIG = {
+  pitch_deck: {
+    label: 'Pitch Deck',
+    icon: FileImage,
+    color: 'bg-blue-50 text-blue-700'  // Light backgrounds, dark text
+  },
+  financials: {
+    label: 'Financial Documents',
+    icon: FileSpreadsheet,
+    color: 'bg-green-50 text-green-700'
+  },
+  legal: {
+    label: 'Legal Documents',
+    icon: Scale,
+    color: 'bg-purple-50 text-purple-700'
+  },
+  technical: {
+    label: 'Technical Documentation',
+    icon: Cpu,
+    color: 'bg-orange-50 text-orange-700'
+  },
+  market_research: {
+    label: 'Market Research',
+    icon: BarChart3,
+    color: 'bg-cyan-50 text-cyan-700'
+  },
+  other: {
+    label: 'Other',
+    icon: Archive,
+    color: 'bg-gray-50 text-gray-700'
+  }
+};
+```
+
+#### Visual Implementation
+```tsx
+// File cards with category-specific styling
+<Card className="shadow-sm hover:shadow-md transition-shadow">
+  <CardContent className="p-6">
+    <div className="flex items-start gap-3">
+      <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${categoryConfig.color}`}>
+        <CategoryIcon className="h-5 w-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-semibold text-base mb-1 truncate">{file.name}</h4>
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span>{formatFileSize(file.size)}</span>
+          <span>•</span>
+          <span className="capitalize">{file.type.split('/')[1]}</span>
+        </div>
+      </div>
+      {statusBadge}
+    </div>
+  </CardContent>
+</Card>
+```
+
+### 3. Status Badge System
+
+#### Badge Variants
+```tsx
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return (
+        <Badge className="bg-green-50 text-green-700 border-green-200">
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          Completed
+        </Badge>
+      );
+    case 'uploading':
+      return (
+        <Badge className="bg-blue-50 text-blue-700 border-blue-200">
+          <Clock className="h-3 w-3 mr-1 animate-spin" />
+          Uploading
+        </Badge>
+      );
+    case 'error':
+      return (
+        <Badge variant="destructive">
+          <AlertCircle className="h-3 w-3 mr-1" />
+          Error
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="secondary">
+          <Clock className="h-3 w-3 mr-1" />
+          Pending
+        </Badge>
+      );
+  }
+};
+```
+
+### 4. Tag Management Interface
+
+#### Multi-Color Tag System
+```tsx
+// Five-color rotation for visual variety
+const colors = [
+  'bg-blue-50 text-blue-700 border-blue-200',
+  'bg-green-50 text-green-700 border-green-200',
+  'bg-purple-50 text-purple-700 border-purple-200',
+  'bg-orange-50 text-orange-700 border-orange-200',
+  'bg-pink-50 text-pink-700 border-pink-200'
+];
+
+// Tag rendering with interactive removal
+<Badge className={`text-xs border ${colorClass} hover:shadow-sm transition-shadow`}>
+  {tag}
+  <Button
+    type="button"
+    variant="ghost"
+    size="sm"
+    className="h-auto p-0 ml-1 hover:bg-transparent"
+    onClick={() => removeTag(index, tagIndex)}
+  >
+    <X className="h-3 w-3" />
+  </Button>
+</Badge>
+```
+
+### 5. Action Button Design
+
+#### Modern Action Panel
+```tsx
+<Card className="shadow-sm bg-gray-50/50">
+  <CardContent className="p-6">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="space-y-1">
+        <h3 className="font-semibold text-lg">Ready to Submit?</h3>
+        <p className="text-sm text-muted-foreground">
+          Review your deal information and file details before submitting for underwriting.
+        </p>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <Button variant="outline" className="h-11 px-6">
+          <X className="h-4 w-4 mr-2" />
+          Cancel
+        </Button>
+        
+        <Button variant="secondary" className="h-11 px-6">
+          <Save className="h-4 w-4 mr-2" />
+          Save Draft
+        </Button>
+        
+        <Button className="h-11 px-8">
+          <CheckCircle2 className="h-4 w-4 mr-2" />
+          Submit for Underwriting
+        </Button>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+```
+
+### 6. File Upload Interface
+
+#### Drag-and-Drop Design
+```tsx
+// Clean upload interface with proper states
+<div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
+  <Upload className="h-10 w-10 text-gray-400 mx-auto mb-4" />
+  <p className="text-lg font-medium text-gray-700 mb-2">Drop files here or click to browse</p>
+  <p className="text-sm text-gray-500">Supports PDF, DOC, DOCX, TXT, MD files up to 50MB each</p>
+</div>
+```
+
+### 7. Form Validation Patterns
+
+#### Enhanced Error Display
+```tsx
+// Structured error parsing and display
+const [submitError, setSubmitError] = useState<string | null>(null);
+
+// Error extraction from API responses
+let errorMessage = 'Submission failed';
+if (error instanceof Error) {
+  try {
+    const apiError = JSON.parse(error.message);
+    if (apiError.website) {
+      errorMessage = `Website: ${Array.isArray(apiError.website) ? apiError.website[0] : apiError.website}`;
+    }
+  } catch {
+    errorMessage = error.message;
+  }
+}
+
+// Error display with dismissal
+{submitError && (
+  <Alert variant="destructive" className="mb-4">
+    <AlertCircle className="h-4 w-4" />
+    <AlertDescription>
+      <div className="flex justify-between items-start">
+        <span>{submitError}</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setSubmitError(null)}
+          className="h-6 w-6 p-0"
+        >
+          ×
+        </Button>
+      </div>
+    </AlertDescription>
+  </Alert>
+)}
+```
+
+### 8. Responsive Design Implementation
+
+#### Mobile-First Grid System
+```css
+/* Form layouts adapt to screen size */
+.grid-cols-1         /* Mobile: Single column */
+.md:grid-cols-2      /* Tablet: Two columns */
+.lg:grid-cols-3      /* Desktop: Three columns */
+
+/* Button groups stack on mobile */
+.flex-col            /* Mobile: Vertical stack */
+.sm:flex-row         /* Desktop: Horizontal layout */
+```
+
+#### Adaptive Spacing
+```tsx
+// Different spacing for different screen sizes
+<div className="space-y-4 md:space-y-6 lg:space-y-8">
+  {/* Content adapts spacing based on screen size */}
+</div>
+```
+
+### 9. Loading and Progress States
+
+#### Upload Progress Indication
+```tsx
+// Progress tracking with visual feedback
+<div className="w-full bg-gray-200 rounded-full h-2">
+  <div 
+    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+    style={{ width: `${progress}%` }}
+  />
+</div>
+```
+
+#### Loading State Patterns
+```tsx
+// Consistent loading indicators
+{isSubmitting ? (
+  <>
+    <Upload className="h-4 w-4 mr-2 animate-spin" />
+    Submitting...
+  </>
+) : (
+  <>
+    <CheckCircle2 className="h-4 w-4 mr-2" />
+    Submit for Underwriting
+  </>
+)}
+```
+
+## Design System Impact
+
+### Visual Consistency Improvements
+| Element | Before | After | Impact |
+|---------|---------|--------|---------|
+| **Card Elevation** | Mixed borders/shadows | Consistent `shadow-sm` | ✅ Clean, unified look |
+| **Form Spacing** | Variable label spacing | Consistent `mb-2` on labels | ✅ Better readability |
+| **Input Emphasis** | Standard inputs | `shadow-sm` on all inputs | ✅ Clear field identification |
+| **Category System** | Text-only categories | Color-coded with icons | ✅ Visual categorization |
+| **Status Indicators** | Basic text states | Animated badge system | ✅ Clear state communication |
+| **Error Handling** | Generic error messages | Structured, actionable feedback | ✅ Better user guidance |
+
+### User Experience Enhancements
+- **Progressive Disclosure**: Complex metadata forms revealed step-by-step
+- **Visual Feedback**: All actions provide immediate visual confirmation
+- **Error Recovery**: Clear error states with actionable recovery options
+- **Mobile Optimization**: Full functionality preserved on all screen sizes
+- **Accessibility**: Screen reader support and keyboard navigation throughout
+
+### Technical Architecture Benefits
+- **Component Reusability**: Standardized patterns for file operations across workflows
+- **State Management**: Sophisticated localStorage persistence with conflict resolution
+- **Performance Optimization**: Debounced validation and efficient re-renders
+- **Type Safety**: Complete TypeScript coverage with proper interface definitions
+- **Testing Foundation**: Clear component boundaries enable comprehensive testing
+
+### Design Pattern Establishment
+This implementation establishes key patterns for future file-related interfaces:
+1. **Category-based color coding** for document types
+2. **Status badge systems** with animated states
+3. **Progressive form disclosure** for complex metadata
+4. **Bulk operation interfaces** with safety confirmations
+5. **Draft persistence patterns** with conflict resolution
+
+## Conclusion
+
+The File Management System implementation demonstrates sophisticated React component architecture for complex file operations. The design successfully balances functionality with usability, creating patterns that can be extended across other file-handling interfaces within the platform.
+
+This implementation establishes clear precedents for handling multi-file workflows, state management, and responsive design challenges that will benefit future development across the brain application ecosystem.
+
+The Research Agent implementation demonstrates sophisticated React component architecture for complex analytical interfaces. The design successfully balances information density with usability, creating patterns that can be extended across other investment and analytical tools within the platform.
+
+This implementation establishes clear precedents for handling complex data visualization, progressive disclosure, and responsive design challenges that will benefit future development across the brain application ecosystem.
+
+---
+
+## React Development Best Practices
+
+### React Hook Form Integration
+- Form validation with real-time feedback
+- Error state management and display
+- Auto-save functionality with debouncing
+
+#### Common Patterns for useFieldArray
+- **ID Lookup Issue:** When using `useFieldArray` with external data, always use form field data for lookups
+- **Wrong:** `getItemById(field.id)` (uses useFieldArray's internal ID)
+- **Correct:** `getItemById(form.watch(`items.${index}.id`))` (uses actual data ID)
+- **Reason:** useFieldArray generates internal UUIDs that don't match your data IDs
+
+### Component Development Guidelines
+- Always document major bug fixes in AGENTS.md files
+- Use AGENTS.md files as the primary source of implementation details
+- Update design.md when establishing new design patterns
+- Provide clear debugging steps and root cause analysis

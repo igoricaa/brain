@@ -4,7 +4,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
+from rest_framework import mixins
 
 from ..models import Deal, DealFile, Deck, DraftDeal, DualUseSignal, Paper, DealAssessment
 from .filters import DealFileFilter, DealFilter, DeckFilter, DualUseSignalFilter, PaperFilter
@@ -112,7 +113,7 @@ class DraftDealViewSet(DealViewSet):
         )
 
     def get_serializer_class(self):
-        if action == 'finalize':
+        if self.action == 'finalize':
             return DealReadSerializer
         return DraftDealSerializer
 
@@ -204,8 +205,12 @@ class PaperViewSet(DealFileViewSet):
         summary=_('Deck Details'),
         description=_('Retrieve details of a specific deck.'),
     ),
+    create=extend_schema(
+        summary=_('Upload Deck'),
+        description=_('Upload a PDF deck. If no deal is provided, a new deal is created and the deck is attached.'),
+    ),
 )
-class DeckViewSet(ReadOnlyModelViewSet):
+class DeckViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
 
     serializer_class = DeckSerializer
     lookup_field = 'uuid'
@@ -216,6 +221,53 @@ class DeckViewSet(ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return Deck.objects.select_related('deal')
+
+    def create(self, request, *args, **kwargs):
+        """Create a new Deck (PDF upload).
+
+        If `deal` UUID is provided in form-data, attach to that deal.
+        Otherwise, create a new Deal with a default name derived from the filename,
+        and attach the uploaded deck to it.
+        Returns JSON with deck_uuid, deal_uuid, and redirect_url.
+        """
+        uploaded = request.FILES.get('file')
+        if not uploaded:
+            return Response({'file': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        filename = getattr(uploaded, 'name', '') or ''
+        if not filename.lower().endswith('.pdf'):
+            return Response({'file': ['Only PDF files are supported for decks.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        deal_uuid = request.data.get('deal')
+
+        # Resolve or create the deal
+        if deal_uuid:
+            try:
+                deal = Deal.objects.select_related('company').get(uuid=deal_uuid)
+            except Deal.DoesNotExist:
+                return Response({'deal': ['Deal not found.']}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # Derive a default name from the file stem
+            stem = filename.rsplit('.', 1)[0]
+            deal = Deal(name=stem or '')
+            if request.user and request.user.is_authenticated:
+                deal.creator = request.user
+            deal.save()  # will auto-create company if needed
+
+        # Create the deck and attach file
+        deck = Deck(deal=deal)
+        if request.user and request.user.is_authenticated:
+            # Track uploader
+            deck.creator = request.user
+        deck.file = uploaded
+        deck.save()
+
+        data = {
+            'deck_uuid': str(deck.uuid),
+            'deal_uuid': str(deal.uuid),
+            'redirect_url': deal.get_absolute_url() or f"/deals/{deal.uuid}/",
+        }
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(

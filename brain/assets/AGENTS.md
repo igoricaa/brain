@@ -27,7 +27,7 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
 ## Django Integration
 
 - Base: `{% load django_vite %}{% vite_hmr_client %}{% vite_asset 'src/main.tsx' %}` only. Page code is lazy-loaded by `main.tsx`.
-- Body IDs used by router: `_company-detail`, `_grant-create`, `_deals-dashboard`, `_deals-fresh`, `_deals-reviewed`, `_deal-detail`, `_du-dashboard`, `_founders-list`, `_advisors-list`.
+- Body IDs used by router: `_company-detail`, `_grant-create`, `_deals-dashboard`, `_deals-fresh`, `_deals-reviewed`, `_deal-detail`, `_deal-assessment`, `_deal-upload`, `_du-dashboard`, `_founders-list`, `_advisors-list`.
 
 ## Adding a New Page Module
 
@@ -66,6 +66,14 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
 - Module: `src/pages/deals_fresh.tsx` mounts at `#deals-fresh-root` on body `#_deals-fresh`.
 - **API**: Uses `status: 'new'` filter with search and infinite scroll.
 - **Features**: 300ms debounced search, Cmd+K focus, URL sync, "0 Pending" indicator.
+- **CTA**: Primary "New Deal" button links to `/deals/upload/`.
+
+### Upload Deal (`deal_upload.tsx`)
+
+- Module: `src/pages/deal_upload.tsx` mounts at `#deal-upload-root` on body `#_deal-upload`.
+- UI: Large drag-and-drop area (≈60vh) with click-to-browse overlay; shadcn/ui `Button`; PDF-only.
+- API: Posts `multipart/form-data` to `/api/deals/decks/` with `file` only; on success, redirects to `/deals/<uuid>/` from response `redirect_url`.
+- Discovery: Also accessible via the left sidebar "Upload New Deal" button and Fresh Deals header CTA.
 
 ### Past Deals (`deals_reviewed.tsx`)
 
@@ -338,3 +346,436 @@ The Research Agent is a frontend-only dashboard that analyzes research papers an
 - Replace mock data with APIs (e.g., `/api/research/analysis`, `/api/research/papers`, `/api/research/team`, `/api/research/members`) using `http` (axios) per repo standards.
 - Optionally migrate collapsible/scroll-area to Radix primitives once dependencies are approved.
 - Add filters/sorting for papers and team members if needed.
+
+## Enhanced Research Agent (T-0407)
+
+The Research Agent was completely redesigned with enhanced components and sophisticated data visualization patterns. This represents a major upgrade from the initial implementation.
+
+### Enhanced Component Architecture
+
+**Upgraded Components**:
+- `MetricsHeader.tsx`: 4-column KPI summary with color-coded metric cards
+- `EnhancedResearchAnalysis.tsx`: Executive summary + key insights + progressive disclosure
+- `EnhancedTeamAnalysis.tsx`: Team rating system with strength categories and highlights
+- `EnhancedPapersList.tsx`: Academic paper evaluation with investment implications
+- `EnhancedTeamMembersList.tsx`: Individual team member profiles with ratings and analysis
+
+### Key Design Improvements
+
+**Investment Metrics Header**: 4-column responsive grid showcasing:
+- Overall Rating (A+ with color coding)
+- Investment Recommendation (Strong Buy/High confidence)
+- Risk Level (Medium with risk factors)
+- Market Opportunity (TAM and growth projections)
+
+**Enhanced Research Analysis**:
+- Color-coded insight system (green=positive, red=risk, blue=neutral)
+- Impact badges (high/medium/low) for quick prioritization
+- Executive summary in highlighted green background
+- Collapsible detailed analysis with markdown support
+
+**Enhanced Team Analysis**:
+- Letter-grade rating system (A+, A, B+) with visual indicators
+- Strength categories with progress-style indicators
+- Highlight metrics (experience, publications, exits, patents)
+- Risk factor assessment with mitigation strategies
+
+**Enhanced Team Members**:
+- Individual profile cards with avatar placeholders
+- Rating badges with color-coded backgrounds
+- Metrics grid (publications, patents, exits, experience percentage)
+- Strengths vs. risk factors comparison
+- Expandable detailed analysis per member
+
+**Enhanced Papers List**:
+- Academic paper cards with relevance/merit badges
+- Citation counts and author information
+- Investment implications clearly highlighted
+- Enhanced evaluation with markdown support
+
+### Technical Implementation
+
+**File Structure**:
+```
+brain/assets/src/components/research/
+├── MetricsHeader.tsx
+├── EnhancedResearchAnalysis.tsx
+├── EnhancedTeamAnalysis.tsx  
+├── EnhancedPapersList.tsx
+├── EnhancedTeamMembersList.tsx
+└── index.ts
+```
+
+**Enhanced Mock Data**:
+- `mockInvestmentMetrics`: Top-level KPIs with detailed descriptions
+- `mockEnhancedResearchAnalysis`: Comprehensive analysis with insights
+- `mockEnhancedTeamAnalysis`: Team evaluation with strength scoring
+- `mockEnhancedPapers`: Academic papers with investment evaluation
+- `mockEnhancedTeamMembers`: Individual profiles with detailed assessment
+
+**Design System Contributions**:
+- **Color System**: Green (positive), blue (neutral), orange (caution), red (risk)
+- **Typography Scale**: Clear hierarchy from headers to metadata
+- **Card Architecture**: Consistent spacing and shadow patterns
+- **Progressive Disclosure**: Expandable sections for complex content
+- **Rating Systems**: Letter grades with visual color coding
+
+### Responsive Design
+
+**Grid System**:
+- Mobile: Stacked single-column layout
+- Tablet: 2-column grid for supporting data
+- Desktop: 3-column main layout (2/3 + 1/3) with 4-column metrics
+
+**Breakpoint Strategy**:
+```css
+/* Mobile First */
+.grid-cols-1
+
+/* Tablet (768px+) */
+.md:grid-cols-2
+
+/* Desktop (1024px+) */
+.lg:grid-cols-3
+.lg:grid-cols-4
+```
+
+### Performance & Accessibility
+
+**Performance Features**:
+- Progressive loading with expandable sections
+- Component memoization for expensive calculations
+- Efficient state management with local UI state
+- Icon tree shaking for optimal bundle size
+
+**Accessibility Features**:
+- Semantic HTML structure with proper headings
+- ARIA attributes for interactive elements
+- Keyboard navigation support
+- Screen reader compatible content
+- High contrast color combinations
+
+### Integration with Design System
+
+The enhanced Research Agent establishes patterns that extend across the platform:
+- **Metric Cards**: Reusable for other dashboard pages
+- **Progressive Disclosure**: Complex content display pattern
+- **Rating Systems**: Evaluation interfaces across the app
+- **Profile Cards**: People-focused page patterns
+- **Academic Citations**: Research/library page integration
+
+This implementation demonstrates sophisticated React architecture for complex analytical interfaces while maintaining the clean, professional aesthetic established in the broader design system.
+### Deal Detail (`deal_detail.tsx` — Redesign)
+
+- Layout: Clean summary header (SSR) followed by a two-column assessments row and the existing Decks/Papers row.
+- Assessments:
+  - AI Assessment: read-only; displays auto fields from the latest `DealAssessment` (`auto_investment_rationale`, `auto_pros`, `auto_cons`, `auto_quality_percentile`).
+  - Analyst (Final): inline-editable; mirrors AI layout; allows editing `investment_rationale`, `pros`, `cons`, and selecting a recommendation via `quality_percentile` (options: Not/Potentially/Interesting/Very/Most interesting → Top 50/20/10/5/1%).
+- API:
+  - Read: `GET /api/deals/assessments/?deal=<uuid>&ordering=-created_at&page_size=1`.
+  - Write: `POST /api/deals/assessments/` or `PATCH /api/deals/assessments/{uuid}/` with `{ deal, investment_rationale, pros, cons, quality_percentile }`.
+- UI: Uses shadcn/ui `Button` for subtle Edit/Save/Cancel; otherwise Tailwind utility classes for textareas/selects.
+- Simplifications: Removed the former Refresh Data control to align with the spec (no top-right actions).
+
+## File Management System (T-0801 - Aug 2025)
+
+### Overview
+Complete file management system with sophisticated upload workflows, state management, and bulk operations. Represents a major architectural advancement in the frontend codebase.
+
+### Component Architecture
+
+#### Core Components
+- **FileManager** (`components/file-manager/FileManager.tsx`): Main orchestrator with mode-based rendering
+- **FileUpload** (`components/file-manager/FileUpload.tsx`): Drag-and-drop interface with validation
+- **FileTable** (`components/file-manager/FileTable.tsx`): Advanced table with TanStack integration
+- **FileMetadataForm** (`components/file-manager/FileMetadataForm.tsx`): Form with React Hook Form + Zod
+
+#### Supporting Components
+- **FileActionsMenu** (`components/file-manager/FileActionsMenu.tsx`): Context actions with status awareness
+- **BulkMetadataDialog** (`components/file-manager/BulkMetadataDialog.tsx`): Batch metadata editing
+- **BulkDeleteConfirmDialog** (`components/file-manager/BulkDeleteConfirmDialog.tsx`): Safe bulk deletion
+- **InlineEditCell** (`components/file-manager/InlineEditCell.tsx`): Table cell editing with Popover
+
+### API Integration Layer
+
+#### Hook Architecture
+```typescript
+// Draft Deal Operations
+useDraftDeals() {
+  createDraftDeal, updateDraftDeal, uploadDraftFile, 
+  finalizeDraftDeal, getDraftDeal, deleteDraftDeal
+}
+
+// File Management Operations  
+useFileManagement() {
+  // Deal files
+  getDealFiles, uploadDealFile, updateDealFile, 
+  deleteDealFile, reprocessDealFile,
+  
+  // Library files  
+  getLibraryFiles, uploadLibraryFile, updateLibraryFile,
+  deleteLibraryFile, reprocessLibraryFile,
+  
+  // Bulk operations
+  bulkDeleteFiles, bulkUpdateFiles, bulkReprocessFiles,
+  downloadFile, subscribeToFileUpdates
+}
+
+// Draft Persistence
+useDraftPersistence() {
+  saveDraft, loadDraft, deleteDraft, scheduleAutoSave,
+  getAllDrafts, clearAllDrafts, checkForConflicts
+}
+```
+
+### Three-Mode Architecture
+
+#### 1. Draft Deal Mode (`draft-deal`)
+**Purpose**: Stage files before deal submission  
+**Features**:
+- Multi-file upload with validation
+- Per-file metadata configuration
+- Auto-save to localStorage
+- Conflict detection across tabs
+- Draft recovery on page reload
+- Finalization workflow
+
+**User Flow**:
+1. Upload files → Metadata configuration → Submit for underwriting
+2. Auto-save preserves state every 30 seconds
+3. Draft finalization creates live deal
+
+#### 2. Existing Deal Mode (`existing-deal`)  
+**Purpose**: Manage files for live deals  
+**Features**:
+- View existing files in advanced table
+- Upload additional files
+- Bulk operations (delete, update, reprocess)
+- Inline metadata editing
+- File download with proper naming
+
+#### 3. Library Mode (`library`)
+**Purpose**: General knowledge base file management  
+**Features**:
+- Upload files to library  
+- Same advanced table and bulk operations
+- Library-specific metadata (is_public, source)
+
+### Advanced Table Implementation
+
+#### TanStack Table Features
+- **Row Selection**: Checkbox-based with bulk actions
+- **Sorting**: Column-based with visual indicators  
+- **Filtering**: Global search with debouncing
+- **Pagination**: Page-based with size controls
+- **Inline Editing**: Popover-based cell editing
+
+#### Table Architecture
+```typescript
+const table = useReactTable({
+  data: files,
+  columns: [
+    selectColumn,      // Checkbox selection
+    nameColumn,        // File name with status
+    categoryColumn,    // Inline editable
+    typeColumn,        // File type badge
+    sizeColumn,        // Formatted file size
+    statusColumn,      // Processing status
+    actionsColumn      // Context menu
+  ],
+  getCoreRowModel: getCoreRowModel(),
+  getPaginationRowModel: getPaginationRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
+  onRowSelectionChange: setRowSelection
+});
+```
+
+### Drag-and-Drop Upload System
+
+#### Validation Pipeline
+- **File Type**: Configurable allowed extensions
+- **File Size**: Per-file and total size limits  
+- **Duplicate Detection**: Name + size combination checking
+- **Count Limits**: Mode-specific file count restrictions
+
+#### Upload Process
+```typescript
+interface UploadFile {
+  id: string;
+  file: File;
+  name: string;
+  type: string;
+  size: number;
+  status: 'pending' | 'uploading' | 'completed' | 'error';
+  progress: number;
+  category?: string;
+  documentType?: string;
+  proprietary?: boolean;
+  tldr?: string;
+  tags?: string[];
+  error?: string;
+}
+```
+
+### Form Validation Architecture
+
+#### Zod Schema Integration
+```typescript
+const dealFormSchema = z.object({
+  name: z.string().min(1, "Deal name is required"),
+  description: z.string().optional(),
+  website: z.string().url().optional().or(z.literal("")),
+  fundingTarget: z.string().optional(),
+  files: z.array(fileMetadataSchema).min(1, "At least one file is required")
+});
+
+const fileMetadataSchema = z.object({
+  id: z.string(),
+  category: z.string().min(1, "Category is required"),
+  documentType: z.string().optional(),
+  proprietary: z.boolean().default(false),
+  tldr: z.string().optional(),
+  tags: z.array(z.string()).default([])
+});
+```
+
+#### Real-time Validation
+- **Debounced validation** (300ms) for responsive UX
+- **Field-level error display** with inline messages
+- **Form-level validation** before submission
+- **Custom validation rules** for business logic
+
+### State Management System
+
+#### Draft Persistence Architecture
+```typescript
+interface DraftState {
+  draftId: string;
+  dealName: string;
+  description?: string;
+  website?: string;
+  fundingTarget?: string;
+  files: FileMetadata[];
+  lastSaved: number;
+  version: number;
+}
+```
+
+#### localStorage Strategy
+- **Auto-save**: Every 30 seconds with change detection
+- **Conflict Resolution**: Version-based collision detection
+- **Recovery**: Unsaved draft discovery on page load
+- **Expiration**: 7-day automatic cleanup
+- **Multi-tab Safety**: Cross-tab state synchronization
+
+### Bulk Operations Framework
+
+#### Operation Types
+- **Bulk Delete**: Multi-file deletion with safety confirmations
+- **Bulk Update**: Metadata changes across selected files
+- **Bulk Reprocess**: Processing trigger for multiple files
+
+#### Safety Features
+- **Preview Mode**: Show affected files before action
+- **Undo Support**: Where technically feasible
+- **Progress Tracking**: Visual progress for long operations
+- **Error Handling**: Per-file error reporting
+
+### Error Handling & Recovery
+
+#### Upload Error Recovery
+- **Per-file retry**: Individual file reupload capability
+- **Partial success**: Handle mixed success/failure scenarios
+- **Network resilience**: Automatic retry with exponential backoff
+- **User guidance**: Actionable error messages
+
+#### Validation Error Display
+- **Inline field errors**: Form field level validation
+- **Summary errors**: Form-level error aggregation  
+- **Real-time feedback**: Immediate validation response
+- **Accessibility**: Screen reader compatible error announcements
+
+### Performance Optimizations
+
+#### Client-Side Performance
+- **Virtual scrolling**: For large file lists
+- **Debounced operations**: Search, validation, auto-save
+- **Request batching**: Minimize API calls
+- **Optimistic updates**: Immediate UI feedback
+
+#### Memory Management
+- **File object cleanup**: Prevent memory leaks
+- **Component unmounting**: Proper cleanup on navigation
+- **Cache management**: TanStack Query cache invalidation
+- **State cleanup**: localStorage management
+
+### Integration Points
+
+#### API Endpoint Integration
+- **Draft Deals**: `/api/deals/draft_deals/`
+- **Deal Files**: `/api/deals/deal_files/`  
+- **Library Files**: `/api/library/files/`
+- **Bulk Operations**: `/api/*/bulk_*` endpoints
+
+#### Form Integration
+- **React Hook Form**: Form state management
+- **Zod Validation**: Schema-based validation
+- **shadcn/ui**: Consistent component library
+- **TanStack Query**: Server state management
+
+### Design System Contributions
+
+#### UI Patterns Established
+- **Multi-mode components**: Single component, multiple workflows
+- **Progressive disclosure**: Tabbed interfaces for complex workflows
+- **Bulk action patterns**: Selection → Action → Confirmation flow
+- **Inline editing**: Popover-based editing paradigm
+
+#### Styling Conventions
+- **shadow-sm**: Replaced borders throughout system
+- **Consistent spacing**: Tailwind spacing scale
+- **Color semantics**: Status-based color coding
+- **Loading states**: Skeleton and spinner patterns
+
+### Testing Considerations
+
+#### Component Testing Areas
+- **File validation logic**: Upload restrictions and error handling
+- **Form validation**: Zod schema compliance
+- **Table interactions**: Sorting, filtering, selection
+- **Bulk operations**: Multi-file action flows
+
+#### Integration Testing Areas  
+- **API integration**: Hook behavior and error handling
+- **State persistence**: localStorage operations
+- **Cross-tab behavior**: Conflict detection and resolution
+- **Upload workflows**: End-to-end file processing
+
+### Future Enhancement Opportunities
+
+#### Real-time Features
+- **WebSocket integration**: Live processing status updates
+- **Collaborative editing**: Multi-user file management
+- **Live notifications**: Cross-tab update notifications
+
+#### Advanced Features
+- **File versioning**: Track file changes over time
+- **Advanced search**: Content-based file search
+- **Batch import**: CSV/JSON based file imports
+- **Export capabilities**: Bulk file download as ZIP
+
+## Changelog — Aug 2025
+
+- **File Management System**: Complete architectural implementation with three-mode workflow support
+- **TanStack Table Integration**: Advanced table with row selection, bulk operations, and inline editing
+- **Draft Persistence System**: localStorage-based auto-save with conflict detection and recovery
+- **Form Validation Framework**: React Hook Form + Zod with real-time validation and error handling
+- **Bulk Operations Framework**: Comprehensive multi-file management with safety features and progress tracking
+- **Performance Optimizations**: Virtual scrolling, debounced operations, and memory management
+- **Design System Extensions**: shadow-sm styling, consistent spacing, and progressive disclosure patterns
+- Implemented Deal Detail redesign (AI + Analyst assessments) and removed header actions.
+- Backed by serializer updates exposing AI `auto_*` fields; write pipeline supports `recommendation` and `quality_percentile`.
+- Dev seeding utilities:
+  - `manage.py create_dummy_deal [--count N]` creates deals with real PDFs so panels render realistic data.
+  - `manage.py import_figma_deal <json>` imports a deal from a Figma-style export file.

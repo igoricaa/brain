@@ -59,3 +59,21 @@ This monorepo hosts: (1) `aindex/` a standalone Python backend (do not modify), 
 - Frontend assets: `brain/assets/AGENTS.md`
 - Legacy UI reference: `aindex-web/AGENTS.md`
 - Migration checklists: `docs/FRONTEND_MIGRATION_CHECKLIST.md`
+
+## Recent Work (Aug 2025) — Deals Detail & Seeding
+
+- Deal Detail redesign (brain):
+  - Implemented AI Assessment (read-only) and Analyst (Final) Assessment (inline-edit) on `/deals/<uuid>/`.
+  - Removed top-right actions per spec (no Download/Refresh/Delete in header).
+  - Frontend uses shadcn/ui + Tailwind; React island mounted at `#deal-detail-root` with `body#_deal-detail`.
+- Backend/API changes:
+  - `DealAssessmentReadSerializer` exposes AI `auto_*` fields for the redesigned page.
+  - `DealAssessmentSerializer` includes `recommendation` alongside `quality_percentile` (recommendation selector maps to quality percentile in UI).
+- Data import and seeding utilities (brain):
+  - `python manage.py import_figma_deal <path>`: import a deal from a Figma-style JSON (company, deal fields, assessment AI/analyst). Place files under `brain/seed_data/` (gitignored).
+  - `python manage.py create_dummy_deal [--count 3]`: create one or more fully-populated deals with real PDF deck + paper attachments, all fields filled.
+- Docs added:
+  - `docs/DEAL_DETAIL_REDESIGN_NOTES.md`: Implementation notes and verification steps.
+  - `docs/FRONTEND_PROJECT_BRAIN_NOTES.md`: Project scope summary and phased plan.
+
+See `brain/apps/deals/AGENTS.md` and `brain/assets/AGENTS.md` for page-level details and usage.
