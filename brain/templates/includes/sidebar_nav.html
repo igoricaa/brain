@@ -37,7 +37,7 @@
           <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
           </svg>
-          {% trans 'Fresh Deals' %}
+          {% trans 'New Deals' %}
         </a>
         
         <a href="{% url 'deals:reviewed_deals' %}" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white {% if '/deals/reviewed' in request.path %}bg-slate-800 text-white{% endif %}">
@@ -47,18 +47,13 @@
           {% trans 'Past Deals' %}
         </a>
         
-        <a href="{% url 'research-agent' %}" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white {% if '/research-agent' in request.path %}bg-slate-800 text-white{% endif %}">
-          <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-          {% trans 'Research Agent' %}
-        </a>
+        <!-- Research Agent removed - now embedded in deal details -->
         
-        <a href="#" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white opacity-50 cursor-not-allowed">
+        <a href="{% url 'library:library' %}" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white {% if '/library' in request.path %}bg-slate-800 text-white{% endif %}">
           <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
           </svg>
-          {% trans 'File Management' %}
+          {% trans 'Knowledge Graph' %}
         </a>
         
         <a href="#" class="group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white opacity-50 cursor-not-allowed">

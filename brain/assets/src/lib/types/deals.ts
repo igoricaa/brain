@@ -60,6 +60,7 @@ export interface Deal {
     govt_relationships?: string;
     grants_count?: number;
     has_processing_deck: boolean;
+    last_assessment_created_at?: string;
     created_at: string;
     updated_at: string;
 }
@@ -162,6 +163,36 @@ export interface UseSearchDealsResult extends UseDealsResult {
     filters: DealFilters;
     setFilters: (filters: DealFilters) => void;
     clearFilters: () => void;
+}
+
+// Deal file types
+export interface DealFile {
+    uuid: string;
+    file_name: string;
+    file?: string;
+    src_url?: string;
+    mime_type?: string;
+    file_size?: number;
+    processing_status: 'pending' | 'processing' | 'completed' | 'error';
+    created_at: string;
+    updated_at: string;
+    categories?: string[];
+    tags?: string[];
+    description?: string;
+    deal?: { uuid: string };
+}
+
+export interface DealDeck extends DealFile {
+    title?: string;
+    subtitle?: string;
+    raw_text?: string;
+}
+
+export interface DealPaper extends DealFile {
+    title?: string;
+    authors?: string;
+    abstract?: string;
+    citation_count?: number;
 }
 
 // Component props

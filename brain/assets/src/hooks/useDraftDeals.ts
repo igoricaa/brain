@@ -254,6 +254,23 @@ export const useDraftDeals = () => {
         }
     }, []);
 
+    const getDraftDeals = useCallback(async (): Promise<DraftDeal[]> => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const response = await http.get<{ results: DraftDeal[] }>('/deals/drafts/');
+            return response.data.results || response.data as any;
+        } catch (err: unknown) {
+            const apiError = err as ApiErrorResponse;
+            const errorMessage = apiError.response?.data?.detail || 'Failed to fetch draft deals';
+            setError(errorMessage);
+            throw new Error(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
     const deleteDraftDeal = useCallback(async (uuid: string): Promise<void> => {
         setIsLoading(true);
         setError(null);
@@ -276,6 +293,7 @@ export const useDraftDeals = () => {
         uploadDraftFile,
         finalizeDraftDeal,
         getDraftDeal,
+        getDraftDeals,
         deleteDraftDeal,
         isLoading,
         error,

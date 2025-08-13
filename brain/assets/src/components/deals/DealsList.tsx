@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { DealsTable } from './DealsTable';
+import { DealsTableV2 } from './DealsTableV2';
 import { useSearchDeals } from '@/hooks/useDeals';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { DealsListProps } from '@/lib/types/deals';
@@ -109,7 +109,7 @@ export function DealsList({
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold text-gray-900">Fresh Deals</h1>
+                        <h1 className="text-2xl font-semibold text-gray-900">New Deals</h1>
                         <p className="text-sm text-gray-600">
                             New deals submitted but not yet sorted
                         </p>
@@ -155,7 +155,12 @@ export function DealsList({
             </div>
 
             {/* Deals Table */}
-            <DealsTable deals={deals} loading={loading} onDealSelect={onDealSelect} />
+            <DealsTableV2
+                deals={deals}
+                loading={loading}
+                onDealSelect={onDealSelect}
+                onDealsChange={refetch}
+            />
 
             {/* Load More / Infinite Scroll Trigger */}
             {hasMore && (

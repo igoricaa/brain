@@ -118,7 +118,7 @@ class DraftDealViewSet(DealViewSet):
         )
 
     def get_serializer_class(self):
-        if action == 'finalize':
+        if self.action == 'finalize':
             return DealReadSerializer
         return DraftDealSerializer
 

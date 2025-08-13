@@ -1,0 +1,27 @@
+{% extends 'main.html' %}
+{% load django_vite %}
+
+{% block title %}Knowledge Graph - brAINbrAIN{% endblock %}
+
+{% block extra_head %}
+    <meta name="description" content="Comprehensive file management and knowledge base for document analysis and research">
+    <meta name="keywords" content="knowledge graph, file management, documents, research, library">
+{% endblock %}
+
+{% block body_id %}_library{% endblock %}
+
+{% block main_content %}
+    <!-- React mount point -->
+    <div id="library-root" class="min-h-screen">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p class="text-gray-600">Loading Knowledge Graph...</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    {% vite_asset 'src/main.tsx' %}
+{% endblock %}

@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DealsList } from '@/components/deals';
+import { Toaster } from '@/components/ui/sonner';
 
 // Create a new QueryClient instance for this page
 const queryClient = new QueryClient({
@@ -47,6 +48,7 @@ function FreshDealsPage() {
                     enableColumnSort={true}
                 />
             </div>
+            <Toaster />
         </QueryClientProvider>
     );
 }

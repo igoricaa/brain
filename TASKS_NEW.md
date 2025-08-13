@@ -1,35 +1,89 @@
-**Deal Upload, Management, Assessment — End‑to‑End Plan**
+**Deal Upload, Management, Assessment — Frontend‑First Plan (aligned to current backend)**
 
-- **Scope:** Implement draft → upload → process → enrich → research → assess → send/activate → reassess → archive across Brain (backend APIs + React UI). Align with PRD and transcript. Avoid gzip on client; upload files individually with soft limits. Unify Deals list with status tabs and server search. Redesign Deal Detail with stacked AI vs Analyst, file manager modal, actions bar. Add library file manager link.
-- **Assumptions:** Postgres + Redis/RQ/Celery available; Affinity and Coresignal creds present in env; document index/knowledge graph ready via `library` app; OCR pipeline callable server‑side; tokenization available via `tokenizers` or fallback char/4.
+- **Scope:** Frontend implements draft → upload (per‑file) → review → assess → send/activate → reassess → archive UX against existing Brain APIs. Avoid gzip on client; upload files individually with soft limits. Unify Deals list (tabs), add server search when backend exposes it. Redesign Deal Detail with stacked AI vs Analyst, file manager modal, and anchored actions bar. Add Library file manager link.
+- **Assumptions:** Current backend is authoritative; we minimize backend changes. We call out explicit backend dependencies where gaps exist. Existing APIs used: `/api/deals/*`, `/api/library/*`, `/api/companies/*`. OCR/cleaning/research pipelines are backend concerns; frontend surfaces progress and results.
 
-**Backend — Models & Migrations**
-- **DealStatus: add `archived`:** Update `brain/apps/deals/models/base.py` to include `ARCHIVED = 'archived'`; add migration; update usages and choices validation.
-- **DraftDeal lifecycle:** Confirm `Deal.is_draft` + `DraftDeal` proxy is correct; ensure constraints allow missing `company` only if `is_draft=True` (already enforced). Add `finalized_at` datetime on Deal when draft → deal (optional, helps analytics).
-- **DealFile provenance:** Ensure `DealFile` has fields `source` (enum: upload, affinity, library), `affinity_file_id` (nullable), and `soft_deleted` boolean. Add `ingested_at`, `cleaned_text` TextField, `tokens_estimate` int. Migration with defaults; backfill nulls.
-- **Assessment tracking:** Verify `DealAssessment` includes AI auto_* fields (present). Add fields for longitudinal diff: `based_on_assessment` FK (nullable) and `new_files_json` JSONField (list of file UUIDs since last). Add `sent_to_affinity_at` dt on assessment.
-- **ResearchAgent storage:** In `apps/research` or `deals`, add model(s): `ResearchAnalysis` with `deal` FK, `final_assessment_md`, `team_assessment_md`, `search_queries` (array), and per‑query components table if not present. If a similar model exists, extend with `updated_from_files` many‑to‑many to DealFile.
+**Backend Dependencies (no direct changes here; required/optional support)**
+- **Statuses:** Backend currently exposes `DealStatus = {new, active, subcommittee vetting}`; there is no `archived`. Frontend will show New and Active tabs (+ All). Backend to add `archived` later to enable the Archived tab.
+- **Deals search:** Current `DealFilter` has created/updated range filters but no text search. Backend to add `q` filter (company/deal name icontains) for server‑side search. Until then: client‑side filter only for the small “Fresh/New” list.
+- **Draft flow:** Present. Use `/api/deals/drafts/` (create/update/delete) and `/api/deals/drafts/{uuid}/finalize/` (POST). Note: current code path uses `DraftDeal` proxy model; finalize endpoint exists, but `get_serializer_class` references `self.action` (minor bug in code seen); assume backend maintains this.
+- **Upload endpoints:** `/api/deals/decks|files|papers/` require a `deal` UUID now (no auto‑create Deal in Deck create). Frontend must create a draft first, then upload each file with `deal=<draft_uuid>`.
+- **Assessments API:** `/api/deals/assessments/` exists with PRD‑aligned fields (`problem_solved`, `tam`, etc.) and `auto_*` mirrors. Use `?deal=<deal_uuid>` to get/set latest. No “send‑to‑affinity” API action yet.
+- **Send to Affinity:** Model method exists (`Deal.send_to_affinity`), but no API endpoint/action. Backend to expose an action for one‑click send (and mark `sent_to_affinity` true).
+- **Reassess trigger:** No explicit endpoint. Backend to expose a reassessment action (idempotent) that enqueues the pipeline and returns processing status.
+- **“New since last assessment”:** Deal list annotates `last_assessment_created_at`. Frontend can compute new files by comparing `DealFile.created_at` to this value. Optional backend endpoint can be added later.
+- **Library/Knowledge Graph:** `/api/library/*` endpoints exist (files, papers, authors, sources). No vector “chunk search” or RAG endpoint is exposed; RA/RAG remain backend concerns.
 
-**Backend — APIs**
-- **Draft Deals API:** Confirm `POST /api/deals/drafts/` creates minimal draft (name optional). Add `POST /api/deals/drafts/{uuid}/finalize/` (exists) to produce non‑draft deal; ensure returns DealReadSerializer with URL.
-- **File Upload APIs:**
-  - `POST /api/deals/decks/` exists; extend to accept `deal` that may be a draft UUID (Deal.all_objects). Return created `deal_uuid` regardless. Enforce mimetype/extension = pdf only (present).
-  - `POST /api/deals/files/` and `/api/deals/papers/` support multipart for individual files. Validate per‑file size soft limit via Django setting and return 413/400 with friendly message.
-  - Add `GET /api/deals/files/new-since-assessment/?deal=<uuid>` to list files created or updated after latest assessment, grouped by type; include `is_new_since_last` flag on file list endpoints when `deal` param present.
-- **Deals list/search/status:**
-  - Extend `DealFilter` to include `status` (already) and `q` (already). Add `status=archived` support. Consider `all=true` to return all statuses; otherwise filter default by `new`.
-  - Add counts endpoint: `/api/deals/summary/?status=<...>` returning totals per status, and per external signal counts (founders, grants, patents, clinical trials) for list badges.
-- **Assessment endpoints:**
-  - Confirm `GET/POST /api/deals/assessments/?deal=<uuid>` using write serializer. On create, set `based_on_assessment` = latest existing assessment if present; compute and store `new_files_json` via server diff.
-  - Add `POST /api/deals/assessments/{uuid}/send-to-affinity/` that posts once; if success, mark `deal.status=new→active` and set `assessment.sent_to_affinity_at`.
-- **Reassessment trigger:** `POST /api/deals/deals/{uuid}/reassess/` to enqueue pipeline (see Processing). Should skip re‑processing existing files; decide whether to enqueue research agent based on presence of new academic/whitepapers since last assessment.
-- **Archive/Delete actions:**
-  - `POST /api/deals/deals/{uuid}/archive/` sets `status=archived` (idempotent).
-  - `DELETE /api/deals/deals/{uuid}/` regular delete (already).
-  - No bulk endpoints; front‑end sends N individual requests.
-- **Research Agent API:**
-  - `GET /api/research/analyses/?deal=<uuid>` list latest, with `final_assessment_md`, `team_assessment_md`, top chunks per search query; `POST /api/research/analyses/run/` to run agent for a deal.
-- **Knowledge Graph search for RAG:** `GET /api/library/chunk-search/?deal=<uuid>&q=<query>&top_k=...&min_score=...` if not already exposed; otherwise reuse existing vector search.
+**Frontend — What exists and how we consume it**
+- **Routers:** `brain/brain/api_urls.py` exposes `/api/deals/*`, `/api/library/*`, `/api/companies/*`, `/api/socialgraph/*`, `/api/dual-use/*`.
+- **Deals API:**
+  - Lists/details at `/api/deals/deals/`; filter by `status`, `created/updated` ranges; annotated `last_assessment_created_at` present on read serializer.
+  - Drafts at `/api/deals/drafts/` (+ `.../{uuid}/finalize/`).
+  - Files: `/api/deals/files/`; Decks: `/api/deals/decks/`; Papers: `/api/deals/papers/`. Each requires `deal=<uuid>`; shapes mirror Library File/Paper read serializers plus a `deal` relation.
+  - Assessments: `/api/deals/assessments/` using PRD field names (`problem_solved`, `tam`, etc.) and `auto_*` mirrors; filter by `deal`.
+- **Library API:** Complete for files/papers/authors/sources; used for Related Documents panel and Knowledge Graph.
+- **Server pages:** Fresh/Reviewed/Missed and Deal Detail shells exist with React mount points. New Deal Upload shell exists (posts to Decks API, but per backend change we must create a draft first).
+
+**Frontend — Global/Navigation**
+- **Nav updates:**
+  - Keep existing dashboard pages for now; add a new unified `Deals Overview` page later. Menu: Deals (Overview), + New Deal, Knowledge Graph, Dual‑use, Companies.
+  - Wire `{% vite_asset %}` entries in corresponding templates; maintain HMR in dev.
+
+**Frontend — Deals List (near‑term vs. unified later)**
+- **Near‑term:**
+  - Keep Fresh and Reviewed pages; ensure they consume `/api/deals/deals/?status=new` and `?status=active` respectively.
+  - Add client‑side search for Fresh (<=50 items typical). Reviewed may omit search until server `q` exists.
+  - Show per‑deal metadata: company name, age, fundraise, industries, dual‑use tags, and show “assessed recently” using `last_assessment_created_at`.
+- **Unified page (later):**
+  - New React page `src/pages/deals_list.tsx` with tabs: New, Active, All (Archive tab disabled until backend adds status). Server‑side pagination; debounced `q` search once backend adds it.
+
+**Frontend — Deal Detail Redesign**
+- **Sectioning:**
+  - Basic card (SSR) with company, website, status, funding stage, created date (already present).
+  - External data accordions: Founders, Grants, Clinical Trials, Patent Applications; auto‑expand only if count > 0; include +Add Founder/Patent buttons if backend UIs exist.
+  - Research agent summary: render two markdown blocks (tech assessment, team assessment) if backend provides; otherwise show placeholder with link to `research-agent` shell.
+  - Mini Memo: stack AI (read‑only) over Analyst (editable). Map fields to current serializer names: `auto_investment_rationale/pros/cons/recommendation/quality_percentile` and `investment_rationale/pros/cons/recommendation/quality_percentile`. Include upper PRD fields (problem_solved, solution, customer_traction, business_model, intellectual_property, tam, competition) as text with pencil edit affordance (click‑to‑edit inline input).
+- **Actions bar (anchored):** Buttons: Send to Affinity (disabled if `sent_to_affinity` true), Reassess (pending backend), Edit Files (modal), Refresh Data (existing server view), Underwriting History, Archive (pending backend), Delete (confirm). Persist across scroll.
+- **New since last assessment:** Compute client‑side via `file.created_at > deal.last_assessment_created_at`. Visually flag in modal and context preview.
+
+**Frontend — Deal Creation & Drafts (aligned with backend)**
+- **Flow:**
+  - On open, `POST /api/deals/drafts/` to create a draft deal; cache `draft_uuid` in IndexedDB (hooks exist: `useDraftDeals`, `useDraftPersistence`).
+  - Upload each file individually to `/api/deals/decks|files|papers/` with `deal=<draft_uuid>`; 3‑at‑a‑time concurrency with retry. Enforce soft size limit 15MB per file in UI; surface server 413/400 gracefully.
+  - Show per‑file progress; on success, list appears in modal. “Save Draft” just leaves it server‑side; “Finalize & Continue” calls `/api/deals/drafts/{uuid}/finalize/` then redirects to Deal Detail.
+- **No gzip:** Remove any client compression; rely on individual uploads.
+
+**Frontend — File Management Modal**
+- **Features:**
+  - Use Deals Files API for listing and delete; DELETE will remove file (no soft delete flag available). Restore not available now.
+  - Group by type (Decks/Papers/Other); upload buttons for each; show processing status chip from `processing_status`.
+  - Mark “New since last assessment” client‑side as above.
+- **Metadata form:** Title/description support for Decks/Papers depends on serializer fields: Deck includes `title/subtitle/text`; Papers have `title/abstract/document_types/authors`; basic tags/categories from Library available.
+
+**Frontend — Research Agent UI**
+- **Research page:** Keep existing `research_agent.tsx` shell. If/when backend exposes research outputs for a deal, fetch and render markdown; otherwise link out or hide section. No client‑side RAG.
+
+**Frontend — Knowledge Graph (Library) UI**
+- **Generic file manager:** Implement or link to Library views using `/api/library/files/` and related endpoints; reuse existing `RelatedDocumentsPanel` component styles and behavior.
+
+**QA & Documentation**
+- **Smoke tests:** Deals Fresh/Reviewed load and paginate; New Deal draft → upload → finalize; Deal Detail assessment edit saves; Files modal operations; Refresh status polling works.
+- **Acceptance:** UI behaves with current backend (no `q`, no `archived`, no send/reassess endpoints yet). Features that depend on backend actions are present but disabled or no‑op with explanatory tooltips.
+- **Docs:** Update `brain/apps/deals/AGENTS.md` and `brain/assets/AGENTS.md` to reflect actual field names and flows; add screenshots of the redesigned panels.
+
+**Backend requests (minimal)**
+- Add `q` to DealFilter (company/deal name icontains) for server search.
+- Add `archived` status to DealStatus and support filtering.
+- Add `POST /api/deals/deals/{uuid}/send-to-affinity/` (calls `Deal.send_to_affinity`) returning result and flipping `status=new→active`.
+- Add `POST /api/deals/deals/{uuid}/reassess/` to enqueue reassessment and return processing state.
+
+**Milestones (frontend‑first)**
+- M1: Draft Upload UI wired to drafts + files endpoints; progress, size checks, finalize flow.
+- M2: Deal Detail stacked AI/Analyst assessments mapped to new serializer fields; anchored actions bar (buttons stubbed as needed).
+- M3: File Management Modal integrated with Deals Files/Papers/Decks; “new since last” flagging.
+- M4: Fresh/Reviewed pages polish; client search on Fresh; counts and badges; prepare unified list scaffold.
+- M5: Unified Deals page (tabs New/Active/All) gated behind feature flag; enable server `q` when backend ready.
+- M6: Knowledge Graph page/panel polish; Library file manager link.
 
 **Backend — Processing Pipelines**
 - **OCR & cleaning:** On new DealFile (Deck, Paper, File):
@@ -129,4 +183,3 @@
 
 **Acceptance Summary**
 - Users can: create a draft, upload multiple files individually with size checks, leave and return; finalize to a deal; view a redesigned Deal Detail with stacked AI vs Analyst, edit analyst text inline; open file manager modal to add/remove/restore files and see which are new since last assessment; send to Affinity once per assessment changing status to Active; reassess later, skipping unchanged files and RA when no new papers; archive and find deals under Archived tab; search deals server‑side.
-

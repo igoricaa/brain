@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Deal, Industry, DualUseSignal } from '@/lib/types/deals';
 
 // Company cell with processing status and time
-export function CompanyCell({ deal }: { deal: Deal }) {
+export function CompanyCell({ deal, onClick }: { deal: Deal; onClick?: () => void }) {
     const timeAgo = formatDistanceToNow(new Date(deal.created_at), { addSuffix: true });
 
     return (
@@ -16,9 +16,15 @@ export function CompanyCell({ deal }: { deal: Deal }) {
             )}
             <div className="min-w-0 flex-1">
                 <div className="font-medium text-foreground truncate">
-                    <a href={`/deals/${deal.uuid}/`} className="hover:underline">
-                        {deal.company.name}
-                    </a>
+                    {onClick ? (
+                        <button onClick={onClick} className="hover:underline text-left">
+                            {deal.company.name}
+                        </button>
+                    ) : (
+                        <a href={`/deals/${deal.uuid}/`} className="hover:underline">
+                            {deal.company.name}
+                        </a>
+                    )}
                 </div>
                 <div className="text-sm text-muted-foreground">{timeAgo}</div>
             </div>
@@ -188,6 +194,9 @@ export function DualUseSignalsCell({ signals }: { signals: DualUseSignal[] }) {
 
 // Grants cell with count and pluralization
 export function GrantsCell({ deal }: { deal: Deal }) {
+    if (!deal) {
+        return <div className="text-sm text-muted-foreground">—</div>;
+    }
     const grantsCount = deal.grants_count || 0;
 
     if (grantsCount === 0) {

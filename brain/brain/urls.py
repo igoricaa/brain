@@ -32,6 +32,7 @@ urlpatterns = [
     path('companies/', include(('companies.urls', 'companies'), namespace='companies')),
     path('deals/', include(('deals.urls', 'deals'), namespace='deals')),
     path('dual-use/', include(('dual_use.urls', 'dual-use'), namespace='dual-use')),
+    path('library/', include(('library.urls', 'library'), namespace='library')),
     # Research Agent (frontend-only shell)
     path('research-agent/', TemplateView.as_view(template_name='research/agent.html'), name='research-agent'),
     path("api/", include((api_router.urls, 'api'))),
