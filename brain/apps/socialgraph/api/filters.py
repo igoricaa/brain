@@ -93,6 +93,16 @@ class ProfileFilter(filters.FilterSet):
         help_text=_("Filter by multiple military or government background."),
     )
 
+    updated = filters.DateTimeFromToRangeFilter(
+        field_name='updated_at',
+        help_text=_('filter by time the record was last updated'),
+    )
+
+    created = filters.DateTimeFromToRangeFilter(
+        field_name='created_at',
+        help_text=_('filter by time the record was created'),
+    )
+
     class Meta:
         model = Profile
         fields = [
