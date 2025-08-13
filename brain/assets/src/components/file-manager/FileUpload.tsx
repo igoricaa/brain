@@ -4,7 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, X, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import {
+    Upload,
+    X,
+    FileText,
+    AlertCircle,
+    CheckCircle,
+    Loader2,
+    File,
+    Image,
+    FileSpreadsheet,
+    Presentation,
+    Paperclip,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface FileUploadProps {
@@ -44,12 +56,15 @@ const formatFileSize = (bytes: number): string => {
 };
 
 const getFileIcon = (type: string) => {
-    if (type.includes('pdf')) return '📄';
-    if (type.includes('image')) return '🖼️';
-    if (type.includes('document') || type.includes('word')) return '📝';
-    if (type.includes('spreadsheet') || type.includes('excel')) return '📊';
-    if (type.includes('presentation') || type.includes('powerpoint')) return '📈';
-    return '📎';
+    if (type.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
+    if (type.includes('image')) return <Image className="h-4 w-4 text-blue-500" />;
+    if (type.includes('document') || type.includes('word'))
+        return <FileText className="h-4 w-4 text-blue-600" />;
+    if (type.includes('spreadsheet') || type.includes('excel'))
+        return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
+    if (type.includes('presentation') || type.includes('powerpoint'))
+        return <Presentation className="h-4 w-4 text-orange-500" />;
+    return <File className="h-4 w-4 text-gray-500" />;
 };
 
 export default function FileUpload({
@@ -158,19 +173,6 @@ export default function FileUpload({
         fileInputRef.current?.click();
     }, []);
 
-    const getStatusIcon = (status: UploadFile['status']) => {
-        switch (status) {
-            case 'uploading':
-                return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
-            case 'completed':
-                return <CheckCircle className="h-4 w-4 text-green-500" />;
-            case 'error':
-                return <AlertCircle className="h-4 w-4 text-red-500" />;
-            default:
-                return <FileText className="h-4 w-4 text-muted-foreground" />;
-        }
-    };
-
     const getStatusBadge = (status: UploadFile['status']) => {
         switch (status) {
             case 'uploading':
@@ -184,7 +186,9 @@ export default function FileUpload({
             case 'error':
                 return <Badge variant="destructive">Error</Badge>;
             default:
-                return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Pending</Badge>;
+                return (
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-200">Pending</Badge>
+                );
         }
     };
 
@@ -267,15 +271,9 @@ export default function FileUpload({
                         <div className="divide-y divide-gray-200">
                             {files.map((file) => (
                                 <div key={file.id} className="p-4 flex items-center gap-3">
-                                    <div className="flex-shrink-0">
-                                        {getStatusIcon(file.status)}
-                                    </div>
-
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-sm">
-                                                {getFileIcon(file.type)}
-                                            </span>
+                                            {getFileIcon(file.type)}
                                             <span className="font-medium text-sm truncate">
                                                 {file.name}
                                             </span>

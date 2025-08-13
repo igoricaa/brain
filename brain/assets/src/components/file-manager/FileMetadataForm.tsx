@@ -44,7 +44,7 @@ import {
     Cpu,
     BarChart3,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { showSubmitAreaErrorToast } from '@/utils/customToast';
 import { UploadFile } from './FileUpload';
 
 // File metadata schema
@@ -156,11 +156,17 @@ export default function FileMetadataForm({
     isDraftSaving = false,
     formRef,
 }: FileMetadataFormProps) {
-    const form = useForm<DraftDealFormData>({
-        resolver: zodResolver(draftDealSchema),
-        mode: 'onSubmit', // Only validate on submit
-        reValidateMode: 'onChange', // Re-validate on change after first submit
-        defaultValues: {
+    // DEBUG: Log initialization
+    console.log('🚀 FileMetadataForm INITIALIZATION', {
+        hasInitialData: !!initialData,
+        initialData: initialData,
+        filesCount: files.length,
+        timestamp: new Date().toISOString(),
+    });
+
+    // Create form with proper default values
+    const formDefaultValues = React.useMemo(() => {
+        const values = {
             name: initialData?.name || '',
             description: initialData?.description || '',
             website: initialData?.website || '',
@@ -174,13 +180,43 @@ export default function FileMetadataForm({
                 tldr: '',
                 tags: [],
             })),
-        },
+        };
+
+        console.log('🔧 Form default values computed', {
+            values,
+            hasInitialData: !!initialData,
+            initialDataSource: initialData,
+        });
+
+        return values;
+    }, [initialData, files]);
+
+    const form = useForm<DraftDealFormData>({
+        resolver: zodResolver(draftDealSchema),
+        mode: 'onSubmit', // Only validate on submit
+        reValidateMode: 'onChange', // Re-validate on change after first submit
+        defaultValues: formDefaultValues,
+    });
+
+    console.log('📋 Form created with default values', {
+        formDefaultValues: form.getValues(),
+        initialDataWasUsed: !!initialData,
+        timestamp: new Date().toISOString(),
     });
 
     const { fields: fileFields, update: updateFileField } = useFieldArray({
         control: form.control,
         name: 'files',
     });
+
+    // Track initialData prop changes - DEBUGGING
+    useEffect(() => {
+        console.log('📥 INITIAL DATA PROP CHANGED', {
+            hasInitialData: !!initialData,
+            initialData: initialData,
+            timestamp: new Date().toISOString(),
+        });
+    }, [initialData]);
 
     // Expose form methods through ref
     useEffect(() => {
@@ -191,16 +227,89 @@ export default function FileMetadataForm({
         }
     }, [form, formRef]);
 
-    // Update form when initialData changes (e.g., when loading draft)
+    // Update form when initialData changes (e.g., when loading draft) - ENHANCED DEBUGGING & FIX
     useEffect(() => {
+        console.log('📝 FORM INITIAL DATA EFFECT TRIGGERED', {
+            hasInitialData: !!initialData,
+            initialDataKeys: initialData ? Object.keys(initialData) : [],
+            initialData: initialData,
+            currentFormValues: form.getValues(),
+            formState: {
+                isDirty: form.formState.isDirty,
+                isValid: form.formState.isValid,
+                errors: form.formState.errors,
+            },
+        });
+
         if (initialData) {
-            form.reset({
+            console.log('🔄 Resetting form with initial data...');
+
+            const resetData = {
                 name: initialData.name || '',
                 description: initialData.description || '',
                 website: initialData.website || '',
                 fundingTarget: initialData.fundingTarget || '',
                 files: form.getValues('files'), // Keep existing file data
-            });
+            };
+
+            console.log('📋 Form reset data prepared', resetData);
+
+            try {
+                // Reset the entire form state
+                form.reset(resetData, { keepDefaultValues: false });
+                console.log('✅ Form reset successful with keepDefaultValues: false');
+
+                // Force field updates using setValue as backup
+                form.setValue('name', resetData.name, {
+                    shouldValidate: false,
+                    shouldDirty: false,
+                });
+                form.setValue('description', resetData.description, {
+                    shouldValidate: false,
+                    shouldDirty: false,
+                });
+                form.setValue('website', resetData.website, {
+                    shouldValidate: false,
+                    shouldDirty: false,
+                });
+                form.setValue('fundingTarget', resetData.fundingTarget, {
+                    shouldValidate: false,
+                    shouldDirty: false,
+                });
+
+                console.log('✅ Backup setValue calls completed');
+
+                // Verify form state after reset
+                setTimeout(() => {
+                    const newValues = form.getValues();
+                    console.log('🔍 Form values after reset', {
+                        newValues,
+                        fieldMatches: {
+                            name: newValues.name === (initialData.name || ''),
+                            description: newValues.description === (initialData.description || ''),
+                            website: newValues.website === (initialData.website || ''),
+                            fundingTarget:
+                                newValues.fundingTarget === (initialData.fundingTarget || ''),
+                        },
+                    });
+
+                    // If fields still don't match, force a re-render
+                    if (
+                        newValues.name !== (initialData.name || '') ||
+                        newValues.description !== (initialData.description || '') ||
+                        newValues.website !== (initialData.website || '') ||
+                        newValues.fundingTarget !== (initialData.fundingTarget || '')
+                    ) {
+                        console.log("⚠️ Form values still don't match, forcing re-render...");
+                        // Trigger a form state update
+                        form.trigger();
+                    }
+                }, 100);
+            } catch (error) {
+                console.error('❌ Form reset failed', error);
+            }
+        } else {
+            console.log('ℹ️ No initial data to reset with');
         }
     }, [initialData, form]);
 
@@ -302,28 +411,31 @@ export default function FileMetadataForm({
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit, (errors) => {
-                // Focus first error field
-                const firstErrorField = Object.keys(errors)[0];
-                if (firstErrorField === 'files') {
-                    // Handle file-specific errors
-                    const fileErrors = errors.files;
-                    if (Array.isArray(fileErrors)) {
-                        const firstFileError = fileErrors.findIndex((err) => err !== undefined);
-                        if (firstFileError !== -1) {
-                            const errorField = Object.keys(fileErrors[firstFileError] || {})[0];
-                            if (errorField) {
-                                form.setFocus(`files.${firstFileError}.${errorField}` as any);
+            <form
+                onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+                    // Focus first error field
+                    const firstErrorField = Object.keys(errors)[0];
+                    if (firstErrorField === 'files') {
+                        // Handle file-specific errors
+                        const fileErrors = errors.files;
+                        if (Array.isArray(fileErrors)) {
+                            const firstFileError = fileErrors.findIndex((err) => err !== undefined);
+                            if (firstFileError !== -1) {
+                                const errorField = Object.keys(fileErrors[firstFileError] || {})[0];
+                                if (errorField) {
+                                    form.setFocus(`files.${firstFileError}.${errorField}` as any);
+                                }
                             }
                         }
+                    } else if (firstErrorField) {
+                        form.setFocus(firstErrorField as any);
                     }
-                } else if (firstErrorField) {
-                    form.setFocus(firstErrorField as any);
-                }
-                
-                // Show error toast
-                toast.error('Please fill in all required fields');
-            })} className="space-y-6">
+
+                    // Show error toast
+                    showSubmitAreaErrorToast('Please fill in all required fields');
+                })}
+                className="space-y-6"
+            >
                 {/* Deal Information */}
                 <Card className="shadow-sm">
                     <CardHeader>
@@ -341,38 +453,60 @@ export default function FileMetadataForm({
                         <FormField
                             control={form.control}
                             name="name"
-                            render={({ field }) => (
-                                <FormItem className="space-y-2.5">
-                                    <FormLabel className="block">Deal Name*</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="Enter deal name"
-                                            className="shadow-sm"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                            render={({ field }) => {
+                                // Debug field value
+                                console.log('🏷️ DEAL NAME FIELD RENDER', {
+                                    fieldValue: field.value,
+                                    watchValue: form.watch('name'),
+                                    formValue: form.getValues('name'),
+                                    hasInitialData: !!initialData,
+                                    initialName: initialData?.name,
+                                });
+
+                                return (
+                                    <FormItem className="space-y-2.5">
+                                        <FormLabel className="block">Deal Name*</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Enter deal name"
+                                                className="shadow-sm"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                );
+                            }}
                         />
 
                         <FormField
                             control={form.control}
                             name="description"
-                            render={({ field }) => (
-                                <FormItem className="space-y-2.5">
-                                    <FormLabel className="block">Description</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Brief description of the deal"
-                                            className="shadow-sm"
-                                            rows={3}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                            render={({ field }) => {
+                                // Debug field value
+                                console.log('📝 DESCRIPTION FIELD RENDER', {
+                                    fieldValue: field.value,
+                                    watchValue: form.watch('description'),
+                                    formValue: form.getValues('description'),
+                                    hasInitialData: !!initialData,
+                                    initialDescription: initialData?.description,
+                                });
+
+                                return (
+                                    <FormItem className="space-y-2.5">
+                                        <FormLabel className="block">Description</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Brief description of the deal"
+                                                className="shadow-sm"
+                                                rows={3}
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                );
+                            }}
                         />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -492,10 +626,7 @@ export default function FileMetadataForm({
                             };
 
                             return (
-                                <Card
-                                    key={field.id}
-                                    className="shadow-sm"
-                                >
+                                <Card key={field.id} className="shadow-sm">
                                     <CardContent className="p-6 space-y-6">
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-start gap-3 flex-1">
@@ -609,7 +740,9 @@ export default function FileMetadataForm({
                                             name={`files.${index}.tldr`}
                                             render={({ field: formField }) => (
                                                 <FormItem className="space-y-2.5">
-                                                    <FormLabel className="block">Summary (TLDR)</FormLabel>
+                                                    <FormLabel className="block">
+                                                        Summary (TLDR)
+                                                    </FormLabel>
                                                     <FormControl>
                                                         <Textarea
                                                             placeholder="Brief summary of this document's contents"
@@ -779,11 +912,7 @@ export default function FileMetadataForm({
                                     )}
                                 </Button>
 
-                                <Button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className="h-11 px-8"
-                                >
+                                <Button type="submit" disabled={isSubmitting} className="h-11 px-8">
                                     {isSubmitting ? (
                                         <>
                                             <Upload className="h-4 w-4 mr-2 animate-spin" />

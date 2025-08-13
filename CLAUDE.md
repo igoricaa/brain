@@ -2,11 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Note**: This is a monorepo with distributed documentation. Check both CLAUDE.md and AGENTS.md files for module-specific guidance:
+**IMPORTANT**: For this project, prioritize AGENTS.md files over CLAUDE.md. AGENTS.md files contain the primary guidance and patterns for each module. Use CLAUDE.md only for development commands and architecture reference.
 
-### Primary Documentation
-- Main repository guidelines: `AGENTS.md`
-- This file: `CLAUDE.md` (development commands and architecture)
+**Note**: This is a monorepo with distributed documentation. Always check AGENTS.md files first for module-specific guidance:
+
+### Primary Documentation (AGENTS.md Priority)
+- Main repository guidelines: `AGENTS.md` (**Primary - use first**)
+- This file: `CLAUDE.md` (development commands and architecture - **secondary reference only**)
 - Migration roadmap: `docs/TASKS.md` and `docs/FRONTEND_MIGRATION_CHECKLIST.md`
 - **UI Redesign**: `docs/sidebar_redesign.md` (T-0401 Sidebar Navigation Implementation)
 
@@ -150,8 +152,28 @@ This is a monorepo containing three related components:
 
 ## Working with this Codebase
 
+- **AGENTS.md files are the primary source of truth** - always consult them first
 - **Primary work should be in brain**, not aindex-web
-- **Always check AGENTS.md files** for module-specific guidance and patterns
+- **Always check AGENTS.md files** for module-specific guidance and patterns - they override CLAUDE.md guidance
+
+### Agent Usage Policy
+- **USE AGENTS ALMOST ALWAYS** - Default to using specialized agents for virtually all tasks
+- **Only work directly** if the task is REALLY simple and can be done in 1-2 basic operations
+- **Available specialized agents** include:
+  - `ui-ux-designer` - Interface design, wireframes, user flows
+  - `frontend-developer` - React components, UI functionality, client-side logic
+  - `typescript-pro` - TypeScript architecture, advanced typing, optimization
+  - `debugger` - Error resolution, test failures, unexpected behavior
+  - `code-reviewer` - Quality assurance, security, maintainability review
+  - `backend-architect` - API design, database schemas, system architecture
+  - `security-auditor` - Vulnerability assessment, auth flows, compliance
+  - `performance-engineer` - Optimization, profiling, caching strategies
+  - And many others - see Task tool description for full list
+- **Benefits of using agents**: Specialized expertise, consistent patterns, better documentation, thorough consideration of edge cases
+- **When to work directly**: Simple typo fixes, single line changes, obvious syntax errors
+- **When in doubt, use an agent** - Better to over-use agents than miss specialized insights
+
+### Development Workflow
 - **UI/Template Work**: All new pages should extend `main.html` for consistent sidebar layout
 - Check for existing patterns in the target app before implementing
 - Use appropriate virtual environment for each component

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Draft Persistence Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        button { padding: 8px 16px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Draft Persistence Test</h1>
+    
+    <button onclick="testSaveLoad()">Test Save & Load Flow</button>
+    <button onclick="testIndexedDBScan()">Test IndexedDB Scan</button>
+    <button onclick="clearAll()">Clear All Data</button>
+    
+    <div id="log"></div>
+
+    <script>
+        // Simple logging
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log';
+            entry.textContent = new Date().toISOString() + ': ' + message;
+            logDiv.appendChild(entry);
+            console.log(message);
+        }
+
+        // Test constants matching the real code
+        const STORAGE_KEY_PREFIX = 'brain_draft_deal_';
+        const STORAGE_INDEX_KEY = 'brain_draft_deals_index';
+        const INDEXEDDB_NAME = 'BrainFileStorage';
+        const INDEXEDDB_STORE = 'files';
+
+        async function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(INDEXEDDB_NAME, 1);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(INDEXEDDB_STORE)) {
+                        db.createObjectStore(INDEXEDDB_STORE);
+                    }
+                };
+            });
+        }
+
+        async function storeInIndexedDB(key, data) {
+            const db = await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([INDEXEDDB_STORE], 'readwrite');
+                const store = transaction.objectStore(INDEXEDDB_STORE);
+                const request = store.put(data, key);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve();
+            });
+        }
+
+        async function getFromIndexedDB(key) {
+            const db = await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([INDEXEDDB_STORE], 'readonly');
+                const store = transaction.objectStore(INDEXEDDB_STORE);
+                const request = store.get(key);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result || null);
+            });
+        }
+
+        async function getAllKeysFromIndexedDB(prefix) {
+            const db = await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([INDEXEDDB_STORE], 'readonly');
+                const store = transaction.objectStore(INDEXEDDB_STORE);
+                const request = store.getAllKeys();
+                request.onerror = () => resolve([]);
+                request.onsuccess = () => {
+                    const allKeys = request.result;
+                    const stringKeys = allKeys.filter(key => typeof key === 'string');
+                    const filteredKeys = prefix ? stringKeys.filter(key => key.startsWith(prefix)) : stringKeys;
+                    resolve(filteredKeys);
+                };
+            });
+        }
+
+        async function testSaveLoad() {
+            log('=== Testing Save & Load Flow ===');
+            
+            try {
+                // Create test draft data
+                const testDraftId = `test_${Date.now()}`;
+                const testKey = STORAGE_KEY_PREFIX + testDraftId;
+                const testData = {
+                    draftId: testDraftId,
+                    dealName: 'Test Deal',
+                    description: 'Test Description',
+                    files: [],
+                    lastSaved: Date.now(),
+                    version: 1
+                };
+                
+                log(`Creating test draft with ID: ${testDraftId}`);
+                
+                // 1. Save to IndexedDB
+                log('Step 1: Saving to IndexedDB...');
+                await storeInIndexedDB(testKey, JSON.stringify(testData));
+                log('✅ Saved to IndexedDB successfully');
+                
+                // 2. Update localStorage index
+                log('Step 2: Updating localStorage index...');
+                const currentIndex = JSON.parse(localStorage.getItem(STORAGE_INDEX_KEY) || '[]');
+                const newIndex = [testDraftId, ...currentIndex];
+                localStorage.setItem(STORAGE_INDEX_KEY, JSON.stringify(newIndex));
+                log(`✅ Updated localStorage index: ${JSON.stringify(newIndex)}`);
+                
+                // 3. Verify retrieval
+                log('Step 3: Verifying retrieval...');
+                const retrieved = await getFromIndexedDB(testKey);
+                if (retrieved) {
+                    log('✅ Successfully retrieved from IndexedDB');
+                    const parsedData = JSON.parse(retrieved);
+                    log(`Retrieved draft: ${parsedData.dealName}`);
+                } else {
+                    log('❌ Failed to retrieve from IndexedDB');
+                }
+                
+                // 4. Test getAllDrafts simulation
+                log('Step 4: Testing draft discovery...');
+                const localStorageIndex = JSON.parse(localStorage.getItem(STORAGE_INDEX_KEY) || '[]');
+                const indexedDBKeys = await getAllKeysFromIndexedDB(STORAGE_KEY_PREFIX);
+                
+                log(`localStorage index contains: ${localStorageIndex.length} items`);
+                log(`IndexedDB contains: ${indexedDBKeys.length} draft keys`);
+                
+                const allDraftIds = new Set([...localStorageIndex]);
+                for (const key of indexedDBKeys) {
+                    if (key.startsWith(STORAGE_KEY_PREFIX)) {
+                        const draftId = key.substring(STORAGE_KEY_PREFIX.length);
+                        allDraftIds.add(draftId);
+                    }
+                }
+                
+                log(`Total unique draft IDs found: ${allDraftIds.size}`);
+                log(`Draft IDs: ${JSON.stringify([...allDraftIds])}`);
+                
+                if (allDraftIds.has(testDraftId)) {
+                    log('✅ Test draft found in discovery process');
+                } else {
+                    log('❌ Test draft NOT found in discovery process');
+                }
+                
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`);
+            }
+        }
+
+        async function testIndexedDBScan() {
+            log('=== Testing IndexedDB Scan ===');
+            
+            try {
+                log('Scanning all IndexedDB keys...');
+                const allKeys = await getAllKeysFromIndexedDB();
+                log(`Total keys in IndexedDB: ${allKeys.length}`);
+                
+                log('Scanning draft-specific keys...');
+                const draftKeys = await getAllKeysFromIndexedDB(STORAGE_KEY_PREFIX);
+                log(`Draft keys in IndexedDB: ${draftKeys.length}`);
+                log(`Draft keys: ${JSON.stringify(draftKeys)}`);
+                
+                log('Checking localStorage index...');
+                const localIndex = JSON.parse(localStorage.getItem(STORAGE_INDEX_KEY) || '[]');
+                log(`localStorage index: ${JSON.stringify(localIndex)}`);
+                
+            } catch (error) {
+                log(`❌ IndexedDB scan failed: ${error.message}`);
+            }
+        }
+
+        async function clearAll() {
+            log('=== Clearing All Data ===');
+            
+            try {
+                // Clear localStorage
+                const keys = Object.keys(localStorage);
+                for (const key of keys) {
+                    if (key.startsWith('brain_')) {
+                        localStorage.removeItem(key);
+                    }
+                }
+                
+                // Clear IndexedDB
+                const db = await initIndexedDB();
+                const transaction = db.transaction([INDEXEDDB_STORE], 'readwrite');
+                const store = transaction.objectStore(INDEXEDDB_STORE);
+                await new Promise((resolve, reject) => {
+                    const request = store.clear();
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve();
+                });
+                
+                log('✅ All data cleared');
+            } catch (error) {
+                log(`❌ Clear failed: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

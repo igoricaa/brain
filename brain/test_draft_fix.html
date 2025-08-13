@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Draft Persistence Fix Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        button { margin: 10px; padding: 10px; font-size: 14px; }
+        .log { margin: 5px 0; padding: 5px; background: #f0f0f0; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .warning { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Draft Persistence Fix Verification</h1>
+    
+    <button onclick="testDraftPersistence()">Test Draft Save & Load</button>
+    <button onclick="checkIndexedDB()">Check IndexedDB Contents</button>
+    <button onclick="checkLocalStorage()">Check localStorage Index</button>
+    <button onclick="clearAll()">Clear All Data</button>
+    
+    <div id="log"></div>
+    
+    <script>
+        const STORAGE_KEY_PREFIX = 'brain_draft_deal_';
+        const STORAGE_INDEX_KEY = 'brain_draft_deals_index';
+        
+        function log(message, type = '') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log ${type}`;
+            entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            logDiv.appendChild(entry);
+            console.log(message);
+        }
+        
+        async function testDraftPersistence() {
+            log('Starting draft persistence test...', 'warning');
+            
+            // Create test draft
+            const draftId = `draft_${Date.now()}_test`;
+            const testDraft = {
+                draftId: draftId,
+                dealName: 'Test Deal',
+                description: 'Test description',
+                files: [
+                    { id: 'file1', name: 'test.pdf', size: 1024, type: 'application/pdf' }
+                ],
+                lastSaved: Date.now(),
+                version: 1
+            };
+            
+            // Save to IndexedDB
+            try {
+                const dbName = 'BrainFileStorage';
+                const request = indexedDB.open(dbName, 1);
+                
+                request.onsuccess = async (event) => {
+                    const db = event.target.result;
+                    const transaction = db.transaction(['files'], 'readwrite');
+                    const store = transaction.objectStore('files');
+                    
+                    // Save draft
+                    const key = STORAGE_KEY_PREFIX + draftId;
+                    await store.put(JSON.stringify(testDraft), key);
+                    log(`✅ Saved draft to IndexedDB with key: ${key}`, 'success');
+                    
+                    // Update localStorage index
+                    const currentIndex = JSON.parse(localStorage.getItem(STORAGE_INDEX_KEY) || '[]');
+                    if (!currentIndex.includes(draftId)) {
+                        currentIndex.unshift(draftId);
+                        localStorage.setItem(STORAGE_INDEX_KEY, JSON.stringify(currentIndex));
+                        log(`✅ Updated localStorage index with draft ID: ${draftId}`, 'success');
+                    }
+                    
+                    // Try to retrieve it
+                    setTimeout(async () => {
+                        const getTransaction = db.transaction(['files'], 'readonly');
+                        const getStore = getTransaction.objectStore('files');
+                        const getRequest = getStore.get(key);
+                        
+                        getRequest.onsuccess = () => {
+                            const retrieved = getRequest.result;
+                            if (retrieved) {
+                                const parsed = JSON.parse(retrieved);
+                                if (parsed.draftId === draftId) {
+                                    log(`✅ DRAFT PERSISTED SUCCESSFULLY! Retrieved: ${parsed.dealName}`, 'success');
+                                } else {
+                                    log('❌ Draft ID mismatch!', 'error');
+                                }
+                            } else {
+                                log('❌ DRAFT NOT FOUND - This is the bug!', 'error');
+                            }
+                        };
+                    }, 1000);
+                };
+                
+                request.onerror = () => {
+                    log('❌ Failed to open IndexedDB', 'error');
+                };
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkIndexedDB() {
+            log('Checking IndexedDB contents...', 'warning');
+            
+            const dbName = 'BrainFileStorage';
+            const request = indexedDB.open(dbName, 1);
+            
+            request.onsuccess = (event) => {
+                const db = event.target.result;
+                const transaction = db.transaction(['files'], 'readonly');
+                const store = transaction.objectStore('files');
+                const getAllKeys = store.getAllKeys();
+                
+                getAllKeys.onsuccess = () => {
+                    const keys = getAllKeys.result;
+                    const draftKeys = keys.filter(k => k.startsWith(STORAGE_KEY_PREFIX));
+                    
+                    log(`Found ${draftKeys.length} draft(s) in IndexedDB:`, 'success');
+                    draftKeys.forEach(key => {
+                        const draftId = key.replace(STORAGE_KEY_PREFIX, '');
+                        log(`  - ${draftId}`, 'success');
+                    });
+                    
+                    if (draftKeys.length === 0) {
+                        log('⚠️ No drafts found - they may have been deleted!', 'warning');
+                    }
+                };
+            };
+            
+            request.onerror = () => {
+                log('❌ Failed to open IndexedDB', 'error');
+            };
+        }
+        
+        function checkLocalStorage() {
+            log('Checking localStorage index...', 'warning');
+            
+            const index = localStorage.getItem(STORAGE_INDEX_KEY);
+            if (index) {
+                const draftIds = JSON.parse(index);
+                log(`localStorage index contains ${draftIds.length} draft ID(s):`, 'success');
+                draftIds.forEach(id => log(`  - ${id}`, 'success'));
+            } else {
+                log('⚠️ No localStorage index found', 'warning');
+            }
+        }
+        
+        async function clearAll() {
+            if (!confirm('This will clear all draft data. Continue?')) return;
+            
+            log('Clearing all draft data...', 'warning');
+            
+            // Clear localStorage index
+            localStorage.removeItem(STORAGE_INDEX_KEY);
+            log('Cleared localStorage index', 'success');
+            
+            // Clear IndexedDB
+            const dbName = 'BrainFileStorage';
+            const request = indexedDB.open(dbName, 1);
+            
+            request.onsuccess = (event) => {
+                const db = event.target.result;
+                const transaction = db.transaction(['files'], 'readwrite');
+                const store = transaction.objectStore('files');
+                const getAllKeys = store.getAllKeys();
+                
+                getAllKeys.onsuccess = () => {
+                    const keys = getAllKeys.result;
+                    const draftKeys = keys.filter(k => k.startsWith(STORAGE_KEY_PREFIX));
+                    
+                    draftKeys.forEach(key => {
+                        store.delete(key);
+                    });
+                    
+                    log(`Cleared ${draftKeys.length} draft(s) from IndexedDB`, 'success');
+                };
+            };
+        }
+        
+        // Check on load
+        window.onload = () => {
+            log('Page loaded. Click buttons to test draft persistence.', 'warning');
+            checkLocalStorage();
+            checkIndexedDB();
+        };
+    </script>
+</body>
+</html>

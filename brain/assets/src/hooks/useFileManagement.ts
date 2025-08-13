@@ -129,9 +129,7 @@ export const useFileManagement = () => {
 
     try {
       const response = await http.post<DealFile>('/deals/files/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        // Don't set Content-Type header - let browser set it with boundary for FormData
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total && onProgress) {
             const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -141,8 +139,25 @@ export const useFileManagement = () => {
       });
       
       return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || 'Failed to upload file';
+    } catch (err: unknown) {
+      // Handle validation errors from Django REST Framework
+      let errorMessage = 'Failed to upload deal file';
+      
+      const apiError = err as { response?: { data?: any }; message?: string };
+      
+      if (apiError.response?.data) {
+        const errorData = apiError.response.data;
+        
+        if (errorData.file) {
+          const fileError = Array.isArray(errorData.file) ? errorData.file[0] : errorData.file;
+          errorMessage = `File upload error: ${fileError}`;
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        }
+      } else if (apiError.message) {
+        errorMessage = apiError.message;
+      }
+      
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -274,9 +289,7 @@ export const useFileManagement = () => {
 
     try {
       const response = await http.post<LibraryFile>('/library/files/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        // Don't set Content-Type header - let browser set it with boundary for FormData
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total && onProgress) {
             const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -286,8 +299,25 @@ export const useFileManagement = () => {
       });
       
       return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || 'Failed to upload file';
+    } catch (err: unknown) {
+      // Handle validation errors from Django REST Framework
+      let errorMessage = 'Failed to upload library file';
+      
+      const apiError = err as { response?: { data?: any }; message?: string };
+      
+      if (apiError.response?.data) {
+        const errorData = apiError.response.data;
+        
+        if (errorData.file) {
+          const fileError = Array.isArray(errorData.file) ? errorData.file[0] : errorData.file;
+          errorMessage = `File upload error: ${fileError}`;
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        }
+      } else if (apiError.message) {
+        errorMessage = apiError.message;
+      }
+      
       setError(errorMessage);
       throw new Error(errorMessage);
     }

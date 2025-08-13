@@ -26,12 +26,14 @@ interface UploadProgressOverlayProps {
     uploadState: UploadState;
     onCancel?: () => void;
     allowCancel?: boolean;
+    onClose?: () => void;
 }
 
 export default function UploadProgressOverlay({
     uploadState,
     onCancel,
     allowCancel = false,
+    onClose,
 }: UploadProgressOverlayProps) {
     const {
         isUploading,
@@ -50,7 +52,19 @@ export default function UploadProgressOverlay({
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-            <Card className="w-full max-w-lg mx-4 shadow-2xl">
+            <Card className="w-full max-w-lg mx-4 shadow-2xl relative">
+                {/* Close button - only show when there are errors and onClose is provided */}
+                {isCompleted && errors.length > 0 && onClose && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onClose}
+                        className="absolute top-4 right-4 h-8 w-8 p-0 rounded-full hover:bg-red-50 hover:text-red-600 transition-all duration-200 z-10 focus:ring-2 focus:ring-red-200 focus:ring-offset-1"
+                        aria-label="Close error dialog"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                )}
                 <CardContent className="p-8">
                     <div className="text-center space-y-6">
                         {/* Header */}
@@ -116,7 +130,7 @@ export default function UploadProgressOverlay({
 
                         {/* Errors */}
                         {errors.length > 0 && (
-                            <div className="text-left">
+                            <div className="text-left space-y-3">
                                 <h3 className="text-sm font-medium text-red-600 mb-2">Upload Errors:</h3>
                                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-h-32 overflow-y-auto">
                                     {errors.map((error, index) => (
@@ -125,6 +139,17 @@ export default function UploadProgressOverlay({
                                         </p>
                                     ))}
                                 </div>
+                                {onClose && (
+                                    <div className="flex justify-center">
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={onClose}
+                                            className="w-full"
+                                        >
+                                            Close
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         )}
 
