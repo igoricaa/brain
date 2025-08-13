@@ -190,7 +190,7 @@ class Deal(models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return ''
+        return f"/deals/{self.uuid}/"
 
     @property
     def display_name(self):

@@ -23,6 +23,9 @@ class DualUseSummaryViewSet(viewsets.ViewSet):
       - hq_country (ISO alpha-2 code for Company.hq_country)
     """
 
+    # OAuth2 scope required for access (for DOT TokenHasScope)
+    required_scopes = ['default']
+
     @extend_schema(
         parameters=[
             OpenApiParameter(name='category_name', description='Dual-use category name (iexact)', required=False, type=str),
@@ -82,4 +85,3 @@ class DualUseSummaryViewSet(viewsets.ViewSet):
         }
 
         return Response(data)
-

@@ -119,6 +119,9 @@ export function DealsList({
                         <Button variant="outline" size="sm">
                             Filter
                         </Button>
+                        <Button asChild size="sm">
+                            <a href="/deals/upload/">New Deal</a>
+                        </Button>
                     </div>
                 </div>
 

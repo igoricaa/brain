@@ -10,6 +10,7 @@ urlpatterns = [
     path("fresh/", views.fresh_deals, name="fresh_deals"),
     path("reviewed/", views.reviewed_deals, name="reviewed_deals"),
     path("missed/", views.missed_deals, name="missed_deals"),
+    path("upload/", views.deal_upload, name="deal_upload"),
 
     # Deal detail shells
     path("<uuid:uuid>/", views.deal_detail, name="deal_detail"),
@@ -25,4 +26,3 @@ urlpatterns = [
     # Dashboard data JSON (T-0203 will implement aggregations)
     path("dash/data/", views.deals_dashboard_data, name="dashboard_data"),
 ]
-

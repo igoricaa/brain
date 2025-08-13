@@ -124,3 +124,11 @@ node_modules/
 
 # nohup
 nohup.out
+
+# Seed data (gitignored)
+seed_data/*
+!seed_data/README.md
+
+# Local dev management commands (seed/import)
+apps/deals/management/commands/create_dummy_deal.py
+apps/deals/management/commands/import_figma_deal.py

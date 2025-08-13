@@ -20,6 +20,7 @@ const pageModules = {
     '_deals-reviewed': () => import('./pages/deals_reviewed'),
     '_deal-detail': () => import('./pages/deal_detail'),
     '_deal-assessment': () => import('./pages/deal_assessment'),
+    '_deal-upload': () => import('./pages/deal_upload'),
     '_du-dashboard': () => import('./pages/du_dashboard'),
     '_founders-list': () => import('./pages/founders'),
     '_advisors-list': () => import('./pages/advisors'),

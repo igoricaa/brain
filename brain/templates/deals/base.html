@@ -13,43 +13,7 @@
 
 {% block content %}
   <div class="my-4">
-    {% url 'deals:dashboard' as deals_dashboard_url %}
-    {% url 'deals:fresh_deals' as deals_fresh_url %}
-    {% url 'deals:reviewed_deals' as deals_reviewed_url %}
-    {% url 'deals:missed_deals' as deals_missed_url %}
-
-    <nav class="mb-4 flex flex-wrap items-center gap-2 text-sm">
-      <a
-        href="{{ deals_dashboard_url }}"
-        class="inline-flex items-center rounded-md px-2.5 py-1.5 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600/50
-          {% if request.path == deals_dashboard_url %} bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 {% else %} text-gray-700 hover:bg-gray-100 hover:text-gray-900 {% endif %}"
-        {% if request.path == deals_dashboard_url %}aria-current="page"{% endif %}
-      >{% trans 'Dashboard' %}</a>
-
-      <a
-        href="{{ deals_fresh_url }}"
-        class="inline-flex items-center rounded-md px-2.5 py-1.5 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600/50
-          {% if request.path == deals_fresh_url %} bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 {% else %} text-gray-700 hover:bg-gray-100 hover:text-gray-900 {% endif %}"
-        {% if request.path == deals_fresh_url %}aria-current="page"{% endif %}
-      >{% trans 'Fresh' %}</a>
-
-      <a
-        href="{{ deals_reviewed_url }}"
-        class="inline-flex items-center rounded-md px-2.5 py-1.5 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600/50
-          {% if request.path == deals_reviewed_url %} bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 {% else %} text-gray-700 hover:bg-gray-100 hover:text-gray-900 {% endif %}"
-        {% if request.path == deals_reviewed_url %}aria-current="page"{% endif %}
-      >{% trans 'Reviewed' %}</a>
-
-      <a
-        href="{{ deals_missed_url }}"
-        class="inline-flex items-center rounded-md px-2.5 py-1.5 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600/50
-          {% if request.path == deals_missed_url %} bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 {% else %} text-gray-700 hover:bg-gray-100 hover:text-gray-900 {% endif %}"
-        {% if request.path == deals_missed_url %}aria-current="page"{% endif %}
-      >{% trans 'Missed' %}</a>
-    </nav>
 
     {% block deals_content %}{% endblock %}
-
-    <div class="mt-4 text-xs text-gray-500">Shell template — content to be enhanced with React.</div>
   </div>
 {% endblock %}
