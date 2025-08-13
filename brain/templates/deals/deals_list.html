@@ -1,0 +1,16 @@
+{% extends "main.html" %}
+{% load django_vite %}
+
+{% block title %}Deals Overview{% endblock %}
+
+{% block body_id %}_deals-list{% endblock %}
+
+{% block content %}
+<div id="deals-list-root"></div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Load React components via Vite -->
+{% vite_hmr_client %}
+{% vite_asset 'src/main.tsx' %}
+{% endblock %}

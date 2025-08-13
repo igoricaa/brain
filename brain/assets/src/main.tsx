@@ -16,6 +16,7 @@ const pageModules = {
     '_grant-create': () => import('./pages/company_detail'),
     // Future migrations:
     '_deals-dashboard': () => import('./pages/deals_dashboard'),
+    '_deals-list': () => import('./pages/deals_list'),
     '_deals-fresh': () => import('./pages/deals_fresh'),
     '_deals-reviewed': () => import('./pages/deals_reviewed'),
     '_deal-detail': () => import('./pages/deal_detail'),

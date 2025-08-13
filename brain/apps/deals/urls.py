@@ -7,6 +7,7 @@ app_name = "deals"
 urlpatterns = [
     # Dashboards and lists
     path("", views.deals_dashboard, name="dashboard"),
+    path("list/", views.deals_list, name="deals_list"),
     path("fresh/", views.fresh_deals, name="fresh_deals"),
     path("reviewed/", views.reviewed_deals, name="reviewed_deals"),
     path("missed/", views.missed_deals, name="missed_deals"),

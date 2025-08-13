@@ -23,6 +23,11 @@ def reviewed_deals(request: HttpRequest) -> HttpResponse:
     return render(request, "deals/reviewed_deals.html", {})
 
 
+def deals_list(request: HttpRequest) -> HttpResponse:
+    """Render the unified deals list page with comprehensive table view."""
+    return render(request, "deals/deals_list.html", {})
+
+
 def missed_deals(request: HttpRequest) -> HttpResponse:
     return render(request, "deals/missed_deal_list.html", {})
 
