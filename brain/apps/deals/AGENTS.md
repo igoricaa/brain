@@ -412,15 +412,60 @@ const handleSimpleSubmit = async () => {
 - `POST /api/deals/files/` - Upload files (now works with drafts)
 - `POST /api/deals/drafts/{uuid}/finalize/` - Convert to live deal
 
+### Draft Management & Loading (Dec 2025)
+
+#### Complete Draft Workflow
+1. **Create New Draft** - Upload files, save as draft
+2. **Manage Drafts** - View all saved drafts in dialog
+3. **Load Existing Draft** - Click on draft to continue editing
+4. **Edit Draft** - Add/remove files, save changes
+5. **Submit Draft** - Finalize and redirect to deal detail
+
+#### Draft Loading Implementation
+```typescript
+// FileManager.tsx - Draft loading system
+useEffect(() => {
+  // Initialize draft ID from prop
+  if (mode === 'draft-deal' && dealId && dealId !== currentDraftId) {
+    setCurrentDraftId(dealId);
+  }
+}, [mode, dealId, currentDraftId]);
+
+useEffect(() => {
+  // Load existing draft files when draft ID changes
+  const loadDraftFiles = async () => {
+    if (mode === 'draft-deal' && currentDraftId) {
+      const response = await getDealFiles(currentDraftId);
+      setExistingDraftFiles(response.results);
+    }
+  };
+  loadDraftFiles();
+}, [mode, currentDraftId, getDealFiles]);
+```
+
+#### UI Features for Draft Management
+- **Draft Dialog**: Lists all drafts with creation date and file counts
+- **Existing Files Display**: Shows previously uploaded files with remove option
+- **Contextual Upload**: "Add More Files" vs "Upload Files for New Deal"
+- **Smart Button States**: Enabled when new files OR existing files present
+- **File Management**: Remove existing files, add new files, save incrementally
+
+#### API Integration
+- `GET /api/deals/drafts/` - List all drafts for management dialog
+- `GET /api/deals/files/?deal={uuid}` - Load existing files for draft
+- `DELETE /api/deals/files/{uuid}/` - Remove individual draft files
+
 ### Benefits
 1. **Faster workflow** - No form filling required
 2. **Immediate persistence** - Files saved to backend on draft save
 3. **Iterative editing** - Save multiple times without losing work
-4. **Clear intent separation** - Draft vs final submission
-5. **Reduced complexity** - No metadata configuration needed
+4. **Draft continuity** - Resume work on saved drafts seamlessly
+5. **Clear intent separation** - Draft vs final submission
+6. **Reduced complexity** - No metadata configuration needed
 
 ## Changelog — Aug/Dec 2025
 
+- **Draft Loading Fix (Dec 2025)** - Complete draft management with load/edit/continue workflow
 - **Draft File Upload Fix (Dec 2025)** - Backend serializer fix enables direct file uploads to draft deals
 - **UI Simplification (Dec 2025)** - Removed deal name requirement and complex metadata forms
 - **Workflow Redesign (Dec 2025)** - Save Draft stays on page, Submit for Underwriting redirects

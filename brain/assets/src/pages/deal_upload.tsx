@@ -39,8 +39,8 @@ function DealUploadApp() {
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Upload New Deal</h1>
                         <p className="mt-2 text-sm text-gray-600">
-                            Upload multiple files to create a new deal. Files will be staged until you
-                            submit for underwriting.
+                            Upload multiple files to create a new deal. Files will be staged until
+                            you submit for underwriting.
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -52,10 +52,7 @@ function DealUploadApp() {
                             <FolderOpen className="h-4 w-4 mr-2" />
                             Manage Drafts
                         </Button>
-                        <Button
-                            onClick={handleCreateNew}
-                            className="h-10 px-4"
-                        >
+                        <Button onClick={handleCreateNew} className="h-10 px-4">
                             <Plus className="h-4 w-4 mr-2" />
                             New Draft
                         </Button>
@@ -78,7 +75,7 @@ function DealUploadApp() {
                 onSelectDraft={handleSelectDraft}
                 onCreateNew={handleCreateNew}
             />
-            
+
             <Toaster />
         </>
     );

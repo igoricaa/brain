@@ -4,7 +4,10 @@
 
 Frontend components implementing a comprehensive file management system with three operational modes, advanced table features, bulk operations, and sophisticated state management. Built with React 19, TypeScript, shadcn/ui, and TanStack Table.
 
-**Recent Update (Dec 2025)**: Draft deal workflow significantly simplified - removed complex forms, deal name requirements, and metadata configuration. Focus on immediate file upload and backend persistence.
+**Recent Updates (Dec 2025)**: 
+- **Draft Loading Fix**: Complete draft management with load/edit/continue workflow
+- **Workflow Simplification**: Removed complex forms, deal name requirements, and metadata configuration
+- **Backend Integration**: Immediate file upload and backend persistence with existing file management
 
 ## Component Architecture
 
@@ -27,9 +30,10 @@ interface FileManagerProps {
 
 **Key Features**:
 - **Mode-based rendering**: Different UI flows for each operational mode
+- **Draft loading**: Initialize and load existing drafts with file management
 - **State coordination**: Manages file lists, loading states, and error handling
-- **Tab management**: Upload and metadata configuration tabs for draft mode
-- **Auto-save integration**: localStorage persistence with conflict detection
+- **Existing file display**: Shows previously uploaded files with remove capability
+- **Smart button states**: Enable/disable based on new and existing files
 - **Event handling**: Coordinates between child components
 
 **Architecture Pattern**:
@@ -37,12 +41,30 @@ interface FileManagerProps {
 const FileManager = ({ mode, draftId, dealId, ...props }) => {
   // State management
   const [files, setFiles] = useState<UploadFile[]>([]);
-  const [activeTab, setActiveTab] = useState('upload');
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [existingDraftFiles, setExistingDraftFiles] = useState<FileTableData[]>([]);
+  
+  // Initialize draft from prop
+  useEffect(() => {
+    if (mode === 'draft-deal' && dealId && dealId !== currentDraftId) {
+      setCurrentDraftId(dealId);
+    }
+  }, [mode, dealId, currentDraftId]);
+  
+  // Load existing draft files
+  useEffect(() => {
+    const loadDraftFiles = async () => {
+      if (mode === 'draft-deal' && currentDraftId) {
+        const response = await getDealFiles(currentDraftId);
+        setExistingDraftFiles(response.results);
+      }
+    };
+    loadDraftFiles();
+  }, [mode, currentDraftId, getDealFiles]);
   
   // API hooks
   const { createDraftDeal, uploadDraftFile } = useDraftDeals();
   const { getDealFiles, uploadDealFile } = useFileManagement();
-  const { saveDraft, loadDraft } = useDraftPersistence();
   
   // Mode-specific rendering
   const renderModeContent = () => {
@@ -1019,9 +1041,26 @@ Key architectural decisions include:
 
 The system serves as a foundation for future file management needs across the platform and demonstrates best practices for complex React component architecture.
 
-## Draft Deal Workflow Simplification (Dec 2025)
+## Draft Deal Workflow Evolution (Dec 2025)
 
-### Major Changes
+### Complete Draft Management Cycle
+
+#### 1. Draft Creation & Loading
+- **New Draft**: Upload files to create fresh draft
+- **Load Existing**: Select from saved drafts to continue editing
+- **Seamless Transition**: Auto-load existing files when draft selected
+
+#### 2. File Management Integration
+- **Existing Files**: Display previously uploaded files with remove capability
+- **New Files**: Add additional files to existing draft
+- **Contextual UI**: Upload section adapts based on draft state
+
+#### 3. Iterative Editing
+- **Save Draft**: Upload new files, keep existing ones, stay on page
+- **Continue Later**: All changes persisted in backend for later access
+- **File Operations**: Remove existing files, add new ones, save incrementally
+
+### Implementation Changes
 
 #### Before: Complex Multi-Step Process
 ```typescript
@@ -1090,24 +1129,37 @@ These components are no longer used in the simplified draft workflow:
 
 ### Updated Components
 
-#### FileManager.tsx - Simplified Handlers
+#### FileManager.tsx - Enhanced Draft Management
 ```typescript
-// Old: Complex form submission with validation
-const handleFormSubmit = async (formData: DealFormData) => {
-  const validated = dealFormSchema.parse(formData);
-  // Complex form processing...
-};
+// Draft loading and state management
+useEffect(() => {
+  if (mode === 'draft-deal' && dealId && dealId !== currentDraftId) {
+    setCurrentDraftId(dealId);
+  }
+}, [mode, dealId, currentDraftId]);
 
-// New: Direct file upload
+useEffect(() => {
+  const loadDraftFiles = async () => {
+    if (mode === 'draft-deal' && currentDraftId) {
+      const response = await getDealFiles(currentDraftId);
+      setExistingDraftFiles(response.results);
+    }
+  };
+  loadDraftFiles();
+}, [mode, currentDraftId, getDealFiles]);
+
+// Simplified save with existing file awareness
 const handleSimpleSaveDraft = async () => {
   const draftDeal = currentDraftId ? { uuid: currentDraftId } : 
     await createDraftDeal({ name: 'Untitled Deal' });
 
-  for (const file of files) {
-    await uploadDraftFile(draftDeal.uuid, {
-      file: file.file,
-      category: 'other',
-      proprietary: false,
+  // Only upload new files (not re-upload existing ones)
+  if (files.length > 0) {
+    for (const file of files) {
+      await uploadDraftFile(draftDeal.uuid, {
+        file: file.file,
+        category: 'other',
+        proprietary: false,
     });
   }
   
@@ -1180,6 +1232,81 @@ await uploadDraftFile(draftDeal.uuid, {
 3. **Better maintainability** - Fewer components to maintain
 4. **Clearer data flow** - Direct file → API → response pattern
 
+## Complete Draft Management Workflow (Dec 2025)
+
+### End-to-End User Journey
+
+#### 1. Draft Discovery & Selection
+```typescript
+// ManageDraftsDialog integration
+<ManageDraftsDialog
+  isOpen={isManageDraftsOpen}
+  onSelectDraft={handleSelectDraft}  // Sets draftId in FileManager
+  onCreateNew={handleCreateNew}      // Resets draftId to null
+/>
+```
+
+#### 2. Draft Loading & File Display
+```typescript
+// FileManager automatically loads existing files
+useEffect(() => {
+  if (mode === 'draft-deal' && currentDraftId) {
+    const response = await getDealFiles(currentDraftId);
+    setExistingDraftFiles(response.results);
+  }
+}, [mode, currentDraftId]);
+
+// UI shows both existing and new files
+{existingDraftFiles.length > 0 && (
+  <Card>
+    <CardTitle>Previously Uploaded Files ({existingDraftFiles.length})</CardTitle>
+    {existingDraftFiles.map(file => (
+      <FileRow key={file.uuid} file={file} onRemove={handleExistingFileRemove} />
+    ))}
+  </Card>
+)}
+```
+
+#### 3. File Operations
+```typescript
+// Add new files to existing draft
+const handleFileAdd = (newFiles: File[]) => {
+  setFiles(prev => [...prev, ...newFiles.map(toUploadFile)]);
+};
+
+// Remove existing files from backend
+const handleExistingFileRemove = async (fileUuid: string) => {
+  await deleteDealFile(fileUuid);
+  setExistingDraftFiles(prev => prev.filter(f => f.uuid !== fileUuid));
+};
+```
+
+#### 4. Smart Save Logic
+```typescript
+// Save only uploads new files, preserves existing
+const handleSimpleSaveDraft = async () => {
+  if (files.length > 0) {
+    for (const file of files) {
+      await uploadDraftFile(currentDraftId, file);
+    }
+    setFiles([]); // Clear new files after upload
+    // Reload to show newly uploaded files in existing section
+    const response = await getDealFiles(currentDraftId);
+    setExistingDraftFiles(response.results);
+  }
+  toast.success(`Draft saved successfully (${existingDraftFiles.length + files.length} files)`);
+};
+```
+
+#### 5. Button State Management
+```typescript
+// Buttons enabled when ANY files present (new OR existing)
+const hasFiles = files.length > 0 || existingDraftFiles.length > 0;
+
+<Button disabled={!hasFiles || isLoading}>Save Draft</Button>
+<Button disabled={!hasFiles || isLoading}>Submit for Underwriting</Button>
+```
+
 ### Migration Guide
 
 For developers working with the file manager components:
@@ -1194,6 +1321,7 @@ import { dealFormSchema } from '@/lib/validation/dealFormSchema';
 // Update FileManager props (simplified)
 <FileManager
   mode="draft-deal"
+  dealId={selectedDraftId}  // NEW: Pass draft ID to load existing files
   // Removed: formSchema, validationOptions, metadataConfig
   onDraftSubmit={handleDraftSubmit}
   onCancel={handleCancel}

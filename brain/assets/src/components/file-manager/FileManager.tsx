@@ -51,6 +51,10 @@ export default function FileManager({
 }: FileManagerProps) {
     const [files, setFiles] = useState<UploadFile[]>([]);
     const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+    
+    // Existing draft files (already uploaded to backend)
+    const [existingDraftFiles, setExistingDraftFiles] = useState<FileTableData[]>([]);
+    const [loadingDraftFiles, setLoadingDraftFiles] = useState(false);
 
     // File management state
     const [dealFiles, setDealFiles] = useState<FileTableData[]>([]);
@@ -102,6 +106,42 @@ export default function FileManager({
         error: fileManagementError,
         clearError: clearFileManagementError,
     } = useFileManagement();
+
+    // Initialize currentDraftId from dealId prop when in draft mode
+    useEffect(() => {
+        if (mode === 'draft-deal' && dealId && dealId !== currentDraftId) {
+            setCurrentDraftId(dealId);
+        }
+    }, [mode, dealId, currentDraftId]);
+
+    // Load existing draft files when currentDraftId changes
+    useEffect(() => {
+        const loadDraftFiles = async () => {
+            if (mode !== 'draft-deal' || !currentDraftId) {
+                setExistingDraftFiles([]);
+                return;
+            }
+
+            setLoadingDraftFiles(true);
+            try {
+                clearFileManagementError();
+                const response = await getDealFiles(currentDraftId);
+                setExistingDraftFiles(response.results);
+            } catch (error) {
+                console.error('Error loading draft files:', error);
+                const sanitizedError = sanitizeError(error, 'Draft file loading');
+                const userFriendlyMessage = getUserFriendlyMessage(sanitizedError, 'Draft file loading');
+                toast.error('Failed to load draft files', {
+                    description: userFriendlyMessage,
+                    duration: 4000,
+                });
+            } finally {
+                setLoadingDraftFiles(false);
+            }
+        };
+
+        loadDraftFiles();
+    }, [mode, currentDraftId, getDealFiles, clearFileManagementError]);
 
     const handleFileAdd = useCallback((newFiles: File[]) => {
         const uploadFiles: UploadFile[] = newFiles.map((file, index) => ({
@@ -169,13 +209,29 @@ export default function FileManager({
 
     const handleFileDelete = useCallback(
         async (fileId: string) => {
-            if (mode === 'existing-deal') {
-                await deleteDealFile(fileId);
-            } else if (mode === 'library') {
-                await deleteLibraryFile(fileId);
+            try {
+                if (mode === 'existing-deal') {
+                    await deleteDealFile(fileId);
+                } else if (mode === 'library') {
+                    await deleteLibraryFile(fileId);
+                } else if (mode === 'draft-deal') {
+                    // Delete draft file using the same API endpoint
+                    await deleteDealFile(fileId);
+                    // Remove the file from existingDraftFiles state immediately
+                    setExistingDraftFiles(prev => prev.filter(file => file.uuid !== fileId));
+                    toast.success('File removed successfully');
+                }
+            } catch (error) {
+                console.error('Error deleting file:', error);
+                const sanitizedError = sanitizeError(error, 'File deletion');
+                const userFriendlyMessage = getUserFriendlyMessage(sanitizedError, 'File deletion');
+                toast.error('Failed to delete file', {
+                    description: userFriendlyMessage,
+                    duration: 4000,
+                });
             }
         },
-        [mode, deleteDealFile, deleteLibraryFile],
+        [mode, deleteDealFile, deleteLibraryFile, setExistingDraftFiles],
     );
 
     const handleFileReprocess = useCallback(
@@ -259,6 +315,15 @@ export default function FileManager({
 
             // Clear files after upload since they're now saved to backend
             setFiles([]);
+
+            // Reload existing draft files to show the newly uploaded files
+            try {
+                const response = await getDealFiles(draftDeal.uuid);
+                setExistingDraftFiles(response.results);
+            } catch (error) {
+                console.error('Error reloading draft files:', error);
+                // Don't show error toast as the main operation succeeded
+            }
 
             // Show success message but stay on the same page (no redirect)
             toast.success('Draft saved successfully');
@@ -397,6 +462,7 @@ export default function FileManager({
     }, [
         files,
         currentDraftId,
+        existingDraftFiles,
         createDraftDeal,
         uploadDraftFile,
         finalizeDraftDeal,
@@ -445,25 +511,70 @@ export default function FileManager({
             case 'draft-deal':
                 return (
                     <div className="space-y-6">
+                        {/* Existing Files (if any) */}
+                        {existingDraftFiles.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <FileText className="h-5 w-5" />
+                                        Previously Uploaded Files ({existingDraftFiles.length})
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        {existingDraftFiles.map((file) => (
+                                            <div
+                                                key={file.uuid}
+                                                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <FileText className="h-4 w-4 text-gray-500" />
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            {file.file_name || 'Unknown file'}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">
+                                                            {file.categories?.[0] || 'other'} • 
+                                                            {file.processing_status || 'pending'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleFileDelete(file.uuid)}
+                                                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
                         {/* File Upload */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Upload className="h-5 w-5" />
-                                    Upload Files for New Deal
+                                    {currentDraftId ? 'Add More Files' : 'Upload Files for New Deal'}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-sm text-muted-foreground mb-4">
-                                    Upload multiple files to create a new deal. Files will be staged
-                                    until you submit for underwriting.
+                                    {currentDraftId 
+                                        ? 'Add additional files to this draft deal.'
+                                        : 'Upload multiple files to create a new deal. Files will be staged until you submit for underwriting.'
+                                    }
                                 </p>
                                 <FileUpload
                                     files={files}
                                     onFilesAdd={handleFileAdd}
                                     onFileRemove={handleFileRemove}
                                     maxFiles={20}
-                                    disabled={isDraftLoading || isCreatingDraft}
+                                    disabled={isDraftLoading || isCreatingDraft || loadingDraftFiles}
                                 />
                             </CardContent>
                         </Card>
@@ -516,7 +627,7 @@ export default function FileManager({
                                         <Button
                                             type="button"
                                             onClick={() => handleSimpleSaveDraft()}
-                                            disabled={files.length === 0 || isDraftLoading}
+                                            disabled={(files.length === 0 && existingDraftFiles.length === 0) || isDraftLoading}
                                             className="h-11 px-6 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200"
                                         >
                                             {isDraftLoading ? (
@@ -536,7 +647,7 @@ export default function FileManager({
                                             type="button"
                                             onClick={() => handleSimpleSubmit()}
                                             disabled={
-                                                files.length === 0 ||
+                                                (files.length === 0 && existingDraftFiles.length === 0) ||
                                                 isDraftLoading ||
                                                 isCreatingDraft
                                             }
