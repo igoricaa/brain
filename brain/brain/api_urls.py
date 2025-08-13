@@ -3,9 +3,9 @@ from rest_framework import routers
 
 from companies.api.urls import router as company_router
 from deals.api.urls import router as deals_router
+from dual_use.api.urls import router as dual_user_router
 from library.api.urls import router as library_router
 from socialgraph.api.urls import router as socialgraph_router
-from dual_use.api.urls import router as dual_use_router
 
 
 class DefaultRouter(routers.DefaultRouter):
@@ -30,4 +30,4 @@ router.include_router(r'deals/', deals_router)
 router.include_router(r'library/', library_router)
 router.include_router(r'locations/', locations_router)
 router.include_router(r'socialgraph/', socialgraph_router)
-router.include_router(r'dual-use/', dual_use_router)
+router.include_router(r'dual-use/', dual_user_router)
