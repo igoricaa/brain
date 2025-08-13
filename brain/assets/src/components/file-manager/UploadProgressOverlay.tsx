@@ -2,14 +2,7 @@ import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-    Upload,
-    CheckCircle2,
-    AlertCircle,
-    X,
-    FileUp,
-    Loader2
-} from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, X, FileUp, Loader2 } from 'lucide-react';
 
 export interface UploadState {
     isUploading: boolean;
@@ -84,16 +77,15 @@ export default function UploadProgressOverlay({
                                     <Upload className="w-8 h-8 text-blue-600 animate-pulse" />
                                 </div>
                             )}
-                            
+
                             <h2 className="text-xl font-semibold">
-                                {isCompleted 
-                                    ? errors.length > 0 
-                                        ? 'Upload Failed' 
+                                {isCompleted
+                                    ? errors.length > 0
+                                        ? 'Upload Failed'
                                         : 'Upload Complete!'
-                                    : 'Uploading Files'
-                                }
+                                    : 'Uploading Files'}
                             </h2>
-                            
+
                             {!isCompleted && (
                                 <p className="text-sm text-muted-foreground">
                                     Please don't close this page while files are uploading
@@ -108,11 +100,15 @@ export default function UploadProgressOverlay({
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="text-muted-foreground">Current file:</span>
-                                        <span className="font-medium">{currentFile} of {totalFiles}</span>
+                                        <span className="font-medium">
+                                            {currentFile} of {totalFiles}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm">
                                         <FileUp className="w-4 h-4 text-blue-600" />
-                                        <span className="truncate font-medium">{currentFileName}</span>
+                                        <span className="truncate font-medium">
+                                            {currentFileName}
+                                        </span>
                                     </div>
                                     <Progress value={fileProgress} className="h-2" />
                                 </div>
@@ -120,8 +116,12 @@ export default function UploadProgressOverlay({
                                 {/* Overall Progress */}
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Overall progress:</span>
-                                        <span className="font-medium">{Math.round(overallProgress)}%</span>
+                                        <span className="text-muted-foreground">
+                                            Overall progress:
+                                        </span>
+                                        <span className="font-medium">
+                                            {Math.round(overallProgress)}%
+                                        </span>
                                     </div>
                                     <Progress value={overallProgress} className="h-3" />
                                 </div>
@@ -131,7 +131,9 @@ export default function UploadProgressOverlay({
                         {/* Errors */}
                         {errors.length > 0 && (
                             <div className="text-left space-y-3">
-                                <h3 className="text-sm font-medium text-red-600 mb-2">Upload Errors:</h3>
+                                <h3 className="text-sm font-medium text-red-600 mb-2">
+                                    Upload Errors:
+                                </h3>
                                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-h-32 overflow-y-auto">
                                     {errors.map((error, index) => (
                                         <p key={index} className="text-sm text-red-700">
@@ -141,8 +143,8 @@ export default function UploadProgressOverlay({
                                 </div>
                                 {onClose && (
                                     <div className="flex justify-center">
-                                        <Button 
-                                            variant="outline" 
+                                        <Button
+                                            variant="outline"
                                             onClick={onClose}
                                             className="w-full"
                                         >
@@ -170,11 +172,7 @@ export default function UploadProgressOverlay({
 
                         {/* Actions */}
                         {!isCompleted && allowCancel && onCancel && (
-                            <Button 
-                                variant="outline" 
-                                onClick={onCancel}
-                                className="w-full"
-                            >
+                            <Button variant="outline" onClick={onCancel} className="w-full">
                                 <X className="w-4 h-4 mr-2" />
                                 Cancel Upload
                             </Button>

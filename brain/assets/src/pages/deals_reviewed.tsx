@@ -1,5 +1,4 @@
-import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
-import { StrictMode } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Search, X } from 'lucide-react';

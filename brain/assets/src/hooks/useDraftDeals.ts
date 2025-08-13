@@ -260,7 +260,7 @@ export const useDraftDeals = () => {
 
         try {
             const response = await http.get<{ results: DraftDeal[] }>('/deals/drafts/');
-            return response.data.results || response.data as any;
+            return response.data.results || (response.data as any);
         } catch (err: unknown) {
             const apiError = err as ApiErrorResponse;
             const errorMessage = apiError.response?.data?.detail || 'Failed to fetch draft deals';

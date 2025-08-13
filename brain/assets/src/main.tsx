@@ -25,7 +25,7 @@ const pageModules = {
     '_founders-list': () => import('./pages/founders'),
     '_advisors-list': () => import('./pages/advisors'),
     '_research-agent': () => import('./pages/research_agent'),
-    '_library': () => import('./pages/library'),
+    _library: () => import('./pages/library'),
 } as const;
 
 // Page initialization system

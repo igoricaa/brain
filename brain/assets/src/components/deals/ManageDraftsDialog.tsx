@@ -31,14 +31,12 @@ interface ManageDraftsDialogProps {
     isOpen: boolean;
     onClose: () => void;
     onSelectDraft: (draftUuid: string) => void;
-    onCreateNew: () => void;
 }
 
 export default function ManageDraftsDialog({
     isOpen,
     onClose,
     onSelectDraft,
-    onCreateNew,
 }: ManageDraftsDialogProps) {
     const [drafts, setDrafts] = useState<DraftDeal[]>([]);
     const [loading, setLoading] = useState(false);
@@ -143,7 +141,7 @@ export default function ManageDraftsDialog({
                         </DialogTitle>
                         <DialogDescription className="text-base">
                             You have {drafts.length} saved draft{drafts.length !== 1 ? 's' : ''}.
-                            Select one to continue editing or create a new deal from scratch.
+                            Select one to continue editing.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -278,7 +276,7 @@ export default function ManageDraftsDialog({
                     <DialogFooter className="border-t border-gray-300 pt-6">
                         <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-4">
                             <p className="text-sm text-gray-500">
-                                Select a draft to continue or start fresh with a new deal
+                                Select a draft to continue editing
                             </p>
                             <Button
                                 onClick={() => onClose()}

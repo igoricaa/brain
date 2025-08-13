@@ -51,7 +51,7 @@ export default function FileManager({
 }: FileManagerProps) {
     const [files, setFiles] = useState<UploadFile[]>([]);
     const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
-    
+
     // Existing draft files (already uploaded to backend)
     const [existingDraftFiles, setExistingDraftFiles] = useState<FileTableData[]>([]);
     const [loadingDraftFiles, setLoadingDraftFiles] = useState(false);
@@ -130,7 +130,10 @@ export default function FileManager({
             } catch (error) {
                 console.error('Error loading draft files:', error);
                 const sanitizedError = sanitizeError(error, 'Draft file loading');
-                const userFriendlyMessage = getUserFriendlyMessage(sanitizedError, 'Draft file loading');
+                const userFriendlyMessage = getUserFriendlyMessage(
+                    sanitizedError,
+                    'Draft file loading',
+                );
                 toast.error('Failed to load draft files', {
                     description: userFriendlyMessage,
                     duration: 4000,
@@ -218,7 +221,7 @@ export default function FileManager({
                     // Delete draft file using the same API endpoint
                     await deleteDealFile(fileId);
                     // Remove the file from existingDraftFiles state immediately
-                    setExistingDraftFiles(prev => prev.filter(file => file.uuid !== fileId));
+                    setExistingDraftFiles((prev) => prev.filter((file) => file.uuid !== fileId));
                     toast.success('File removed successfully');
                 }
             } catch (error) {
@@ -534,7 +537,7 @@ export default function FileManager({
                                                             {file.file_name || 'Unknown file'}
                                                         </p>
                                                         <p className="text-xs text-gray-500">
-                                                            {file.categories?.[0] || 'other'} • 
+                                                            {file.categories?.[0] || 'other'} •
                                                             {file.processing_status || 'pending'}
                                                         </p>
                                                     </div>
@@ -559,22 +562,25 @@ export default function FileManager({
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Upload className="h-5 w-5" />
-                                    {currentDraftId ? 'Add More Files' : 'Upload Files for New Deal'}
+                                    {currentDraftId
+                                        ? 'Add More Files'
+                                        : 'Upload Files for New Deal'}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-sm text-muted-foreground mb-4">
-                                    {currentDraftId 
+                                    {currentDraftId
                                         ? 'Add additional files to this draft deal.'
-                                        : 'Upload multiple files to create a new deal. Files will be staged until you submit for underwriting.'
-                                    }
+                                        : 'Upload multiple files to create a new deal. Files will be staged until you submit for underwriting.'}
                                 </p>
                                 <FileUpload
                                     files={files}
                                     onFilesAdd={handleFileAdd}
                                     onFileRemove={handleFileRemove}
                                     maxFiles={20}
-                                    disabled={isDraftLoading || isCreatingDraft || loadingDraftFiles}
+                                    disabled={
+                                        isDraftLoading || isCreatingDraft || loadingDraftFiles
+                                    }
                                 />
                             </CardContent>
                         </Card>
@@ -627,7 +633,11 @@ export default function FileManager({
                                         <Button
                                             type="button"
                                             onClick={() => handleSimpleSaveDraft()}
-                                            disabled={(files.length === 0 && existingDraftFiles.length === 0) || isDraftLoading}
+                                            disabled={
+                                                (files.length === 0 &&
+                                                    existingDraftFiles.length === 0) ||
+                                                isDraftLoading
+                                            }
                                             className="h-11 px-6 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200"
                                         >
                                             {isDraftLoading ? (
@@ -647,7 +657,8 @@ export default function FileManager({
                                             type="button"
                                             onClick={() => handleSimpleSubmit()}
                                             disabled={
-                                                (files.length === 0 && existingDraftFiles.length === 0) ||
+                                                (files.length === 0 &&
+                                                    existingDraftFiles.length === 0) ||
                                                 isDraftLoading ||
                                                 isCreatingDraft
                                             }

@@ -27,11 +27,6 @@ function DealUploadApp() {
         setIsManageDraftsOpen(false);
     }, []);
 
-    const handleCreateNew = useCallback(() => {
-        setCurrentDraftId(null);
-        setIsManageDraftsOpen(false);
-    }, []);
-
     return (
         <>
             <div className="mx-auto w-full max-w-7xl py-6">
@@ -52,10 +47,6 @@ function DealUploadApp() {
                             <FolderOpen className="h-4 w-4 mr-2" />
                             Manage Drafts
                         </Button>
-                        <Button onClick={handleCreateNew} className="h-10 px-4">
-                            <Plus className="h-4 w-4 mr-2" />
-                            New Draft
-                        </Button>
                     </div>
                 </div>
 
@@ -73,7 +64,6 @@ function DealUploadApp() {
                 isOpen={isManageDraftsOpen}
                 onClose={() => setIsManageDraftsOpen(false)}
                 onSelectDraft={handleSelectDraft}
-                onCreateNew={handleCreateNew}
             />
 
             <Toaster />
