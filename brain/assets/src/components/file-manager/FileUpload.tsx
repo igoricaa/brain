@@ -184,7 +184,7 @@ export default function FileUpload({
             case 'error':
                 return <Badge variant="destructive">Error</Badge>;
             default:
-                return <Badge variant="outline">Pending</Badge>;
+                return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Pending</Badge>;
         }
     };
 
@@ -262,7 +262,7 @@ export default function FileUpload({
 
             {/* File list */}
             {files.length > 0 && (
-                <Card>
+                <Card className="border-0 shadow-sm">
                     <CardContent className="p-0">
                         <div className="divide-y divide-gray-200">
                             {files.map((file) => (

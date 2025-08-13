@@ -44,6 +44,7 @@ import {
     Cpu,
     BarChart3,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { UploadFile } from './FileUpload';
 
 // File metadata schema
@@ -113,9 +114,11 @@ export interface FileMetadataFormProps {
     onSubmit: (data: DraftDealFormData) => void;
     onSaveDraft: (data: DraftDealFormData) => void;
     onCancel: () => void;
+    onFormChange?: (data: DraftDealFormData) => void;
     initialData?: Partial<DraftDealFormData>;
     isSubmitting?: boolean;
     isDraftSaving?: boolean;
+    formRef?: React.RefObject<{ getValues: () => DraftDealFormData }>;
 }
 
 const FILE_CATEGORIES = Object.entries(CATEGORY_CONFIG).map(([value, config]) => ({
@@ -147,12 +150,16 @@ export default function FileMetadataForm({
     onSubmit,
     onSaveDraft,
     onCancel,
+    onFormChange,
     initialData,
     isSubmitting = false,
     isDraftSaving = false,
+    formRef,
 }: FileMetadataFormProps) {
     const form = useForm<DraftDealFormData>({
         resolver: zodResolver(draftDealSchema),
+        mode: 'onSubmit', // Only validate on submit
+        reValidateMode: 'onChange', // Re-validate on change after first submit
         defaultValues: {
             name: initialData?.name || '',
             description: initialData?.description || '',
@@ -174,6 +181,36 @@ export default function FileMetadataForm({
         control: form.control,
         name: 'files',
     });
+
+    // Expose form methods through ref
+    useEffect(() => {
+        if (formRef) {
+            formRef.current = {
+                getValues: () => form.getValues(),
+            };
+        }
+    }, [form, formRef]);
+
+    // Update form when initialData changes (e.g., when loading draft)
+    useEffect(() => {
+        if (initialData) {
+            form.reset({
+                name: initialData.name || '',
+                description: initialData.description || '',
+                website: initialData.website || '',
+                fundingTarget: initialData.fundingTarget || '',
+                files: form.getValues('files'), // Keep existing file data
+            });
+        }
+    }, [initialData, form]);
+
+    // Manual form change handler (removed automatic watching to prevent infinite loops)
+    const handleManualFormChange = useCallback(() => {
+        if (onFormChange) {
+            const currentData = form.getValues();
+            onFormChange(currentData);
+        }
+    }, [form, onFormChange]);
 
     // Update form when files change
     useEffect(() => {
@@ -206,7 +243,8 @@ export default function FileMetadataForm({
     }, [files, form]);
 
     const handleSubmit = useCallback(
-        (data: DraftDealFormData) => {
+        async (data: DraftDealFormData) => {
+            // Only validate form fields - file upload will happen during submission
             onSubmit(data);
         },
         [onSubmit],
@@ -215,7 +253,10 @@ export default function FileMetadataForm({
     const handleSaveDraft = useCallback(() => {
         const data = form.getValues();
         onSaveDraft(data);
-    }, [form, onSaveDraft]);
+        // Also trigger form change for persistence
+        handleManualFormChange();
+        // Toast will be shown by FileManager based on justSaved state
+    }, [form, onSaveDraft, handleManualFormChange]);
 
     const addTag = useCallback(
         (fileIndex: number, tag: string) => {
@@ -248,7 +289,6 @@ export default function FileMetadataForm({
         [files],
     );
 
-
     if (files.length === 0) {
         return (
             <Alert>
@@ -262,9 +302,30 @@ export default function FileMetadataForm({
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+                // Focus first error field
+                const firstErrorField = Object.keys(errors)[0];
+                if (firstErrorField === 'files') {
+                    // Handle file-specific errors
+                    const fileErrors = errors.files;
+                    if (Array.isArray(fileErrors)) {
+                        const firstFileError = fileErrors.findIndex((err) => err !== undefined);
+                        if (firstFileError !== -1) {
+                            const errorField = Object.keys(fileErrors[firstFileError] || {})[0];
+                            if (errorField) {
+                                form.setFocus(`files.${firstFileError}.${errorField}` as any);
+                            }
+                        }
+                    }
+                } else if (firstErrorField) {
+                    form.setFocus(firstErrorField as any);
+                }
+                
+                // Show error toast
+                toast.error('Please fill in all required fields');
+            })} className="space-y-6">
                 {/* Deal Information */}
-                <Card>
+                <Card className="shadow-sm">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3 text-xl font-semibold">
                             <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50">
@@ -361,8 +422,8 @@ export default function FileMetadataForm({
                 </Card>
 
                 {/* File Metadata */}
-                <Card>
-                    <CardHeader className="border-b">
+                <Card className="shadow-sm">
+                    <CardHeader className="border-b border-gray-300">
                         <CardTitle className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-purple-50">
@@ -386,8 +447,7 @@ export default function FileMetadataForm({
                             // Use the file ID stored in the form field, not the useFieldArray generated ID
                             const formFileId = form.watch(`files.${index}.id`);
                             const uploadFile = getFileFromUploadList(formFileId);
-                            
-                            
+
                             if (!uploadFile) return null;
 
                             const categoryConfig =
@@ -434,10 +494,10 @@ export default function FileMetadataForm({
                             return (
                                 <Card
                                     key={field.id}
-                                    className="border hover:border-gray-300 transition-colors"
+                                    className="shadow-sm"
                                 >
-                                    <CardContent className="p-6">
-                                        <div className="flex items-start justify-between mb-4">
+                                    <CardContent className="p-6 space-y-6">
+                                        <div className="flex items-start justify-between">
                                             <div className="flex items-start gap-3 flex-1">
                                                 <div
                                                     className={`flex items-center justify-center w-10 h-10 rounded-lg ${categoryConfig.color}`}
@@ -473,8 +533,8 @@ export default function FileMetadataForm({
                                                 control={form.control}
                                                 name={`files.${index}.category`}
                                                 render={({ field: formField }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-sm font-medium">
+                                                    <FormItem className="space-y-2.5">
+                                                        <FormLabel className="block text-sm font-medium">
                                                             Category*
                                                         </FormLabel>
                                                         <Select
@@ -514,8 +574,8 @@ export default function FileMetadataForm({
                                                 control={form.control}
                                                 name={`files.${index}.documentType`}
                                                 render={({ field: formField }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-sm font-medium">
+                                                    <FormItem className="space-y-2.5">
+                                                        <FormLabel className="block text-sm font-medium">
                                                             Document Type
                                                         </FormLabel>
                                                         <Select
@@ -548,8 +608,8 @@ export default function FileMetadataForm({
                                             control={form.control}
                                             name={`files.${index}.tldr`}
                                             render={({ field: formField }) => (
-                                                <FormItem>
-                                                    <FormLabel>Summary (TLDR)</FormLabel>
+                                                <FormItem className="space-y-2.5">
+                                                    <FormLabel className="block">Summary (TLDR)</FormLabel>
                                                     <FormControl>
                                                         <Textarea
                                                             placeholder="Brief summary of this document's contents"
@@ -570,29 +630,32 @@ export default function FileMetadataForm({
                                             control={form.control}
                                             name={`files.${index}.proprietary`}
                                             render={({ field: formField }) => (
-                                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                                    <FormControl>
-                                                        <Checkbox
-                                                            checked={formField.value}
-                                                            onCheckedChange={formField.onChange}
-                                                        />
-                                                    </FormControl>
-                                                    <div className="space-y-1 leading-none">
-                                                        <FormLabel>
-                                                            Proprietary Information
-                                                        </FormLabel>
-                                                        <FormDescription>
-                                                            This document contains sensitive or
-                                                            proprietary information
-                                                        </FormDescription>
+                                                <FormItem className="space-y-4">
+                                                    <div className="flex items-center space-x-3">
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={formField.value}
+                                                                onCheckedChange={formField.onChange}
+                                                                className="h-5 w-5 rounded-full border-2 border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                                                            />
+                                                        </FormControl>
+                                                        <div className="space-y-1 leading-none">
+                                                            <FormLabel className="text-sm font-medium">
+                                                                Proprietary Information
+                                                            </FormLabel>
+                                                            <FormDescription>
+                                                                This document contains sensitive or
+                                                                proprietary information
+                                                            </FormDescription>
+                                                        </div>
                                                     </div>
                                                 </FormItem>
                                             )}
                                         />
 
                                         {/* Tags */}
-                                        <div className="space-y-3">
-                                            <FormLabel className="text-sm font-medium">
+                                        <div className="space-y-2.5">
+                                            <FormLabel className="block text-sm font-medium">
                                                 Tags
                                             </FormLabel>
                                             <div className="flex flex-wrap gap-2 mb-3">
@@ -672,9 +735,12 @@ export default function FileMetadataForm({
                     </CardContent>
                 </Card>
 
-                {/* Action Buttons */}
-                <Card className="border bg-gray-50/50">
-                    <CardContent className="p-6">
+                {/* Add bottom padding to prevent overlap with sticky bar */}
+                <div className="pb-24"></div>
+
+                {/* Sticky Bottom Action Bar */}
+                <div className="fixed bottom-0 left-64 right-0 bg-white shadow-lg z-50">
+                    <div className="max-w-7xl mx-auto p-4">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div className="space-y-1">
                                 <h3 className="font-semibold text-lg">Ready to Submit?</h3>
@@ -687,9 +753,8 @@ export default function FileMetadataForm({
                             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                                 <Button
                                     type="button"
-                                    variant="outline"
                                     onClick={onCancel}
-                                    className="h-11 px-6"
+                                    className="h-11 px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200"
                                 >
                                     <X className="h-4 w-4 mr-2" />
                                     Cancel
@@ -697,10 +762,9 @@ export default function FileMetadataForm({
 
                                 <Button
                                     type="button"
-                                    variant="secondary"
                                     onClick={handleSaveDraft}
                                     disabled={isDraftSaving}
-                                    className="h-11 px-6"
+                                    className="h-11 px-6 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200"
                                 >
                                     {isDraftSaving ? (
                                         <>
@@ -717,9 +781,7 @@ export default function FileMetadataForm({
 
                                 <Button
                                     type="submit"
-                                    disabled={
-                                        isSubmitting || files.some((f) => f.status !== 'completed')
-                                    }
+                                    disabled={isSubmitting}
                                     className="h-11 px-8"
                                 >
                                     {isSubmitting ? (
@@ -736,8 +798,8 @@ export default function FileMetadataForm({
                                 </Button>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </form>
         </Form>
     );

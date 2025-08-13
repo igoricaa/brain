@@ -307,8 +307,52 @@ const fileMetadataSchema = z.object({
 - **Expired draft cleanup** (7-day expiration)
 - **Version mismatch detection** between tabs/windows
 
+### Toast Notification System (T-0814)
+
+#### Integration with File Management
+- **Draft save feedback** using toast notifications instead of persistent alerts
+- **Non-blocking UX** allowing continued work during notification display
+- **Intelligent positioning** above sticky bottom bars with proper z-index hierarchy
+- **Auto-dismiss** after 3 seconds for optimal user experience
+
+#### Implementation
+- **Components**: Sonner-based toast system documented in `assets/AGENTS.md`
+- **Integration points**: FileManager auto-save notifications and FileMetadataForm manual save
+- **Design patterns**: Immediate feedback (alerts) vs delayed feedback (toasts) hierarchy
+
+For detailed toast system architecture, see `assets/AGENTS.md → Toast Notification System`.
+
+### File Upload Flow Fixes (T-0815)
+
+#### Form Data Persistence Enhancement
+- **Tab Change Persistence**: Form data automatically saved when switching away from Configure Details tab
+- **Reference-Based Access**: Using `formRef` to access form data without reactive dependencies
+- **State Restoration**: Complete form state including active tab restored from draft storage
+- **Infinite Loop Prevention**: Non-reactive form access prevents circular dependencies
+
+#### Upload Process Redesign
+- **Submit Button Availability**: Always enabled regardless of file upload status
+- **Form-Only Validation**: Submit validation focuses exclusively on required form fields
+- **Upload on Submit**: Files upload only when "Submit for Underwriting" is clicked
+- **Progress Overlay**: Full-screen modal with real-time upload progress and file status
+
+#### User Experience Improvements
+- **Predictable Navigation**: No automatic tab switching after file selection
+- **Clear Progress Feedback**: Sequential upload with individual file progress tracking
+- **Enhanced Error Handling**: Specific error messages for upload failures
+- **Non-Blocking Errors**: Upload failures don't cause unexpected navigation
+
+#### Technical Integration Points
+- **FileManager.tsx**: Enhanced with upload state management and progress tracking
+- **FileMetadataForm.tsx**: Simplified validation logic focusing on form fields only
+- **UploadProgressOverlay.tsx**: New component providing comprehensive upload feedback
+- **useDraftPersistence.ts**: Extended to include active tab state in draft storage
+
+For detailed implementation documentation, see `assets/AGENTS.md → File Upload Flow Fixes`.
+
 ## Changelog — Aug/Dec 2025
 
+- **File Upload Flow Fixes (T-0815)** - Critical fixes for form data persistence and upload timing issues
 - **File Management System** - Complete rewrite with multi-file upload, draft workflow, and bulk operations
 - **Draft Deal Persistence** - localStorage auto-save with conflict detection and recovery
 - **TanStack Table Integration** - Advanced table with row selection, sorting, filtering, and pagination

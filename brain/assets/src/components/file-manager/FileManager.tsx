@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,9 +12,12 @@ import {
     Clock,
     CheckCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import FileUpload, { UploadFile } from './FileUpload';
 import FileMetadataForm from './FileMetadataForm';
 import FileTable, { FileTableData } from './FileTable';
+import DraftSelectionDialog from './DraftSelectionDialog';
+import UploadProgressOverlay, { UploadState } from './UploadProgressOverlay';
 import { useDraftDeals } from '@/hooks/useDraftDeals';
 import { useFileManagement } from '@/hooks/useFileManagement';
 import { useDraftPersistence, type DraftState } from '@/hooks/useDraftPersistence';
@@ -61,9 +64,24 @@ export default function FileManager({
     // Draft persistence state
     const [draftFormData, setDraftFormData] = useState<any>(null);
     const [showDraftConflict, setShowDraftConflict] = useState(false);
-    const [showDraftRecovery, setShowDraftRecovery] = useState(false);
-    const [existingDraft, setExistingDraft] = useState<DraftState | null>(null);
+    const [showDraftSelection, setShowDraftSelection] = useState(false);
+    const [availableDrafts, setAvailableDrafts] = useState<DraftState[]>([]);
     const [submitError, setSubmitError] = useState<string | null>(null);
+
+    // Form ref to access form data without reactive dependencies
+    const formRef = useRef<{ getValues: () => any } | null>(null);
+
+    // Upload progress state
+    const [uploadState, setUploadState] = useState<UploadState>({
+        isUploading: false,
+        currentFile: 0,
+        totalFiles: 0,
+        currentFileName: '',
+        overallProgress: 0,
+        fileProgress: 0,
+        errors: [],
+        isCompleted: false,
+    });
 
     const {
         createDraftDeal,
@@ -106,6 +124,7 @@ export default function FileManager({
         currentDraftId: persistenceDraftId,
         isAutoSaving,
         lastSaved,
+        justSaved,
         error: persistenceError,
         clearError: clearPersistenceError,
     } = useDraftPersistence(currentDraftId || undefined);
@@ -118,6 +137,7 @@ export default function FileManager({
                 description: formData?.description || '',
                 website: formData?.website || '',
                 fundingTarget: formData?.fundingTarget || '',
+                activeTab,
                 files: files.map((f) => ({
                     id: f.id,
                     name: f.name,
@@ -131,7 +151,7 @@ export default function FileManager({
                 })),
             };
         },
-        [files],
+        [files, activeTab],
     );
 
     // Load files from DraftState
@@ -152,7 +172,7 @@ export default function FileManager({
             tags: f.tags,
         }));
         setFiles(uploadFiles);
-        setActiveTab('metadata');
+        // Don't auto-switch tabs - let user stay on current tab
     }, []);
 
     // Auto-save draft when form data or files change
@@ -184,8 +204,8 @@ export default function FileManager({
         // Check for existing drafts
         const drafts = getAllDrafts();
         if (drafts.length > 0 && !currentDraftId) {
-            setExistingDraft(drafts[0]);
-            setShowDraftRecovery(true);
+            setAvailableDrafts(drafts);
+            setShowDraftSelection(true);
         } else if (currentDraftId) {
             const draft = loadDraft(currentDraftId);
             if (draft) {
@@ -196,6 +216,10 @@ export default function FileManager({
                     website: draft.website,
                     fundingTarget: draft.fundingTarget,
                 });
+                // Restore active tab
+                if (draft.activeTab) {
+                    setActiveTab(draft.activeTab);
+                }
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -208,6 +232,16 @@ export default function FileManager({
         const interval = setInterval(handleConflictCheck, 30000); // Check every 30 seconds
         return () => clearInterval(interval);
     }, [mode, handleConflictCheck]);
+
+    // Show toast when draft is saved
+    useEffect(() => {
+        if (justSaved && lastSaved) {
+            toast.success('Draft saved', {
+                description: `Saved at ${lastSaved.toLocaleTimeString()}`,
+                duration: 3000,
+            });
+        }
+    }, [justSaved, lastSaved]);
 
     const handleFileAdd = useCallback(
         (newFiles: File[]) => {
@@ -233,10 +267,7 @@ export default function FileManager({
                 return newFiles;
             });
 
-            // Auto-switch to metadata tab if we have files
-            if (uploadFiles.length > 0) {
-                setActiveTab('metadata');
-            }
+            // Don't auto-switch tabs - let user manually navigate
         },
         [mode, draftFormData, handleAutoSave],
     );
@@ -263,14 +294,17 @@ export default function FileManager({
                 clearError();
                 setSubmitError(null); // Clear any previous submit errors
 
-                // Reset file error states for retry
-                setFiles((prev) =>
-                    prev.map((f) => ({
-                        ...f,
-                        status: f.status === 'error' ? ('pending' as const) : f.status,
-                        error: f.status === 'error' ? undefined : f.error,
-                    })),
-                );
+                // Initialize upload state
+                setUploadState({
+                    isUploading: true,
+                    currentFile: 0,
+                    totalFiles: formData.files.length,
+                    currentFileName: '',
+                    overallProgress: 0,
+                    fileProgress: 0,
+                    errors: [],
+                    isCompleted: false,
+                });
 
                 // Step 1: Create or update draft deal
                 let draftDeal;
@@ -297,19 +331,26 @@ export default function FileManager({
                     setCurrentDraftId(draftDeal.uuid);
                 }
 
-                // Step 2: Upload files with metadata
-                for (const fileData of formData.files) {
+                // Step 2: Upload files sequentially with progress tracking
+                const uploadErrors: string[] = [];
+                
+                for (let i = 0; i < formData.files.length; i++) {
+                    const fileData = formData.files[i];
                     const uploadFile = files.find((f) => f.id === fileData.id);
-                    if (!uploadFile) continue;
+                    
+                    if (!uploadFile) {
+                        uploadErrors.push(`File ${fileData.name} not found`);
+                        continue;
+                    }
 
-                    // Update file status to uploading
-                    setFiles((prev) =>
-                        prev.map((f) =>
-                            f.id === fileData.id
-                                ? { ...f, status: 'uploading' as const, progress: 0 }
-                                : f,
-                        ),
-                    );
+                    // Update progress state
+                    setUploadState(prev => ({
+                        ...prev,
+                        currentFile: i + 1,
+                        currentFileName: uploadFile.name,
+                        fileProgress: 0,
+                        overallProgress: (i / formData.files.length) * 100,
+                    }));
 
                     try {
                         await uploadDraftFile(
@@ -323,42 +364,39 @@ export default function FileManager({
                                 tags: fileData.tags,
                             },
                             (progress) => {
-                                setFiles((prev) =>
-                                    prev.map((f) =>
-                                        f.id === fileData.id ? { ...f, progress } : f,
-                                    ),
-                                );
+                                setUploadState(prev => ({
+                                    ...prev,
+                                    fileProgress: progress,
+                                }));
                             },
                         );
 
-                        // Mark file as completed
-                        setFiles((prev) =>
-                            prev.map((f) =>
-                                f.id === fileData.id
-                                    ? { ...f, status: 'completed' as const, progress: 100 }
-                                    : f,
-                            ),
-                        );
+                        // File completed successfully
+                        setUploadState(prev => ({
+                            ...prev,
+                            fileProgress: 100,
+                            overallProgress: ((i + 1) / formData.files.length) * 100,
+                        }));
+                        
                     } catch (error) {
                         console.error('Error uploading file:', error);
-                        setFiles((prev) =>
-                            prev.map((f) =>
-                                f.id === fileData.id
-                                    ? {
-                                          ...f,
-                                          status: 'error' as const,
-                                          error:
-                                              error instanceof Error
-                                                  ? error.message
-                                                  : 'Upload failed',
-                                      }
-                                    : f,
-                            ),
-                        );
+                        const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+                        uploadErrors.push(`${uploadFile.name}: ${errorMessage}`);
                     }
                 }
 
-                // Step 3: Finalize the draft deal
+                // Check if any uploads failed
+                if (uploadErrors.length > 0) {
+                    setUploadState(prev => ({
+                        ...prev,
+                        isUploading: false,
+                        isCompleted: true,
+                        errors: uploadErrors,
+                    }));
+                    return; // Stop here, don't finalize
+                }
+
+                // Step 3: Finalize the draft deal only after all uploads succeed
                 const finalDeal = await finalizeDraftDeal(draftDeal.uuid);
 
                 // Clean up draft storage after successful submission
@@ -366,10 +404,20 @@ export default function FileManager({
                     deleteDraft(currentDraftId);
                 }
 
-                // Call the parent handler
-                if (onDraftSubmit) {
-                    onDraftSubmit(finalDeal.uuid);
-                }
+                // Show success state briefly
+                setUploadState(prev => ({
+                    ...prev,
+                    isUploading: false,
+                    isCompleted: true,
+                    overallProgress: 100,
+                }));
+
+                // Wait a moment to show success, then redirect
+                setTimeout(() => {
+                    if (onDraftSubmit) {
+                        onDraftSubmit(finalDeal.uuid);
+                    }
+                }, 1500);
             } catch (error) {
                 console.error('Error submitting draft:', error);
 
@@ -394,15 +442,12 @@ export default function FileManager({
                 }
 
                 setSubmitError(errorMessage);
-
-                // Only mark files as error if they were being uploaded
-                setFiles((prev) =>
-                    prev.map((f) => ({
-                        ...f,
-                        status: f.status === 'uploading' ? ('error' as const) : f.status,
-                        error: f.status === 'uploading' ? errorMessage : f.error,
-                    })),
-                );
+                setUploadState(prev => ({
+                    ...prev,
+                    isUploading: false,
+                    isCompleted: true,
+                    errors: [errorMessage],
+                }));
             }
         },
         [
@@ -413,7 +458,9 @@ export default function FileManager({
             uploadDraftFile,
             finalizeDraftDeal,
             clearError,
+            deleteDraft,
             onDraftSubmit,
+            mode,
         ],
     );
 
@@ -444,28 +491,59 @@ export default function FileManager({
         [mode, createDraftState, saveDraft, currentDraftId, updateDraftDeal],
     );
 
-    // Handle draft recovery actions
-    const handleRecoverDraft = useCallback(() => {
-        if (existingDraft) {
-            loadFilesFromDraft(existingDraft);
+    // Handle draft selection
+    const handleSelectDraft = useCallback((draftId: string) => {
+        const draft = availableDrafts.find(d => d.draftId === draftId);
+        if (draft) {
+            loadFilesFromDraft(draft);
             setDraftFormData({
-                name: existingDraft.dealName,
-                description: existingDraft.description,
-                website: existingDraft.website,
-                fundingTarget: existingDraft.fundingTarget,
+                name: draft.dealName,
+                description: draft.description,
+                website: draft.website,
+                fundingTarget: draft.fundingTarget,
             });
-            setCurrentDraftId(existingDraft.draftId);
+            setCurrentDraftId(draft.draftId);
+            // Restore active tab
+            if (draft.activeTab) {
+                setActiveTab(draft.activeTab);
+            }
         }
-        setShowDraftRecovery(false);
-    }, [existingDraft, loadFilesFromDraft]);
+        setShowDraftSelection(false);
+    }, [availableDrafts, loadFilesFromDraft]);
 
-    const handleDiscardDraft = useCallback(() => {
-        if (existingDraft) {
-            deleteDraft(existingDraft.draftId);
+    const handleDeleteDraft = useCallback((draftId: string) => {
+        deleteDraft(draftId);
+        setAvailableDrafts(prev => prev.filter(d => d.draftId !== draftId));
+        
+        // If no drafts left, close the dialog
+        if (availableDrafts.length <= 1) {
+            setShowDraftSelection(false);
         }
-        setShowDraftRecovery(false);
-        setExistingDraft(null);
-    }, [existingDraft, deleteDraft]);
+    }, [availableDrafts, deleteDraft]);
+
+    const handleCreateNewDraft = useCallback(() => {
+        setShowDraftSelection(false);
+        // Reset to empty state for new draft
+        setFiles([]);
+        setDraftFormData(null);
+        setCurrentDraftId(null);
+    }, []);
+
+    // Handle tab changes - save form data when leaving metadata tab
+    const handleTabChange = useCallback((newTab: string) => {
+        // If leaving metadata tab, save current form data to prevent loss
+        if (activeTab === 'metadata' && newTab !== 'metadata' && formRef.current) {
+            try {
+                const currentData = formRef.current.getValues();
+                if (currentData && currentData.name) { // Only save if there's actual data
+                    handleAutoSave(currentData);
+                }
+            } catch (error) {
+                console.error('Error saving form data on tab change:', error);
+            }
+        }
+        setActiveTab(newTab);
+    }, [activeTab, handleAutoSave]);
 
     // Handle conflict resolution
     const handleResolveConflict = useCallback(
@@ -480,6 +558,10 @@ export default function FileManager({
                         website: draft.website,
                         fundingTarget: draft.fundingTarget,
                     });
+                    // Restore active tab
+                    if (draft.activeTab) {
+                        setActiveTab(draft.activeTab);
+                    }
                 }
             }
             setShowDraftConflict(false);
@@ -607,10 +689,19 @@ export default function FileManager({
         switch (mode) {
             case 'draft-deal':
                 return (
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 px-0">
-                            <TabsTrigger value="upload">Upload Files</TabsTrigger>
-                            <TabsTrigger value="metadata" disabled={files.length === 0}>
+                    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 px-0 h-14">
+                            <TabsTrigger 
+                                value="upload"
+                                className="cursor-pointer h-12 px-6 font-medium text-sm data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm border-0 data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
+                            >
+                                Upload Files
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="metadata" 
+                                disabled={files.length === 0}
+                                className="cursor-pointer h-12 px-6 font-medium text-sm data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm border-0 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 disabled:cursor-not-allowed"
+                            >
                                 Configure Details ({files.length})
                             </TabsTrigger>
                         </TabsList>
@@ -667,6 +758,7 @@ export default function FileManager({
                                 isSubmitting={isDraftLoading}
                                 isDraftSaving={isDraftLoading}
                                 initialData={draftFormData}
+                                formRef={formRef}
                             />
                         </TabsContent>
                     </Tabs>
@@ -824,67 +916,35 @@ export default function FileManager({
             {/* Draft Status Indicators - only show for draft-deal mode */}
             {mode === 'draft-deal' && (
                 <>
-                    {/* Auto-save status */}
-                    {(isAutoSaving || lastSaved) && (
+                    {/* Auto-save status - now using toast */}
+                    {isAutoSaving && (
                         <Alert>
                             <Clock className="h-4 w-4" />
                             <AlertDescription>
-                                <div className="flex items-center justify-between">
-                                    <span>
-                                        {isAutoSaving ? (
-                                            <>
-                                                <span className="animate-pulse">
-                                                    Auto-saving draft...
-                                                </span>
-                                            </>
-                                        ) : lastSaved ? (
-                                            <>
-                                                <CheckCircle className="h-4 w-4 inline mr-1 text-green-600" />
-                                                Draft saved {lastSaved.toLocaleTimeString()}
-                                            </>
-                                        ) : null}
-                                    </span>
-                                    {persistenceError && (
-                                        <span className="text-red-600 text-sm">
-                                            Error: {persistenceError}
-                                        </span>
-                                    )}
-                                </div>
+                                <span className="animate-pulse">
+                                    Auto-saving draft...
+                                </span>
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    {persistenceError && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                                Error: {persistenceError}
                             </AlertDescription>
                         </Alert>
                     )}
 
-                    {/* Draft recovery dialog */}
-                    {showDraftRecovery && existingDraft && (
-                        <Alert>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>
-                                <div className="space-y-3">
-                                    <div>
-                                        <h4 className="font-medium mb-1">Draft Found</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            You have a saved draft "{existingDraft.dealName}" from{' '}
-                                            {new Date(existingDraft.lastSaved).toLocaleString()}.
-                                            Would you like to continue working on it?
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button size="sm" onClick={handleRecoverDraft}>
-                                            <CheckCircle className="h-4 w-4 mr-1" />
-                                            Continue Draft
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={handleDiscardDraft}
-                                        >
-                                            Start Fresh
-                                        </Button>
-                                    </div>
-                                </div>
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                    {/* Draft selection dialog */}
+                    <DraftSelectionDialog
+                        drafts={availableDrafts}
+                        open={showDraftSelection}
+                        onSelect={handleSelectDraft}
+                        onDelete={handleDeleteDraft}
+                        onCreateNew={handleCreateNewDraft}
+                        onClose={() => setShowDraftSelection(false)}
+                    />
 
                     {/* Draft conflict dialog */}
                     {showDraftConflict && (
@@ -925,6 +985,9 @@ export default function FileManager({
 
             {/* Mode-specific content */}
             {renderModeContent()}
+
+            {/* Upload progress overlay */}
+            <UploadProgressOverlay uploadState={uploadState} />
         </div>
     );
 }

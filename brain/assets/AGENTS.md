@@ -765,8 +765,399 @@ interface DraftState {
 - **Batch import**: CSV/JSON based file imports
 - **Export capabilities**: Bulk file download as ZIP
 
+## Toast Notification System (T-0814 - Aug 2025)
+
+### Overview
+Comprehensive toast notification system replacing persistent alerts for temporary success messages. Built on Sonner library with custom positioning and styling to integrate seamlessly with existing UI components.
+
+### Technical Implementation
+
+#### Core Components
+- **Toaster** (`components/ui/sonner.tsx`): Main toast container with custom positioning and styling
+- **Integration**: Imported into page-level components (`pages/deal_upload.tsx`)
+- **Toast Functions**: Direct usage of `toast.success()`, `toast.error()` from sonner library
+
+#### Sonner Configuration
+```typescript
+// components/ui/sonner.tsx
+<Sonner
+  theme="light"
+  position="bottom-right"
+  expand={true}
+  richColors
+  offset="100px"
+  toastOptions={{
+    duration: 3000,
+    classNames: {
+      toast: "group toast group-[.toaster]:bg-background ... group-[.toaster]:z-[60]",
+      description: "group-[.toast]:text-muted-foreground"
+    },
+    style: { zIndex: 60 }
+  }}
+/>
+```
+
+### Design System Integration
+
+#### Z-Index Hierarchy
+**Established Layer System**:
+- **Toast notifications**: `z-60` (highest priority for user feedback)
+- **Sticky bottom bars**: `z-50` (action bars, form controls)
+- **Modal overlays**: `z-40` (dialogs, popovers)
+- **Fixed elements**: `z-30` (navigation, headers)
+- **Default content**: `z-10` or auto
+
+#### Positioning Strategy
+- **Position**: `bottom-right` for non-intrusive placement
+- **Offset**: `100px` from bottom to clear sticky action bars
+- **Responsive**: Automatically adjusts on mobile devices
+- **Multiple toasts**: Stacks vertically with smooth animations
+
+#### Visual Design
+- **Duration**: 3-second auto-dismiss for optimal UX timing
+- **Styling**: Matches shadcn/ui design tokens (`bg-background`, `text-foreground`)
+- **Icons**: Success checkmarks, error indicators via `richColors` prop
+- **Animations**: Smooth slide-in from right, fade-out on dismiss
+
+### Usage Patterns
+
+#### Success Notifications
+```typescript
+// Auto-save feedback
+toast.success('Draft saved', {
+  description: `Saved at ${lastSaved.toLocaleTimeString()}`,
+  duration: 3000,
+});
+
+// Manual save feedback
+toast.success('Draft saved manually', {
+  description: 'Your draft has been saved successfully',
+  duration: 3000,
+});
+```
+
+#### Integration Points
+- **FileManager**: Auto-save notifications via `useEffect` watching `justSaved` state
+- **FileMetadataForm**: Manual save button feedback via `handleSaveDraft`
+- **Page-level**: Toaster component added to `deal_upload.tsx` main component
+
+### Architecture Decisions
+
+#### Why Toasts Over Alerts
+**Problems with Alert Components**:
+- Persistent UI clutter after user acknowledgment
+- Required manual dismissal interrupting workflow  
+- Visual competition with form content
+- Poor mobile experience with limited screen space
+
+**Toast Advantages**:
+- **Non-blocking**: Users can continue working while notification displays
+- **Auto-dismiss**: Reduces cognitive load and UI clutter
+- **Positioned intelligently**: Above sticky elements but out of main content flow
+- **Consistent timing**: 3-second standard provides adequate feedback without annoyance
+
+#### Placement Strategy  
+**Bottom-right positioning chosen for**:
+- **Least intrusive**: Doesn't block main content or actions
+- **Desktop convention**: Matches OS notification patterns
+- **Sticky bar awareness**: 100px offset ensures visibility above bottom action bars
+- **Mobile friendly**: Sonner automatically adjusts positioning on small screens
+
+#### State Management Integration
+**Draft persistence workflow**:
+1. `useDraftPersistence` hook sets `justSaved: true` after successful save
+2. `FileManager` `useEffect` watches `justSaved` state changes
+3. Toast triggered with timestamp when `justSaved` becomes `true`
+4. Auto-dismiss after 3 seconds without user intervention required
+
+### Performance Considerations
+
+#### Bundle Impact
+- **Sonner library**: Lightweight (~15kb) with no heavy dependencies
+- **Tree shaking**: Imports only required toast functions
+- **CSS optimization**: Leverages existing Tailwind classes, minimal custom CSS
+
+#### Runtime Performance
+- **Event-driven**: Only renders when toasts are active
+- **Memory efficient**: Automatic cleanup after dismiss timeout
+- **Animation performance**: Uses CSS transforms for smooth animations
+- **No state pollution**: Doesn't add to React component state
+
+### Accessibility Features
+
+#### Screen Reader Support  
+- **ARIA live regions**: Sonner includes proper `aria-live="polite"` announcements
+- **Semantic markup**: Toast content properly structured for screen readers
+- **Focus management**: Non-intrusive, doesn't steal focus from current task
+
+#### Keyboard Navigation
+- **Dismissible**: Users can dismiss with Escape key if needed
+- **Non-blocking**: Doesn't interfere with keyboard navigation flows
+- **Timing**: 3-second duration provides adequate time for screen reader announcement
+
+### Integration with Existing Systems
+
+#### Draft System Integration
+**Replaces alert-based feedback**:
+- Removed persistent "Draft saved" Alert component from FileManager
+- Maintained "Auto-saving..." alert for active save state (immediate feedback)
+- Added toast for successful save completion (delayed feedback)
+
+#### Form System Compatibility
+- **React Hook Form**: Integrates with form submission workflows
+- **Validation errors**: Leaves field-level validation unchanged (immediate, contextual feedback)
+- **Success feedback**: Uses toast for positive confirmation (delayed, non-blocking feedback)
+
+### Design Patterns Established
+
+#### Notification Hierarchy
+**Immediate feedback** (Alerts/Inline):
+- Form validation errors
+- Critical system warnings  
+- Blocking error states
+- Active processing states ("Saving...")
+
+**Delayed feedback** (Toasts):
+- Success confirmations
+- Completion notifications
+- Non-critical status updates
+- Background operation results
+
+#### Timing Standards
+- **Success toasts**: 3 seconds (adequate for acknowledgment, not annoying)
+- **Error toasts**: 5 seconds (more time needed for error comprehension)
+- **Info toasts**: 4 seconds (moderate importance, moderate duration)
+
+#### Message Structure
+```typescript
+toast.success(title, {
+  description: contextualDetails,
+  duration: appropriateTiming
+});
+```
+
+### Future Enhancements
+
+#### Advanced Features
+- **Action buttons**: "Undo" functionality for reversible operations
+- **Rich content**: Progress bars for long-running operations
+- **Grouping**: Stack related notifications to reduce clutter
+- **Persistence**: Optional "sticky" toasts for critical messages
+
+#### Integration Opportunities
+- **File upload progress**: Replace inline progress with toast-based feedback
+- **Bulk operations**: Progress notifications for multi-file actions
+- **API errors**: Centralized error notification system
+- **Real-time updates**: WebSocket-triggered status notifications
+
+### Testing Considerations
+
+#### Unit Testing
+- Toast triggering logic in component methods
+- State change detection in useEffect hooks
+- Message content and timing validation
+- Accessibility compliance testing
+
+#### Integration Testing
+- Cross-component toast coordination
+- Multiple toast stacking behavior
+- Mobile responsive positioning
+- Z-index layering with other UI elements
+
+## File Upload Flow Fixes (T-0815 - Aug 2025)
+
+### Overview
+Critical fixes to the file upload workflow addressing form data persistence issues and confusing upload timing. These improvements provide a clear, predictable user experience with proper progress feedback.
+
+### Issues Resolved
+
+#### 1. Form Data Loss on Tab Switch
+**Problem**: Users lost all form field data when switching between "Upload Files" and "Configure Details" tabs.
+
+**Root Cause**: Form state was not persisted when changing tabs, and previous attempts at automatic persistence created infinite loops.
+
+**Solution Implemented**:
+- **Tab Change Handler**: Added `handleTabChange` that explicitly saves form data when leaving the metadata tab
+- **Form Reference System**: Implemented `formRef` to access form data without reactive dependencies
+- **Active Tab Persistence**: Extended `DraftState` interface to include `activeTab` for complete state restoration
+- **Safe State Access**: Used `useRef` to avoid infinite re-render loops while maintaining data persistence
+
+```typescript
+// FileManager.tsx - Tab change with form persistence
+const handleTabChange = useCallback((newTab: string) => {
+  if (activeTab === 'metadata' && newTab !== 'metadata' && formRef.current) {
+    const currentData = formRef.current.getValues();
+    if (currentData && currentData.name) {
+      handleAutoSave(currentData);
+    }
+  }
+  setActiveTab(newTab);
+}, [activeTab, handleAutoSave]);
+```
+
+#### 2. Confusing Upload Flow and Validation
+**Problem**: Files showed "pending" status causing confusing validation errors, but users expected uploads to happen only on form submission.
+
+**Root Cause**: File status validation occurred before actual uploads, creating misleading error messages about "waiting for uploads to finish" when no uploads were happening.
+
+**Solution Implemented**:
+- **Removed File Status Validation**: Submit validation now checks only form fields, not file upload status
+- **Upload on Submit Only**: Files upload exclusively when "Submit for Underwriting" is clicked
+- **Progress Overlay System**: Full-screen modal prevents user interaction during uploads with real-time progress
+- **Sequential Upload Processing**: Files upload one-by-one with individual progress tracking
+
+### Technical Implementation
+
+#### Form Reference System
+**FileMetadataForm.tsx Integration**:
+```typescript
+export interface FileMetadataFormProps {
+  // ... existing props
+  formRef?: React.RefObject<{ getValues: () => DraftDealFormData }>;
+}
+
+// Expose form methods through ref without reactive dependencies
+useEffect(() => {
+  if (formRef) {
+    formRef.current = {
+      getValues: () => form.getValues(),
+    };
+  }
+}, [form, formRef]);
+```
+
+#### Upload Progress System
+**UploadProgressOverlay Component**:
+```typescript
+export interface UploadState {
+  isUploading: boolean;
+  currentFile: number;
+  totalFiles: number;
+  currentFileName: string;
+  overallProgress: number;
+  fileProgress: number;
+  errors: string[];
+  isCompleted: boolean;
+}
+```
+
+**Key Features**:
+- **Full-screen Modal**: Blocks all user interaction during uploads
+- **Progress Indicators**: Individual file progress and overall completion percentage
+- **File Status**: Shows current file name and position (e.g., "Uploading 2 of 5 files")
+- **Error Handling**: Displays specific error messages for failed uploads
+- **Success Confirmation**: Brief success state before redirect
+
+#### Sequential Upload Implementation
+**FileManager.tsx Upload Flow**:
+```typescript
+// Sequential upload with progress tracking
+for (let i = 0; i < formData.files.length; i++) {
+  setUploadState(prev => ({
+    ...prev,
+    currentFile: i + 1,
+    currentFileName: uploadFile.name,
+    fileProgress: 0,
+    overallProgress: (i / formData.files.length) * 100,
+  }));
+
+  await uploadDraftFile(/* ... */);
+  
+  setUploadState(prev => ({
+    ...prev,
+    fileProgress: 100,
+    overallProgress: ((i + 1) / formData.files.length) * 100,
+  }));
+}
+```
+
+### User Experience Improvements
+
+#### Predictable Tab Navigation
+- **No Auto-Switching**: Removed automatic tab changes after file selection
+- **Data Persistence**: Form data preserved when switching between tabs
+- **State Restoration**: Complete form state restored when returning to Configure Details tab
+- **Visual Continuity**: Users maintain control over their navigation flow
+
+#### Clear Upload Process
+- **Submit Button Always Enabled**: No confusing disabled states based on pending files
+- **Form-Only Validation**: Submit validation focuses on required form fields only
+- **Upload on Demand**: Files upload only when user explicitly submits for underwriting
+- **Progress Visibility**: Real-time feedback shows exactly what's happening during uploads
+
+#### Enhanced Error Handling
+- **Specific Error Messages**: Failed uploads show individual file error details
+- **Non-Blocking Errors**: Upload failures don't cause unexpected redirects
+- **Recovery Options**: Users can fix issues and retry without losing form data
+- **Graceful Degradation**: Partial upload failures handled appropriately
+
+### Design System Integration
+
+#### Progress Overlay Design
+- **Z-Index**: `z-50` to appear above all content including sticky bars
+- **Background**: Semi-transparent backdrop with blur effect for focus
+- **Card Layout**: Centered card with shadcn/ui styling consistency
+- **Icon System**: Lucide React icons for upload states (Upload, CheckCircle2, AlertCircle)
+- **Progress Bars**: shadcn/ui Progress components for visual feedback
+
+#### State Management Architecture
+- **Upload State**: Centralized state object tracking all upload progress aspects
+- **Form Reference**: Non-reactive access to form data preventing infinite loops  
+- **Draft Persistence**: Extended DraftState interface with tab preservation
+- **Error Boundaries**: Comprehensive error handling at all levels
+
+### Performance Considerations
+
+#### Memory Management
+- **Sequential Processing**: One file at a time to avoid overwhelming browser/server
+- **State Cleanup**: Upload state properly reset after completion or errors
+- **Reference Management**: Proper cleanup of form refs and event listeners
+- **Progress Updates**: Efficient state updates without excessive re-renders
+
+#### Network Optimization
+- **Upload Retry Logic**: Individual file retry on failure without affecting others
+- **Progress Callbacks**: Real-time upload progress without performance impact
+- **Error Recovery**: Graceful handling of network issues during uploads
+- **Timeout Handling**: Appropriate timeouts for large file uploads
+
+### Testing Strategy
+
+#### Unit Testing Areas
+- **Form Reference System**: Verify form data access without reactive dependencies
+- **Tab Change Logic**: Ensure data persistence triggers correctly
+- **Upload Progress**: Validate state updates during sequential uploads
+- **Error Scenarios**: Test various upload failure conditions
+
+#### Integration Testing
+- **Complete Upload Flow**: End-to-end file upload with progress tracking
+- **Tab Navigation**: Form data preservation across tab switches
+- **Error Recovery**: Upload failure handling and retry mechanisms
+- **Multi-File Scenarios**: Large file sets with various file types
+
+### Future Enhancements
+
+#### Advanced Upload Features
+- **Parallel Uploads**: Option for concurrent file uploads with aggregated progress
+- **Resume Capability**: Ability to resume interrupted uploads
+- **Drag-and-Drop Integration**: Enhanced file selection during upload process
+- **File Validation**: Pre-upload file type and size validation with user feedback
+
+#### Progress System Extensions
+- **ETA Calculations**: Estimated time remaining for upload completion
+- **Speed Indicators**: Real-time upload speed display
+- **Pause/Resume**: User control over upload process
+- **Background Processing**: Option to continue uploads while navigating away
+
 ## Changelog — Aug 2025
 
+- **File Upload Flow Fixes (T-0815)**: Critical fixes addressing form data persistence and upload timing issues
+  - Form data preservation across tab switches using ref-based persistence
+  - Upload progress overlay with real-time feedback and sequential file processing
+  - Submit button always enabled with form-only validation
+  - Enhanced error handling with specific failure messages
+- **Toast Notification System**: Comprehensive toast implementation replacing persistent alerts with auto-dismissing notifications
+- **Z-Index Hierarchy**: Established layered UI system with toasts (z-60), sticky bars (z-50), and modals (z-40)
+- **Draft Save UX**: Enhanced draft persistence feedback with non-blocking toast notifications and intelligent positioning
 - **File Management System**: Complete architectural implementation with three-mode workflow support
 - **TanStack Table Integration**: Advanced table with row selection, bulk operations, and inline editing
 - **Draft Persistence System**: localStorage-based auto-save with conflict detection and recovery

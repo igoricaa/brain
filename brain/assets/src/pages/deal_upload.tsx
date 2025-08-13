@@ -2,6 +2,7 @@ import { StrictMode, useCallback, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import FileManager from '@/components/file-manager/FileManager';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Toaster } from '@/components/ui/sonner';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 
 function DealUploadApp() {
@@ -39,22 +40,25 @@ function DealUploadApp() {
     }
 
     return (
-        <div className="mx-auto w-full max-w-7xl py-6">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Upload New Deal</h1>
-                <p className="mt-2 text-sm text-gray-600">
-                    Upload multiple files to create a new deal. Files will be staged until you submit for underwriting.
-                </p>
+        <>
+            <div className="mx-auto w-full max-w-7xl py-6">
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-gray-900">Upload New Deal</h1>
+                    <p className="mt-2 text-sm text-gray-600">
+                        Upload multiple files to create a new deal. Files will be staged until you submit for underwriting.
+                    </p>
+                </div>
+                
+                <FileManager
+                    mode="draft-deal"
+                    onDraftSubmit={handleDraftSubmit}
+                    onCancel={handleCancel}
+                    allowSubmission={true}
+                    showUpload={true}
+                />
             </div>
-            
-            <FileManager
-                mode="draft-deal"
-                onDraftSubmit={handleDraftSubmit}
-                onCancel={handleCancel}
-                allowSubmission={true}
-                showUpload={true}
-            />
-        </div>
+            <Toaster />
+        </>
     );
 }
 

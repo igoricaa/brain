@@ -6,6 +6,7 @@ export interface DraftState {
   description?: string;
   website?: string;
   fundingTarget?: string;
+  activeTab?: string;
   files: {
     id: string;
     name: string;
@@ -43,6 +44,7 @@ export const useDraftPersistence = (
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const lastDraftState = useRef<DraftState | null>(null);
@@ -104,6 +106,12 @@ export const useDraftPersistence = (
         
         lastDraftState.current = draftState;
         setLastSaved(new Date());
+        setJustSaved(true);
+        
+        // Reset justSaved flag after a delay to hide the alert
+        setTimeout(() => {
+          setJustSaved(false);
+        }, 3000);
         
         resolve();
       } catch (error) {
@@ -173,6 +181,7 @@ export const useDraftPersistence = (
       
       lastDraftState.current = draft;
       setLastSaved(new Date(draft.lastSaved));
+      // Don't set justSaved when loading - this is restored data, not a fresh save
       
       return draft;
     } catch (error) {
@@ -193,6 +202,7 @@ export const useDraftPersistence = (
       if (id === currentDraftId) {
         lastDraftState.current = null;
         setLastSaved(null);
+        setJustSaved(false);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete draft';
@@ -261,6 +271,7 @@ export const useDraftPersistence = (
     localStorage.removeItem(STORAGE_INDEX_KEY);
     lastDraftState.current = null;
     setLastSaved(null);
+    setJustSaved(false);
   }, [getDraftIndex, getDraftKey]);
 
   // Check for conflicts (multiple tabs editing same draft)
@@ -287,6 +298,7 @@ export const useDraftPersistence = (
             // Another tab updated the draft
             lastDraftState.current = newDraft;
             setLastSaved(new Date(newDraft.lastSaved));
+            // Don't set justSaved for changes from other tabs
           }
         } catch (error) {
           console.warn('Failed to process storage change:', error);
@@ -332,6 +344,7 @@ export const useDraftPersistence = (
     currentDraftId,
     isAutoSaving,
     lastSaved,
+    justSaved,
     error,
     
     // Utilities
