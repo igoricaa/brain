@@ -1,10 +1,18 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileText, Database, RefreshCw, AlertCircle, Save, CheckCircle2, X } from 'lucide-react';
+import {
+    Upload,
+    FileText,
+    Database,
+    RefreshCw,
+    AlertCircle,
+    Save,
+    CheckCircle2,
+    X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import FileUpload, { UploadFile } from './FileUpload';
 import FileTable, { FileTableData } from './FileTable';
@@ -95,8 +103,6 @@ export default function FileManager({
         clearError: clearFileManagementError,
     } = useFileManagement();
 
-
-
     const handleFileAdd = useCallback((newFiles: File[]) => {
         const uploadFiles: UploadFile[] = newFiles.map((file, index) => ({
             id: `${Date.now()}_${index}`,
@@ -115,8 +121,6 @@ export default function FileManager({
     const handleFileRemove = useCallback((fileId: string) => {
         setFiles((prev) => prev.filter((f) => f.id !== fileId));
     }, []);
-
-
 
     // Load files based on mode
     const loadFiles = useCallback(async () => {
@@ -234,7 +238,7 @@ export default function FileManager({
 
             let draftDeal;
             if (currentDraftId) {
-                // Update existing draft - get current data without changing name
+                // Use existing draft
                 draftDeal = { uuid: currentDraftId };
             } else {
                 // Create new draft
@@ -244,18 +248,19 @@ export default function FileManager({
                 setCurrentDraftId(draftDeal.uuid);
             }
 
-            // Upload files one by one
+            // Upload files one by one to the draft
             for (const uploadFile of files) {
-                await uploadDraftFile(
-                    draftDeal.uuid,
-                    {
-                        file: uploadFile.file,
-                        category: 'other', // Default category for simplified version
-                        proprietary: false,
-                    }
-                );
+                await uploadDraftFile(draftDeal.uuid, {
+                    file: uploadFile.file,
+                    category: 'other', // Default category for simplified version
+                    proprietary: false,
+                });
             }
 
+            // Clear files after upload since they're now saved to backend
+            setFiles([]);
+
+            // Show success message but stay on the same page (no redirect)
             toast.success('Draft saved successfully');
         } catch (error) {
             console.error('Error saving draft:', error);
@@ -286,19 +291,18 @@ export default function FileManager({
                 isCompleted: false,
             });
 
+            // Step 1: Create/ensure draft exists
             let draftDeal;
             if (currentDraftId) {
-                // Use existing draft
                 draftDeal = { uuid: currentDraftId };
             } else {
-                // Create new draft
                 draftDeal = await createDraftDeal({
                     name: 'Untitled Deal',
                 });
                 setCurrentDraftId(draftDeal.uuid);
             }
 
-            // Upload files one by one with progress tracking
+            // Step 2: Upload files to draft with progress tracking
             const uploadErrors: string[] = [];
 
             for (let i = 0; i < files.length; i++) {
@@ -309,7 +313,7 @@ export default function FileManager({
                     currentFile: i + 1,
                     currentFileName: uploadFile.name,
                     fileProgress: 0,
-                    overallProgress: (i / files.length) * 100,
+                    overallProgress: (i / files.length) * 80, // Reserve 20% for finalization
                 }));
 
                 try {
@@ -325,20 +329,20 @@ export default function FileManager({
                                 ...prev,
                                 fileProgress: progress,
                             }));
-                        }
+                        },
                     );
 
                     setUploadState((prev) => ({
                         ...prev,
                         fileProgress: 100,
-                        overallProgress: ((i + 1) / files.length) * 100,
+                        overallProgress: ((i + 1) / files.length) * 80,
                     }));
                 } catch (error) {
                     console.error('Error uploading file:', error);
                     const sanitizedError = sanitizeError(error, 'File upload');
                     const userFriendlyMessage = getUserFriendlyMessage(
                         sanitizedError,
-                        'File upload'
+                        'File upload',
                     );
                     uploadErrors.push(`${uploadFile.name}: ${userFriendlyMessage}`);
                 }
@@ -354,18 +358,25 @@ export default function FileManager({
                 return;
             }
 
-            // Finalize the draft deal
+            // Step 3: Finalize the draft deal
+            setUploadState((prev) => ({
+                ...prev,
+                currentFileName: 'Finalizing deal...',
+                overallProgress: 90,
+            }));
+
             const finalDeal = await finalizeDraftDeal(draftDeal.uuid);
 
-            // Show success state
+            // Step 4: Show success state briefly
             setUploadState((prev) => ({
                 ...prev,
                 isUploading: false,
                 isCompleted: true,
                 overallProgress: 100,
+                currentFileName: 'Deal submitted successfully!',
             }));
 
-            // Wait a moment to show success, then redirect
+            // Step 5: Redirect to the finalized deal
             setTimeout(() => {
                 if (onDraftSubmit) {
                     onDraftSubmit(finalDeal.uuid);
@@ -374,10 +385,7 @@ export default function FileManager({
         } catch (error) {
             console.error('Error submitting deal:', error);
             const sanitizedError = sanitizeError(error, 'Deal submission');
-            const userFriendlyMessage = getUserFriendlyMessage(
-                sanitizedError,
-                'Deal submission'
-            );
+            const userFriendlyMessage = getUserFriendlyMessage(sanitizedError, 'Deal submission');
             setSubmitError(userFriendlyMessage);
             setUploadState((prev) => ({
                 ...prev,
@@ -437,7 +445,6 @@ export default function FileManager({
             case 'draft-deal':
                 return (
                     <div className="space-y-6">
-
                         {/* File Upload */}
                         <Card>
                             <CardHeader>
@@ -448,7 +455,8 @@ export default function FileManager({
                             </CardHeader>
                             <CardContent>
                                 <p className="text-sm text-muted-foreground mb-4">
-                                    Upload multiple files to create a new deal. Files will be staged until you submit for underwriting.
+                                    Upload multiple files to create a new deal. Files will be staged
+                                    until you submit for underwriting.
                                 </p>
                                 <FileUpload
                                     files={files}
@@ -490,7 +498,8 @@ export default function FileManager({
                                     <div className="space-y-1">
                                         <h3 className="font-semibold text-lg">Ready to Submit?</h3>
                                         <p className="text-sm text-muted-foreground">
-                                            Review your deal information and uploaded files before submitting for underwriting.
+                                            Review your deal information and uploaded files before
+                                            submitting for underwriting.
                                         </p>
                                     </div>
 
@@ -523,10 +532,14 @@ export default function FileManager({
                                             )}
                                         </Button>
 
-                                        <Button 
+                                        <Button
                                             type="button"
                                             onClick={() => handleSimpleSubmit()}
-                                            disabled={files.length === 0 || isDraftLoading || isCreatingDraft} 
+                                            disabled={
+                                                files.length === 0 ||
+                                                isDraftLoading ||
+                                                isCreatingDraft
+                                            }
                                             className="h-11 px-8"
                                         >
                                             {isDraftLoading || isCreatingDraft ? (

@@ -4,6 +4,8 @@
 
 Frontend components implementing a comprehensive file management system with three operational modes, advanced table features, bulk operations, and sophisticated state management. Built with React 19, TypeScript, shadcn/ui, and TanStack Table.
 
+**Recent Update (Dec 2025)**: Draft deal workflow significantly simplified - removed complex forms, deal name requirements, and metadata configuration. Focus on immediate file upload and backend persistence.
+
 ## Component Architecture
 
 ### Core Components
@@ -1016,3 +1018,212 @@ Key architectural decisions include:
 - **Performance optimization** through memoization, lazy loading, and efficient rendering patterns
 
 The system serves as a foundation for future file management needs across the platform and demonstrates best practices for complex React component architecture.
+
+## Draft Deal Workflow Simplification (Dec 2025)
+
+### Major Changes
+
+#### Before: Complex Multi-Step Process
+```typescript
+// Complex interface with tabs, forms, and metadata
+<Tabs value={activeTab} onValueChange={setActiveTab}>
+  <TabsList>
+    <TabsTrigger value="upload">Upload Files</TabsTrigger>
+    <TabsTrigger value="metadata">Configure Details</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="metadata">
+    <FileMetadataForm 
+      schema={complexDealFormSchema}
+      validation={realTimeValidation}
+      files={files}
+    />
+  </TabsContent>
+</Tabs>
+```
+
+#### After: Simplified Direct Upload
+```typescript
+// Simplified single-view interface
+<div className="space-y-6">
+  <Card>
+    <CardHeader>
+      <CardTitle>Upload Files for New Deal</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <FileUpload
+        files={files}
+        onFilesAdd={handleFileAdd}
+        onFileRemove={handleFileRemove}
+      />
+    </CardContent>
+  </Card>
+  
+  {/* Sticky bottom bar with save/submit actions */}
+  <div className="fixed bottom-0 left-64 right-0 bg-white shadow-lg">
+    <Button onClick={handleSimpleSaveDraft} disabled={files.length === 0}>
+      Save Draft
+    </Button>
+    <Button onClick={handleSimpleSubmit} disabled={files.length === 0}>
+      Submit for Underwriting  
+    </Button>
+  </div>
+</div>
+```
+
+### Removed Components
+These components are no longer used in the simplified draft workflow:
+
+#### FileMetadataForm.tsx (Deprecated)
+- **Purpose**: Complex form for deal and file metadata
+- **Reason Removed**: Too complex for simplified workflow
+- **Replaced By**: Direct file upload with default values
+
+#### DraftSelectionDialog.tsx (Deprecated)  
+- **Purpose**: Select existing drafts from localStorage
+- **Reason Removed**: Backend-first approach eliminates localStorage dependence
+- **Replaced By**: ManageDraftsDialog with backend API
+
+#### useDraftPersistence.ts (Simplified)
+- **Before**: Complex localStorage management with form state
+- **After**: Minimal state tracking, backend handles persistence
+
+### Updated Components
+
+#### FileManager.tsx - Simplified Handlers
+```typescript
+// Old: Complex form submission with validation
+const handleFormSubmit = async (formData: DealFormData) => {
+  const validated = dealFormSchema.parse(formData);
+  // Complex form processing...
+};
+
+// New: Direct file upload
+const handleSimpleSaveDraft = async () => {
+  const draftDeal = currentDraftId ? { uuid: currentDraftId } : 
+    await createDraftDeal({ name: 'Untitled Deal' });
+
+  for (const file of files) {
+    await uploadDraftFile(draftDeal.uuid, {
+      file: file.file,
+      category: 'other',
+      proprietary: false,
+    });
+  }
+  
+  setFiles([]); // Clear after upload
+  toast.success('Draft saved successfully');
+  // No redirect - stay on page
+};
+```
+
+#### Button Logic Simplification
+```typescript
+// Old: Complex validation dependencies  
+disabled={!dealName.trim() || files.length === 0 || hasValidationErrors}
+
+// New: Simple file count check
+disabled={files.length === 0}
+```
+
+### Backend Integration Changes
+
+#### API Calls Simplified
+```typescript
+// Old: Complex form data with validation
+const formData = {
+  name: dealName,
+  description,
+  website,
+  fundingTarget,
+  files: files.map(f => ({
+    ...f,
+    category,
+    documentType,
+    proprietary,
+    tldr,
+    tags
+  }))
+};
+
+// New: Minimal data with defaults
+const draftDeal = await createDraftDeal({ name: 'Untitled Deal' });
+await uploadDraftFile(draftDeal.uuid, {
+  file: file.file,
+  category: 'other',
+  proprietary: false,
+});
+```
+
+### User Experience Improvements
+
+#### Workflow Comparison
+| Aspect | Before (Complex) | After (Simplified) |
+|--------|------------------|-------------------|
+| Steps | 4-5 steps with forms | 2 steps: select files → save/submit |
+| Required Fields | Deal name, file categories | None (all defaults) |
+| Validation | Complex schema validation | File count only |
+| Save Behavior | Form submission → redirect | Upload → stay on page |
+| Submit Behavior | Form submission → redirect | Upload → finalize → redirect |
+| Error Handling | Field-level validation errors | Upload-level errors only |
+| Progress Feedback | Form validation states | File upload progress |
+
+#### Performance Benefits
+1. **Faster workflow** - Eliminated form filling time
+2. **Immediate feedback** - Files upload on save, not on submit
+3. **Reduced complexity** - No form state management overhead
+4. **Better error recovery** - Upload failures don't lose form data
+
+#### Technical Benefits
+1. **Smaller bundle** - Removed complex form validation libraries usage
+2. **Simpler state** - Eliminated form state, validation state
+3. **Better maintainability** - Fewer components to maintain
+4. **Clearer data flow** - Direct file → API → response pattern
+
+### Migration Guide
+
+For developers working with the file manager components:
+
+#### Updating Existing Code
+```typescript
+// Remove these imports (no longer used)
+import { FileMetadataForm } from './FileMetadataForm';
+import { useDraftPersistence } from '@/hooks/useDraftPersistence'; 
+import { dealFormSchema } from '@/lib/validation/dealFormSchema';
+
+// Update FileManager props (simplified)
+<FileManager
+  mode="draft-deal"
+  // Removed: formSchema, validationOptions, metadataConfig
+  onDraftSubmit={handleDraftSubmit}
+  onCancel={handleCancel}
+/>
+```
+
+#### Testing Updates
+```typescript
+// Old test: Complex form validation
+it('validates deal name requirement', async () => {
+  // Form validation testing...
+});
+
+// New test: Simple file upload
+it('uploads files on save draft', async () => {
+  const mockFiles = [new File(['content'], 'test.pdf')];
+  fireEvent.drop(uploadArea, { dataTransfer: { files: mockFiles } });
+  fireEvent.click(screen.getByText('Save Draft'));
+  
+  await waitFor(() => {
+    expect(mockUploadDraftFile).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        file: mockFiles[0],
+        category: 'other',
+        proprietary: false,
+      })
+    );
+  });
+});
+```
+
+This simplification represents a major UX improvement, reducing the deal creation workflow from a complex multi-step process to a streamlined file upload experience.

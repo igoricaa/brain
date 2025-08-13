@@ -190,7 +190,7 @@ class DealAssessmentReadSerializer(DealAssessmentSerializer):
 class DealFileSerializer(FileSerializer):
     deal = serializers.SlugRelatedField(
         slug_field='uuid',
-        queryset=Deal.objects.all(),
+        queryset=Deal.all_objects.all(),  # Include drafts for file uploads
         required=True,
     )
 
@@ -269,7 +269,7 @@ class PaperSerializer(LibraryPaperSerializer):
 
     deal = serializers.SlugRelatedField(
         slug_field='uuid',
-        queryset=Deal.objects.all(),
+        queryset=Deal.all_objects.all(),  # Include drafts for paper uploads
         required=True,
     )
 

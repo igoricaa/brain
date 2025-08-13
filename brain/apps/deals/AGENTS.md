@@ -164,27 +164,29 @@ Complete rewrite of the deal upload workflow with comprehensive file management 
 ### Draft Deal Workflow
 
 #### Backend APIs (DRF)
-- `POST /api/deals/draft_deals/` - Create draft deal
-- `PATCH /api/deals/draft_deals/{uuid}/` - Update draft metadata  
-- `POST /api/deals/deal_files/` - Upload files to draft deal
-- `POST /api/deals/draft_deals/{uuid}/finalize/` - Convert draft to live deal
+- `POST /api/deals/drafts/` - Create draft deal
+- `PATCH /api/deals/drafts/{uuid}/` - Update draft metadata  
+- `POST /api/deals/files/` - Upload files to draft deal (supports both drafts and finalized deals)
+- `POST /api/deals/drafts/{uuid}/finalize/` - Convert draft to live deal
+
+#### Backend Implementation (Dec 2025)
+**Serializer Fix for Draft File Support:**
+- **DealFileSerializer** and **PaperSerializer** now use `Deal.all_objects.all()` instead of `Deal.objects.all()`
+- This includes draft deals (`is_draft=True`) in file upload validation
+- **DealAssessmentSerializer** keeps `Deal.objects.all()` (assessments only for finalized deals)
+- **Root Cause**: Django's default `Deal.objects` manager excludes drafts, causing "Object does not exist" errors
 
 #### Frontend Flow
-1. **File Upload Tab** - Users drag/drop multiple files
-2. **Metadata Tab** - Configure deal info and per-file metadata
-3. **Draft Persistence** - Auto-save to localStorage every 30 seconds
-4. **Submission** - Upload files with metadata, then finalize draft
-5. **Cleanup** - Remove localStorage draft on successful submission
+1. **File Selection** - Users drag/drop multiple files in simplified interface
+2. **Save Draft** - Upload files to draft deal, stay on page for continued editing
+3. **Submit for Underwriting** - Upload remaining files, finalize draft, redirect to deal detail
+4. **No Deal Name Required** - Simplified UI with automatic "Untitled Deal" naming
 
 #### Draft State Management
 ```typescript
 interface DraftState {
   draftId: string;
-  dealName: string;
-  description?: string;
-  website?: string;
-  fundingTarget?: string;
-  files: FileMetadata[];
+  files: UploadFile[]; // Simplified - only files matter
   lastSaved: number;
   version: number;
 }
@@ -214,25 +216,12 @@ Similar to deal files but for general knowledge base:
 - `POST /api/library/files/` - Upload to library
 - Bulk operations and metadata management
 
-### Form Validation (Zod Schema)
+### Form Validation (Simplified - Dec 2025)
 
 ```typescript
-const dealFormSchema = z.object({
-  name: z.string().min(1, "Deal name is required"),
-  description: z.string().optional(),
-  website: z.string().url().optional().or(z.literal("")),
-  fundingTarget: z.string().optional(),
-  files: z.array(fileMetadataSchema).min(1, "At least one file is required")
-});
-
-const fileMetadataSchema = z.object({
-  id: z.string(),
-  category: z.string().min(1, "Category is required"),
-  documentType: z.string().optional(),
-  proprietary: z.boolean().default(false),
-  tldr: z.string().optional(),
-  tags: z.array(z.string()).default([])
-});
+// No form validation needed - simplified UI
+// Files are uploaded directly without metadata configuration
+// Default values used: category='other', proprietary=false
 ```
 
 ### File Upload Integration
@@ -350,8 +339,91 @@ For detailed toast system architecture, see `assets/AGENTS.md → Toast Notifica
 
 For detailed implementation documentation, see `assets/AGENTS.md → File Upload Flow Fixes`.
 
+## Draft File Upload Simplification (Dec 2025)
+
+### Problem Resolution
+**Issue**: Draft deals couldn't accept file uploads due to Django serializer filtering
+- `DealFileSerializer` used `Deal.objects.all()` which excludes drafts (`is_draft=True`)
+- Files uploaded to draft UUIDs failed with "Object does not exist" error
+
+**Solution**: Backend serializer updates
+```python
+# Before (fails for drafts)
+queryset=Deal.objects.all()
+
+# After (includes drafts)  
+queryset=Deal.all_objects.all()
+```
+
+### Simplified User Experience
+
+#### Old Workflow (Complex)
+1. Upload files to staging area
+2. Fill deal name, description, website fields
+3. Configure metadata for each file (category, document type, etc.)
+4. Submit with complex validation
+
+#### New Workflow (Simplified)
+1. **Select Files** - Drag/drop or click to upload
+2. **Save Draft** - Files uploaded to backend, user stays on page
+3. **Continue Editing** - Add more files, remove files, save again
+4. **Submit for Underwriting** - Finalize draft and redirect to deal detail
+
+#### UI Changes
+- **Removed**: Deal name field requirement
+- **Removed**: Complex metadata forms
+- **Removed**: Tabs and progressive disclosure
+- **Added**: Immediate file upload on "Save Draft"
+- **Added**: Stay-on-page behavior for drafts
+- **Added**: Redirect only on final submission
+
+#### Technical Implementation
+```typescript
+// FileManager.tsx - Simplified handlers
+const handleSimpleSaveDraft = async () => {
+  // Create draft if needed
+  const draftDeal = currentDraftId ? { uuid: currentDraftId } : 
+    await createDraftDeal({ name: 'Untitled Deal' });
+
+  // Upload files directly to draft
+  for (const file of files) {
+    await uploadDraftFile(draftDeal.uuid, {
+      file: file.file,
+      category: 'other',
+      proprietary: false,
+    });
+  }
+  
+  // Clear files (now in backend) and stay on page
+  setFiles([]);
+  toast.success('Draft saved successfully');
+};
+
+const handleSimpleSubmit = async () => {
+  // Upload files, then finalize, then redirect
+  await uploadFiles();
+  const finalDeal = await finalizeDraftDeal(draftUuid);
+  onDraftSubmit(finalDeal.uuid); // Redirects to deal detail
+};
+```
+
+### API Endpoints Used
+- `POST /api/deals/drafts/` - Create draft with default name
+- `POST /api/deals/files/` - Upload files (now works with drafts)
+- `POST /api/deals/drafts/{uuid}/finalize/` - Convert to live deal
+
+### Benefits
+1. **Faster workflow** - No form filling required
+2. **Immediate persistence** - Files saved to backend on draft save
+3. **Iterative editing** - Save multiple times without losing work
+4. **Clear intent separation** - Draft vs final submission
+5. **Reduced complexity** - No metadata configuration needed
+
 ## Changelog — Aug/Dec 2025
 
+- **Draft File Upload Fix (Dec 2025)** - Backend serializer fix enables direct file uploads to draft deals
+- **UI Simplification (Dec 2025)** - Removed deal name requirement and complex metadata forms
+- **Workflow Redesign (Dec 2025)** - Save Draft stays on page, Submit for Underwriting redirects
 - **File Upload Flow Fixes (T-0815)** - Critical fixes for form data persistence and upload timing issues
 - **File Management System** - Complete rewrite with multi-file upload, draft workflow, and bulk operations
 - **Draft Deal Persistence** - localStorage auto-save with conflict detection and recovery
