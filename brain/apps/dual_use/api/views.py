@@ -1,87 +1,66 @@
-from django.db.models import Count
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import viewsets
+from django.utils.translation import gettext_lazy as _
 
-from companies.models import Company
-from deals.models import Deal
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import viewsets
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.pagination import PageNumberPagination
+
+from ..models import Report
+from .filters import ReportFilter
+from .serializers import ReportSerializer
+
+__all__ = ["ReportViewSet"]
 
 
 @extend_schema_view(
-    summary=extend_schema(
-        summary='Dual-use Summary',
-        description='Aggregated counts for the Dual-use dashboard.',
-    )
+    list=extend_schema(
+        summary=_('List Reports'),
+        description=_('Retrieve a list of reports.'),
+    ),
+    retrieve=extend_schema(
+        summary=_('Get Report'),
+        description=_('Retrieve details of a specific report.'),
+    ),
 )
-class DualUseSummaryViewSet(viewsets.ViewSet):
-    """Provides aggregated counts for the Dual-use dashboard.
+class ReportViewSet(viewsets.ReadOnlyModelViewSet):
 
-    Endpoint: /api/dual-use/summary/
-    Optional query params:
-      - category_name (iexact match on DualUseCategory.name)
-      - hq_country (ISO alpha-2 code for Company.hq_country)
-    """
-
-    # OAuth2 scope required for access (for DOT TokenHasScope)
+    serializer_class = ReportSerializer
+    filterset_class = ReportFilter
+    pagination_class = PageNumberPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+        OrderingFilter,
+    ]
+    lookup_field = 'uuid'
+    search_fields = ['name']
+    ordering_fields = [
+        'name',
+        'created_at',
+        'updated_at',
+    ]
+    ordering = ['-updated_at']
     required_scopes = ['default']
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(name='category_name', description='Dual-use category name (iexact)', required=False, type=str),
-            OpenApiParameter(name='hq_country', description='Company HQ country (ISO alpha-2)', required=False, type=str),
-        ]
-    )
-    @action(detail=False, methods=['get'], url_path='summary', url_name='summary')
-    def summary(self, request):
-        category_name = (request.GET.get('category_name') or '').strip()
-        hq_country = (request.GET.get('hq_country') or '').strip()
+    def get_queryset(self):
+        # Return queryset for list view
+        if self.action == 'list':
+            return Report.objects.prefetch_related('industries')
 
-        # Base: deals with any DU signal
-        deals_qs = Deal.objects.filter(dual_use_signals__isnull=False)
-        if category_name:
-            deals_qs = deals_qs.filter(dual_use_signals__category__name__iexact=category_name)
-
-        # Companies linked to those deals
-        companies = Company.objects.filter(deal__in=deals_qs).distinct()
-        if hq_country:
-            companies = companies.filter(hq_country=hq_country)
-
-        def aggregate(values_field: str):
-            rows = (
-                companies.values(values_field)
-                .annotate(count=Count('id', distinct=True))
-                .order_by('-count', values_field)
+        # Return queryset for detail view
+        elif self.action == 'retrieve':
+            return Report.objects.select_related(
+                'company',
+                'technology_type',
+                'ipo_status',
+                'funding_stage',
+                'last_funding_type',
+            ).prefetch_related(
+                'industries',
+                'investor_types',
+                'investment_stages',
             )
-            result = []
-            for row in rows:
-                name = row.get(values_field)
-                if name is None or name == '':
-                    name = 'Unknown'
-                result.append({'name': name, 'count': int(row['count'])})
-            return result
 
-        tech_type_company_count = aggregate('technology_type__name')
-        # Industries (M2M)
-        industry_rows = (
-            companies.values('industries__name')
-            .annotate(count=Count('id', distinct=True))
-            .order_by('-count', 'industries__name')
-        )
-        industries_company_count = [
-            {'name': (row['industries__name'] or 'Unspecified'), 'count': int(row['count'])}
-            for row in industry_rows
-            if row['industries__name'] is not None
-        ]
-
-        data = {
-            'hq_country_company_count': aggregate('hq_country'),
-            'hq_state_company_count': aggregate('hq_state_name'),
-            'hq_city_company_count': aggregate('hq_city_name'),
-            'tech_type_company_count': tech_type_company_count,
-            'industries_company_count': industries_company_count,
-            'year_founded_company_count': aggregate('year_founded'),
-            'founders_count_company_count': aggregate('founders_count'),
-        }
-
-        return Response(data)
+        # fallback
+        return super().get_queryset()

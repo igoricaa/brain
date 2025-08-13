@@ -1,6 +1,5 @@
 import uuid
 
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -26,21 +25,18 @@ class DealAssessment(models.Model):
         verbose_name=_('deal'),
     )
 
-    tags = ArrayField(models.CharField(max_length=255), default=list, blank=True, verbose_name=_('tags'))
-
-    pros = models.TextField(_('pros'), blank=True)
-    cons = models.TextField(_('cons'), blank=True)
-    recommendation = models.CharField(_('recommendation'), choices=DealFollowUp, max_length=50, blank=True)
-    investment_rationale = models.TextField(_('investment rationale'), blank=True)
-    problem = models.TextField(_('problem'), blank=True)
+    problem_solved = models.TextField(_('problem solved'), blank=True)
     solution = models.TextField(_('product/solution'), blank=True)
-    thesis_fit = models.TextField(_('thesis fit'), blank=True)
-    auto_thesis_fit_score = models.FloatField(_('thesis fit score'), blank=True, null=True)
-    traction = models.TextField(_('traction'), blank=True)
+    thesis_fit_evaluation = models.TextField(_('thesis fit evaluation'), blank=True)
+    thesis_fit_score = models.FloatField(_('thesis fit score'), blank=True, null=True)
+    customer_traction = models.TextField(_('customer traction'), blank=True)
     intellectual_property = models.TextField(_('intellectual property'), blank=True)
     business_model = models.TextField(_('business model'), blank=True)
-    market_sizing = models.TextField(_('market sizing'), blank=True)
+    tam = models.TextField(_('total addressable market'), blank=True)
     competition = models.TextField(_('competition'), blank=True)
+    pros = models.TextField(_('pros'), blank=True)
+    cons = models.TextField(_('cons'), blank=True)
+    investment_rationale = models.TextField(_('investment rationale'), blank=True)
 
     quality_percentile = models.CharField(
         _('quality percentile'),
@@ -66,90 +62,65 @@ class DealAssessment(models.Model):
         help_text=_('Based on data completeness'),
     )
 
-    parent_breakthroughs = models.TextField(
-        _('SOTA parent breakthroughs'),
-        blank=True,
-        help_text=_("What recent breakthroughs have made this technology newly possible?"),
-    )
-
-    sota_comparison = models.TextField(
-        _('SOTA comparison'),
-        blank=True,
-        help_text=_("How does this company's technology compare to the state of the art?"),
-    )
-
-    feasibility = models.TextField(
-        _('feasibility'),
-        blank=True,
-        help_text=_("How feasible is the company’s planned product?"),
-    )
-
-    technical_risk = models.TextField(
-        _('technical risk'),
-        blank=True,
-        help_text=_("What are the major areas of technical risk?"),
-    )
-
-    auto_tags = ArrayField(
-        models.CharField(max_length=255),
-        default=list,
-        blank=True,
-        verbose_name=_('tags'),
-        editable=False,
-    )
-
-    auto_pros = models.TextField(_('pros'), blank=True, editable=False)
-    auto_cons = models.TextField(_('cons'), blank=True, editable=False)
-    auto_recommendation = models.CharField(
+    recommendation = models.CharField(
         _('recommendation'),
         choices=DealFollowUp,
         max_length=50,
         blank=True,
-        editable=False,
     )
-    auto_investment_rationale = models.TextField(
-        _('investment rationale'),
-        blank=True,
-        editable=False,
-    )
-    auto_problem = models.TextField(
-        _('problem'),
+
+    auto_problem_solved = models.TextField(
+        _('problem solved (automated)'),
         blank=True,
         editable=False,
     )
     auto_solution = models.TextField(
-        _('product/solution'),
+        _('product/solution (automated)'),
         blank=True,
         editable=False,
     )
-    auto_thesis_fit = models.TextField(
-        _('thesis fit'),
+    auto_thesis_fit_evaluation = models.TextField(
+        _('thesis fit evaluation (automated)'),
         blank=True,
         editable=False,
     )
-    auto_auto_thesis_fit_score = models.FloatField(_('thesis fit score'), blank=True, null=True, editable=False)
-    auto_traction = models.TextField(
-        _('traction'),
+    auto_thesis_fit_score = models.FloatField(
+        _('thesis fit score (automated)'),
+        blank=True,
+        null=True,
+        editable=False,
+    )
+    auto_customer_traction = models.TextField(
+        _('customer traction'),
         blank=True,
         editable=False,
     )
-    auto_intellectual_property = models.TextField(_('intellectual property'), blank=True, editable=False)
-    auto_business_model = models.TextField(_('business model'), blank=True, editable=False)
-    auto_market_sizing = models.TextField(_('market sizing'), blank=True, editable=False)
-    auto_competition = models.TextField(_('competition'), blank=True, editable=False)
+    auto_intellectual_property = models.TextField(
+        _('intellectual property (automated)'),
+        blank=True,
+        editable=False,
+    )
+    auto_business_model = models.TextField(_('business model (automated)'), blank=True, editable=False)
+    auto_tam = models.TextField(_('total addressable market (automated)'), blank=True, editable=False)
+    auto_competition = models.TextField(_('competition (automated)'), blank=True, editable=False)
 
     auto_quality_percentile = models.CharField(
-        _('quality percentile'),
+        _('quality percentile (automated)'),
         choices=DealQualityPercentile,
         max_length=50,
         blank=True,
         editable=False,
     )
 
-    auto_numeric_score = models.FloatField(_('numeric score'), blank=True, null=True, editable=False)
+    auto_numeric_score = models.FloatField(
+        _('numeric score (automated)'),
+        blank=True,
+        null=True,
+        editable=False,
+    )
 
     auto_non_numeric_score = models.CharField(
-        _('non numeric score'),
+        _('non numeric score (automated)'),
         choices=DealNonNumericScore,
         max_length=50,
         blank=True,
@@ -157,7 +128,7 @@ class DealAssessment(models.Model):
     )
 
     auto_confidence = models.CharField(
-        _('confidence'),
+        _('confidence (automated)'),
         choices=DealAssessmentConfidence,
         max_length=50,
         blank=True,
@@ -165,34 +136,20 @@ class DealAssessment(models.Model):
         editable=False,
     )
 
-    auto_parent_breakthroughs = models.TextField(
-        _('SOTA parent breakthroughs'),
+    auto_pros = models.TextField(_('pros (automated)'), blank=True, editable=False)
+    auto_cons = models.TextField(_('cons (automated)'), blank=True, editable=False)
+    auto_recommendation = models.CharField(
+        _('recommendation (automated)'),
+        choices=DealFollowUp,
+        max_length=50,
         blank=True,
-        help_text=_("What recent breakthroughs have made this technology newly possible?"),
         editable=False,
     )
-
-    auto_sota_comparison = models.TextField(
-        _('SOTA comparison'),
+    auto_investment_rationale = models.TextField(
+        _('investment rationale (automated)'),
         blank=True,
-        help_text=_("How does this company's technology compare to the state of the art?"),
         editable=False,
     )
-
-    auto_feasibility = models.TextField(
-        _('feasibility'),
-        blank=True,
-        help_text=_("How feasible is the company’s planned product?"),
-        editable=False,
-    )
-
-    auto_technical_risk = models.TextField(
-        _('technical risk'),
-        blank=True,
-        help_text=_("What are the major areas of technical risk?"),
-        editable=False,
-    )
-
     created_at = models.DateTimeField('created at', auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'), auto_now=True, null=True, blank=True)
 

@@ -1,4 +1,5 @@
 from django.contrib.postgres import fields as postgres_fields
+from django.db import transaction
 
 from django_countries.serializer_fields import CountryField
 from drf_extra_fields.fields import DecimalRangeField, IntegerRangeField
@@ -33,12 +34,19 @@ __all__ = [
     'RelatedAdvisorCompanySerializer',
     'RelatedAdvisorCompanySerializer',
     'RelatedCompanySerializer',
-    'CompanySerializer',
+    'CompanyCreateSerializer',
+    'CompanyListSerializer',
     'FounderSerializer',
     'AdvisorSerializer',
     'GrantSerializer',
     'ClinicalStudySerializer',
     'PatentApplicationSerializer',
+    'IPOStatusSerializer',
+    'InvestorTypeSerializer',
+    'FundingTypeSerializer',
+    'FundingStageSerializer',
+    'TechnologyTypeSerializer',
+    'IndustrySerializer',
 ]
 
 
@@ -148,7 +156,7 @@ class RelatedCompanySerializer(serializers.ModelSerializer):
         fields = ['uuid', 'name', 'website', 'image']
 
 
-class CompanySerializer(ModelSerializer):
+class CompanyListSerializer(ModelSerializer):
 
     hq_country = CountryField()
     founders = RelatedCompanyFounderSerializer(source='foundings', read_only=True, many=True)
@@ -293,6 +301,40 @@ class CompanySerializer(ModelSerializer):
         ]
 
 
+class CompanyCreateSerializer(ModelSerializer):
+
+    hq_country = CountryField()
+
+    class Meta:
+        model = Company
+        exclude = ["id", "uuid", "extras", "created_at", "updated_at"]
+        read_only_fields = ["id", "uuid", "extras", "creator", "created_at", "updated_at"]
+        extra_kwargs = {
+            "name": {"required": True},
+        }
+
+    @transaction.atomic
+    def create(self, validated_data):
+        request = self.context.get("request", None)
+        user = getattr(request, "user", None) if request else None
+        creator = user if user and user.is_authenticated else None
+
+        industries = validated_data.pop("industries", [])
+        investor_types = validated_data.pop("investor_types", [])
+        investment_stages = validated_data.pop("investment_stages", [])
+
+        company = Company.objects.create(creator=creator, **validated_data)
+
+        if industries:
+            company.industries.set(industries)
+        if investor_types:
+            company.investor_types.set(investor_types)
+        if investment_stages:
+            company.investment_stages.set(investment_stages)
+
+        return company
+
+
 class FounderSerializer(serializers.ModelSerializer):
     country = CountryField()
     companies = RelatedFounderCompanySerializer(source='foundings', read_only=True, many=True)
@@ -371,3 +413,45 @@ class PatentApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatentApplication
         exclude = ['id', 'extras']
+
+
+class IPOStatusSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = IPOStatus
+        exclude = ['id']
+
+
+class InvestorTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = InvestorType
+        exclude = ['id']
+
+
+class FundingTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FundingType
+        exclude = ['id']
+
+
+class FundingStageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FundingStage
+        exclude = ['id']
+
+
+class TechnologyTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = TechnologyType
+        exclude = ['id']
+
+
+class IndustrySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Industry
+        exclude = ['id']

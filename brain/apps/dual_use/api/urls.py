@@ -1,7 +1,6 @@
 from rest_framework import routers
 
-from .views import DualUseSummaryViewSet
+from . import views
 
 router = routers.SimpleRouter()
-router.register(r'', DualUseSummaryViewSet, basename='dual-use')
-
+router.register(r'reports', views.ReportViewSet, basename='report')

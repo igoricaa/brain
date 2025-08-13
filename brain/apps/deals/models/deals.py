@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from django.db.models import CheckConstraint, Q
+from django.db.models import CheckConstraint, Max, Q
 from django.db.models.utils import resolve_callables
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
@@ -185,12 +185,11 @@ class Deal(models.Model):
 
         if not self.company and not self.is_draft:
             self.set_company()
-            print(self.company, '----------')
 
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return f"/deals/{self.uuid}/"
+        return ''
 
     @property
     def display_name(self):
@@ -210,10 +209,8 @@ class Deal(models.Model):
 
     @property
     def decks_ready(self):
-        # A deal is "decks ready" if none of its files are in a pending/started/retry state.
-        # DealFile inherits from library.File which uses the `processing_status` field.
         return not self.files.filter(
-            processing_status__in=[
+            ingestion_status__in=[
                 ProcessingStatus.PENDING,
                 ProcessingStatus.STARTED,
                 ProcessingStatus.RETRY,
@@ -231,6 +228,15 @@ class Deal(models.Model):
             ]
             and self.decks_ready
         )
+
+    @property
+    def last_assessment(self):
+        return self.assessments.order_by('-created_at').first()
+
+    def get_new_files(self):
+        """Returns list of deal files added since the last assessment"""
+        last_assessment = self.assessments.aggregate(created_at=Max('created_at'))
+        return self.files.filter(created_at__gte=last_assessment['created_at'])
 
     def set_company(self, **kwargs):
         """Prepare the company object and link it with the deal.
@@ -266,42 +272,19 @@ class Deal(models.Model):
             query |= Q(**{k: v})
 
         try:
-            # Try to find exact match first (both name AND website if available)
-            exact_query = Q()
-            if self.website and self.name:
-                exact_query = Q(website=self.website) & Q(name=self.name)
-                exact_matches = Company.objects.filter(exact_query)
-                if exact_matches.exists():
-                    company = exact_matches.first()
-                else:
-                    # No exact match, fall back to OR query but handle multiple results
-                    matches = Company.objects.filter(query)
-                    if matches.count() > 1:
-                        # Multiple matches: prefer website match over name match
-                        website_match = matches.filter(website=self.website).first()
-                        if website_match:
-                            company = website_match
-                        else:
-                            company = matches.first()  # Take first match
-                    else:
-                        company = matches.get()
-            else:
-                # Only one criteria available, use the simpler approach
-                company = Company.objects.filter(query).get()
-            
-            # Update the found company
+            company = Company.objects.filter(query).get()
             for k, v in resolve_callables(update_attrs):
                 setattr(company, k, v)
             company.save(update_fields=[*update_attrs.keys(), 'updated_at'])
-            
         except Company.DoesNotExist:
             company = Company.objects.create(**attrs)
         except Company.MultipleObjectsReturned:
-            # Last resort: if we still get multiple objects, take the first one
-            company = Company.objects.filter(query).first()
-            for k, v in resolve_callables(update_attrs):
-                setattr(company, k, v)
-            company.save(update_fields=[*update_attrs.keys(), 'updated_at'])
+            # probably due to not enough info related to a company.
+            # For example when a deal was just created from a deck
+            if not kwargs and not or_kwargs:
+                company = Company.objects.create(**{'name': str(self.uuid)})
+            else:
+                raise
 
         self.company = company
 

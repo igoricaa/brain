@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.core.files import File as FileProxy
+from django.core.files.storage import FileSystemStorage
 from django.core.files.temp import NamedTemporaryFile
 from django.db import models, transaction
 from django.db.models.functions import Now
@@ -14,8 +15,10 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
 import requests
+from polymorphic.managers import PolymorphicManager
 from polymorphic.models import PolymorphicModel
 
+from aindex.parsers import get_pdf_parser_class
 from aindex.utils import get_requests_filename
 
 from common.models import ProcessingStatus
@@ -30,6 +33,36 @@ def mimetype_validator(value):
     if not mimetypes.guess_extension(value):
         msg = "'{mimetype}' is not a recognized MIME-Type."
         raise ValidationError(msg.format(mimetype=value))
+
+
+class FileManager(PolymorphicManager):
+
+    def convert(self, src, defaults=None):
+        """Change the baseclass or subclass model instance into a new model instance.
+
+        Optionally ``defaults`` could be as dictionary of (field, value) pairs which should be used
+        as default values to be used in the converted instance.
+        """
+
+        # copy attributes
+        attrs = defaults or {}
+        field_names = [f.name for f in self.model._meta.fields]
+        for field in src._meta.fields:
+            if field.name in field_names and field.name not in ['polymorphic_ctype', 'file_ptr']:
+                attrs[field.name] = getattr(src, field.name)
+
+        with transaction.atomic():
+
+            # delete old object
+            src.delete()
+
+            # create a new object
+            obj = self.model(**attrs)
+            obj.pk = None
+            obj.id = None
+            obj.save()
+
+        return obj
 
 
 class File(PolymorphicModel):
@@ -68,7 +101,6 @@ class File(PolymorphicModel):
         max_length=255,
         help_text="MIME type of uploaded content",
         validators=[mimetype_validator],
-        default='application/octet-stream',
     )
 
     src_id = models.CharField(_('external ID'), max_length=255, blank=True)
@@ -111,6 +143,8 @@ class File(PolymorphicModel):
         blank=True,
     )
 
+    objects = FileManager()
+
     class Meta:
         verbose_name = _('File')
         verbose_name_plural = _('Files')
@@ -119,6 +153,10 @@ class File(PolymorphicModel):
         return self.file_name
 
     def save(self, *args, **kwargs):
+
+        if self.file and not self.mime_type:
+            self.mime_type = self.guess_mime_type() or ''
+
         super().save(*args, **kwargs)
 
         post_save_tasks = self.get_post_save_tasks()
@@ -131,6 +169,13 @@ class File(PolymorphicModel):
             return ''
 
         return Path(self.file.name).name
+
+    def guess_mime_type(self):
+        if not self.file:
+            return None
+        _mime_type, _encoding = mimetypes.guess_type(self.file_name)
+
+        return _mime_type
 
     def save_src_file(self):
         """Download and save file from an external url.
@@ -164,3 +209,39 @@ class File(PolymorphicModel):
         if not self.file and self.src_download_url:
             return download_file_src.si(pk=self.pk)
         return None
+
+    @property
+    def pdf_parser(self):
+        parser_class = get_pdf_parser_class()
+
+        if isinstance(self.file.storage, FileSystemStorage):
+            path = Path(self.file.path)
+        else:
+            # GCS
+            path = f'gs://{self.file.storage.bucket_name}/{self.file.file.name}'
+
+        parser = parser_class(path)
+        return parser
+
+    def extract_pdf_text(self, parser=None):
+        """Extract text from PDF
+
+        Returns
+            str:
+                Extracted text
+        """
+        if not self.file:
+            raise ValueError(_('The paper has no file'))
+
+        parser = parser or self.pdf_parser
+        text = self._sanitize_text(parser.extract_text())
+        return text
+
+    @staticmethod
+    def _sanitize_text(text):
+        text = text or ''
+
+        # Avoid "psycopg.DataError: PostgreSQL text fields cannot contain NUL (0x00) bytes"
+        text = text.replace('\x00', '')
+
+        return text

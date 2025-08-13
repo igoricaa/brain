@@ -1,17 +1,17 @@
+import json
 import uuid
 from pathlib import Path
 
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
-from django.utils.functional import cached_property
+from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
 from imagekit.models import ImageSpecField
 from pilkit.processors import ResizeToFit
 from polymorphic.managers import PolymorphicManager
 
-from aindex.parsers import get_pdf_parser_class
+from aindex.vertexai import DealAssistant
 
 from library.models import AbstractPaper
 from library.models import File as LibraryFile
@@ -44,6 +44,29 @@ class DealFile(LibraryFile):
         verbose_name = _('Deal File')
         verbose_name_plural = _('Deal Files')
 
+    def classify_file(self):
+        """Classify deal file and convert it to a more appropriate instance."""
+
+        if self.mime_type == 'application/pdf':
+            text = self.extract_pdf_text()
+        else:
+            return None
+
+        assistant = DealAssistant()
+        response = assistant.classify_document(text)
+        response_data = json.loads(response.text)
+
+        document_type = response_data.get('document_type')
+        title = response_data.get('title') or ''
+        _defaults = {'title': title, 'raw_text': text}
+
+        if document_type == 'deck':
+            Deck.objects.convert(self, defaults=_defaults)
+        elif document_type == 'paper':
+            Paper.objects.convert(self, defaults=_defaults)
+
+        return response.json()
+
 
 class Paper(AbstractPaper, DealFile):
     """Deal Academic Paper"""
@@ -71,6 +94,22 @@ class Paper(AbstractPaper, DealFile):
     def __str__(self):
         return self.title
 
+    def clean_raw_text(self):
+        if not self.raw_text:
+            return None
+
+        assistant = DealAssistant()
+        response = assistant.clean_document(self.raw_text)
+        response_data = json.loads(response.text)
+
+        text = response_data.get('text')
+
+        if text:
+            self.text = text
+            type(self).objects.update(text=self.text, updated_at=now())
+
+        return response.json()
+
 
 class Deck(DealFile):
 
@@ -80,6 +119,7 @@ class Deck(DealFile):
     title = models.CharField(_('title'), max_length=255, blank=True)
     subtitle = models.CharField(_('subtitle'), max_length=255, blank=True)
 
+    raw_text = models.TextField(_('raw text'), blank=True)
     text = models.TextField(_('text'), blank=True)
 
     is_from_mailbox = models.BooleanField(_('is from mailbox'), blank=True, default=False, db_index=True)
@@ -120,22 +160,28 @@ class Deck(DealFile):
         else:
             return self.file_stem
 
-    @cached_property
-    def pdf_parser(self):
-        parser_class = get_pdf_parser_class()
+    def load_text(self):
+        text = self.extract_pdf_text()
 
-        if isinstance(self.file.storage, FileSystemStorage):
-            path = Path(self.file.path)
-        else:
-            # GCS
-            path = f'gs://{self.file.storage.bucket_name}/{self.file.file.name}'
+        if text:
+            self.raw_text = text
+            type(self).objects.update(raw_text=self.raw_text, updated_at=now())
 
-        parser = parser_class(path)
-        return parser
+    def clean_raw_text(self):
+        if not self.raw_text:
+            return None
 
-    def load_pdf_text(self, parser=None):
-        parser = parser or self.pdf_parser
-        self.text = self._clean_str(parser.extract_text())
+        assistant = DealAssistant()
+        response = assistant.clean_deck(self.raw_text)
+        response_data = json.loads(response.text)
+
+        text = response_data.get('text')
+
+        if text:
+            self.text = text
+            type(self).objects.update(text=self.text, updated_at=now())
+
+        return response.json()
 
     def generate_pdf_pages(self, parser=None):
         parser = parser or self.pdf_parser
@@ -150,15 +196,6 @@ class Deck(DealFile):
     def _ingest_deck(self):
         # return (ingest_deck.si(self.pk) | process_deck.si(self.pk)).delay()
         pass
-
-    @staticmethod
-    def _clean_str(text):
-        text = text or ''
-
-        # Avoid "psycopg.DataError: PostgreSQL text fields cannot contain NUL (0x00) bytes"
-        text = text.replace('\x00', '')
-
-        return text
 
 
 class DeckPage(models.Model):

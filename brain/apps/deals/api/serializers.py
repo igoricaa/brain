@@ -7,8 +7,10 @@ from companies.api.serializers import (
     RelatedIndustrySerializer,
 )
 from companies.models import Company, FundingStage, FundingType, Industry
+from library.api.serializers import FileReadSerializer, FileSerializer
+from library.api.serializers import PaperSerializer as LibraryPaperSerializer
 
-from ..models import Deal, DealFile, Deck, DraftDeal, DualUseCategory, DualUseSignal, Paper, DealAssessment
+from ..models import Deal, DealAssessment, DealFile, Deck, DraftDeal, DualUseCategory, DualUseSignal, Paper
 
 __all__ = [
     'RelatedDualUseSignalSerializer',
@@ -17,12 +19,14 @@ __all__ = [
     'DealReadSerializer',
     'DraftDealSerializer',
     'DealFileSerializer',
-    'DealFileReadSerializer',
-    'DeckSerializer',
-    'PaperSerializer',
-    'DualUseSignalSerializer',
     'DealAssessmentSerializer',
     'DealAssessmentReadSerializer',
+    'DealFileReadSerializer',
+    'DeckSerializer',
+    'DeckReadSerializer',
+    'PaperSerializer',
+    'PaperReadSerializer',
+    'DualUseSignalSerializer',
 ]
 
 
@@ -47,7 +51,7 @@ class RelatedDealSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deal
-        fields = ['uuid']
+        fields = ['uuid', 'name']
 
 
 class DealSerializer(serializers.ModelSerializer):
@@ -111,6 +115,10 @@ class DealReadSerializer(DealSerializer):
     dual_use_signals = RelatedDualUseSignalSerializer(read_only=True, many=True)
     funding_stage = RelatedFundingStageSerializer(read_only=True)
     funding_type = RelatedFundingTypeSerializer(read_only=True)
+    last_assessment_created_at = serializers.DateTimeField(read_only=True)
+
+    class Meta(DealSerializer.Meta):
+        fields = DealSerializer.Meta.fields + ['last_assessment_created_at']
 
 
 class DraftDealSerializer(DealReadSerializer):
@@ -124,34 +132,154 @@ class DraftDealSerializer(DealReadSerializer):
         model = DraftDeal
 
 
-class DealFileSerializer(serializers.ModelSerializer):
+class DealAssessmentSerializer(serializers.ModelSerializer):
     deal = serializers.SlugRelatedField(
         slug_field='uuid',
-        queryset=Deal.all_objects.all(),  # Use all_objects to include draft deals
+        queryset=Deal.objects.all(),
         required=True,
     )
 
     class Meta:
-        model = DealFile
-        exclude = ['id', 'processing_task_id', 'creator']
+        model = DealAssessment
+        fields = [
+            'uuid',
+            'deal',
+            'problem_solved',
+            'solution',
+            'thesis_fit_evaluation',
+            'thesis_fit_score',
+            'customer_traction',
+            'intellectual_property',
+            'business_model',
+            'tam',
+            'competition',
+            'quality_percentile',
+            'numeric_score',
+            'non_numeric_score',
+            'confidence',
+            'pros',
+            'cons',
+            'recommendation',
+            'investment_rationale',
+            'auto_problem_solved',
+            'auto_solution',
+            'auto_thesis_fit_evaluation',
+            'auto_thesis_fit_score',
+            'auto_customer_traction',
+            'auto_intellectual_property',
+            'auto_business_model',
+            'auto_tam',
+            'auto_competition',
+            'auto_quality_percentile',
+            'auto_numeric_score',
+            'auto_non_numeric_score',
+            'auto_confidence',
+            'auto_pros',
+            'auto_cons',
+            'auto_recommendation',
+            'auto_investment_rationale',
+            'created_at',
+            'updated_at',
+        ]
 
 
-class DealFileReadSerializer(DealFileSerializer):
+class DealAssessmentReadSerializer(DealAssessmentSerializer):
     deal = RelatedDealSerializer(read_only=True)
+
+
+class DealFileSerializer(FileSerializer):
+    deal = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=Deal.objects.all(),
+        required=True,
+    )
+
+    class Meta(FileSerializer.Meta):
+        model = DealFile
+        fields = [
+            'deal',
+            'uuid',
+            'file',
+            'mime_type',
+            'source',
+            'src_id',
+            'src_url',
+            'src_download_url',
+            'tags',
+            'categories',
+            'processing_status',
+            'created_at',
+            'updated_at',
+        ]
+
+
+class DealFileReadSerializer(FileReadSerializer):
+    deal = RelatedDealSerializer(read_only=True)
+
+    class Meta(FileReadSerializer.Meta):
+        fields = [
+            'deal',
+            'uuid',
+            'file',
+            'file_name',
+            'mime_type',
+            'source',
+            'src_id',
+            'src_url',
+            'src_download_url',
+            'tags',
+            'categories',
+            'processing_status',
+            'created_at',
+            'updated_at',
+        ]
 
 
 class DeckSerializer(DealFileSerializer):
 
     class Meta:
         model = Deck
-        exclude = ['id', 'processing_task_id', 'is_from_mailbox', 'creator']
+        fields = [
+            'uuid',
+            'file',
+            'file_name',
+            'title',
+            'subtitle',
+            'raw_text',
+            'text',
+            'mime_type',
+            'source',
+            'src_id',
+            'src_url',
+            'src_download_url',
+            'tags',
+            'categories',
+            'processing_status',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['processing_status']
 
 
-class PaperSerializer(DealFileSerializer):
+class DeckReadSerializer(DeckSerializer):
+    deal = RelatedDealSerializer(read_only=True)
 
-    class Meta:
+
+class PaperSerializer(LibraryPaperSerializer):
+
+    deal = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=Deal.objects.all(),
+        required=True,
+    )
+
+    class Meta(LibraryPaperSerializer.Meta):
         model = Paper
-        exclude = ['id', 'processing_task_id', 'creator']
+        fields = ['deal'] + LibraryPaperSerializer.Meta.fields
+
+
+class PaperReadSerializer(PaperSerializer):
+    deal = RelatedDealSerializer(read_only=True)
 
 
 class DualUseSignalSerializer(serializers.ModelSerializer):
@@ -160,48 +288,3 @@ class DualUseSignalSerializer(serializers.ModelSerializer):
     class Meta:
         model = DualUseSignal
         exclude = ['id']
-
-
-class DealAssessmentSerializer(serializers.ModelSerializer):
-    deal = serializers.SlugRelatedField(
-        slug_field='uuid', queryset=Deal.all_objects.all(), required=True  # Use all_objects to include draft deals
-    )
-
-    class Meta:
-        model = DealAssessment
-        fields = [
-            'uuid',
-            'deal',
-            'quality_percentile',
-            'recommendation',
-            'investment_rationale',
-            'pros',
-            'cons',
-        ]
-
-
-class DealAssessmentReadSerializer(DealAssessmentSerializer):
-    deal = RelatedDealSerializer(read_only=True)
-    
-    class Meta(DealAssessmentSerializer.Meta):
-        model = DealAssessment
-        # Expose AI (auto_*) read-only fields alongside manual fields for the redesigned Deal Detail view
-        fields = DealAssessmentSerializer.Meta.fields + [
-            'created_at',
-            'updated_at',
-            # Auto (AI) assessment mirrors
-            'auto_quality_percentile',
-            'auto_recommendation',
-            'auto_investment_rationale',
-            'auto_pros',
-            'auto_cons',
-            # Keeping room for future panels if needed
-            'auto_problem',
-            'auto_solution',
-            'auto_thesis_fit',
-            'auto_traction',
-            'auto_intellectual_property',
-            'auto_business_model',
-            'auto_market_sizing',
-            'auto_competition',
-        ]

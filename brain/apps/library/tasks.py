@@ -160,8 +160,7 @@ def extract_paper_text(pk, app_label='library', model_name='paper'):
 
     paper_model = apps.get_registered_model(app_label, model_name)
     paper = paper_model.objects.get(pk=pk)
-    text = paper.extract_pdf_text()
-    paper_model.objects.filter(pk=pk).update(raw_text=text, text=text, updated_at=now())
+    text = paper.load_pdf_text()
     paper.signal_text_extraction_done()
 
     end_time = time.perf_counter()

@@ -163,6 +163,7 @@ class SemanticScholarSearch(models.Model):
             'tldr',
             'references',
             'citations',
+            'citationCount',
             'authors.name',
             'authors.homepage',
             'authors.authorId',
@@ -206,6 +207,9 @@ class SemanticScholarSearch(models.Model):
         if open_access_pdf:
             kwargs['src_download_url'] = open_access_pdf.get('url') or ''
             kwargs['license'] = open_access_pdf.get('license') or ''
+
+        if paper.citationCount is not None:
+            kwargs['citation_count'] = paper.citationCount
 
         tags = set()
         if paper.fieldsOfStudy:

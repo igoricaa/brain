@@ -1,17 +1,13 @@
-from pathlib import Path
-
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
-from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models.functions import Now
-from django.utils.functional import cached_property
+from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
 from celery import chain as task_chain
 from pgvector.django import HnswIndex, VectorField
 
-from aindex.parsers import get_pdf_parser_class
 from aindex.vertexai import get_text_embedding
 
 from socialgraph.models import Profile
@@ -42,6 +38,8 @@ class AbstractPaper(models.Model):
     publication_year = models.PositiveIntegerField(_('year published'), null=True, blank=True)
     publication_date = models.DateField(_('date published'), null=True, blank=True)
 
+    citation_count = models.PositiveIntegerField(_('citation count'), null=True, blank=True)
+
     license = models.CharField(_('license'), blank=True, max_length=255)
 
     embedding = VectorField(
@@ -54,38 +52,13 @@ class AbstractPaper(models.Model):
     class Meta:
         abstract = True
 
-    @cached_property
-    def pdf_parser(self):
-        parser_class = get_pdf_parser_class()
-
-        if isinstance(self.file.storage, FileSystemStorage):
-            path = Path(self.file.path)
-        else:
-            # GCS
-            path = f'gs://{self.file.storage.bucket_name}/{self.file.file.name}'
-
-        parser = parser_class(path)
-        return parser
-
-    def extract_pdf_text(self, parser=None):
-        """Extract text from PDF
-
-        Returns
-            str:
-                Extracted text
-        """
-        if not self.file:
-            raise ValueError(_('The paper has no file'))
-
-        parser = parser or self.pdf_parser
-        text = self._sanitize_text(parser.extract_text())
-        return text
-
     def load_pdf_text(self, parser=None):
         """Load the extracted PDF text to the paper's ``text`` attribute."""
         text = self.extract_pdf_text(parser=parser)
-        self.raw_text = text
-        self.text = text
+        if text:
+            self.raw_text = text
+            self.text = text
+            type(self).objects.update(raw_text=self.raw_text, text=self.text, updated_at=now())
 
     def generate_pdf_pages(self, parser=None):
         parser = parser or self.pdf_parser
@@ -121,15 +94,6 @@ class AbstractPaper(models.Model):
         from ..signals import paper_text_extraction_done
 
         paper_text_extraction_done.send(sender=self.__class__, instance=self)
-
-    @staticmethod
-    def _sanitize_text(text):
-        text = text or ''
-
-        # Avoid "psycopg.DataError: PostgreSQL text fields cannot contain NUL (0x00) bytes"
-        text = text.replace('\x00', '')
-
-        return text
 
     def get_post_save_tasks(self):
         """Tasks to be performed after the paper is saved

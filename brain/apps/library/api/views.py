@@ -106,7 +106,7 @@ class PaperViewSet(ModelViewSet):
 
     filterset_class = PaperFilter
     lookup_field = 'uuid'
-    ordering_fields = ['created_at', 'updated_at']
+    ordering_fields = ['created_at', 'updated_at', 'title', 'citation_count']
     ordering = ['-created_at']
     required_scopes = ['default']
 

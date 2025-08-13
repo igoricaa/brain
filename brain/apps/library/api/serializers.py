@@ -76,16 +76,19 @@ class FileSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
+        read_only_fields = ['processing_status']
 
 
 class FileReadSerializer(FileSerializer):
     source = SourceRelatedSerializer(read_only=True)
     categories = CategoryRelatedSerializer(read_only=True, many=True)
+    file_name = serializers.CharField(read_only=True)
 
     class Meta(FileSerializer.Meta):
         fields = [
             'uuid',
             'file',
+            'file_name',
             'mime_type',
             'source',
             'src_id',
@@ -193,9 +196,11 @@ class PaperReadSerializer(PaperSerializer):
             'categories',
             'document_types',
             'authors',
+            'citation_count',
             'created_at',
             'updated_at',
         ]
+        read_only_field = ['citation_count']
 
 
 class PaperProcessingStatusSerializer(serializers.ModelSerializer):
