@@ -1,9 +1,11 @@
 from django.db.models import OuterRef, Subquery
 from django.utils.translation import gettext_lazy as _
 
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
@@ -54,7 +56,13 @@ from .serializers import (
 class DealViewSet(ModelViewSet):
 
     lookup_field = 'uuid'
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+        OrderingFilter,
+    ]
     filterset_class = DealFilter
+    search_fields = ['name', 'company__name', 'company__website']
     ordering_fields = ['created_at', 'updated_at', 'name']
     ordering = ['-created_at']
     required_scopes = ['default']
@@ -62,7 +70,7 @@ class DealViewSet(ModelViewSet):
     def get_queryset(self):
         last_assessment = DealAssessment.objects.filter(deal=OuterRef("pk")).order_by("-created_at")
         return (
-            Deal.objects.annotate(last_assessment_created_at=Subquery(last_assessment.values('created_at')[:1]))
+            Deal.ready_objects.annotate(last_assessment_created_at=Subquery(last_assessment.values('created_at')[:1]))
             .select_related('company', 'funding_stage', 'funding_type')
             .prefetch_related('industries', 'dual_use_signals')
         )
@@ -118,7 +126,7 @@ class DraftDealViewSet(DealViewSet):
         )
 
     def get_serializer_class(self):
-        if self.action == 'finalize':
+        if action == 'finalize':
             return DealReadSerializer
         return DraftDealSerializer
 

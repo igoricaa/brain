@@ -35,9 +35,12 @@ __all__ = [
     'RelatedAdvisorCompanySerializer',
     'RelatedCompanySerializer',
     'CompanyCreateSerializer',
-    'CompanyListSerializer',
+    'CompanySerializer',
+    'CompanyReadSerializer',
     'FounderSerializer',
+    'FounderReadSerializer',
     'AdvisorSerializer',
+    'AdvisorReadSerializer',
     'GrantSerializer',
     'ClinicalStudySerializer',
     'PatentApplicationSerializer',
@@ -156,19 +159,58 @@ class RelatedCompanySerializer(serializers.ModelSerializer):
         fields = ['uuid', 'name', 'website', 'image']
 
 
-class CompanyListSerializer(ModelSerializer):
+class CompanySerializer(ModelSerializer):
 
     hq_country = CountryField()
-    founders = RelatedCompanyFounderSerializer(source='foundings', read_only=True, many=True)
-    advisors = RelatedCompanyAdvisorSerializer(source='company_advisors', read_only=True, many=True)
-    technology_type = RelatedTechnologyTypeSerializer(read_only=True)
-    industries = RelatedIndustrySerializer(read_only=True, many=True)
-    ipo_status_type = RelatedIPOStatusSerializer(read_only=True)
-    last_funding_type = RelatedFundingTypeSerializer(read_only=True)
-    funding_stage = RelatedFundingStageSerializer(read_only=True)
-    last_equity_funding_stage = RelatedFundingStageSerializer(read_only=True)
-    investment_types = RelatedInvestorTypeSerializer(read_only=True, many=True)
-    investment_stages = RelatedFundingStageSerializer(read_only=True, many=True)
+    founders = serializers.SlugRelatedField(
+        slug_field='uuid', queryset=Founder.objects.all(), required=False, many=True
+    )
+    advisors = serializers.SlugRelatedField(
+        slug_field='uuid', queryset=Advisor.objects.all(), required=False, many=True
+    )
+    technology_type = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=TechnologyType.objects.all(),
+        required=False,
+    )
+    industries = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=Industry.objects.all(),
+        required=False,
+        many=True,
+    )
+    ipo_status = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=IPOStatus.objects.all(),
+        required=False,
+    )
+    last_funding_type = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=FundingType.objects.all(),
+        required=False,
+    )
+    funding_stage = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=FundingStage.objects.all(),
+        required=False,
+    )
+    last_equity_funding_stage = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=FundingStage.objects.all(),
+        required=False,
+    )
+    investment_types = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=InvestorType.objects.all(),
+        required=False,
+        many=True,
+    )
+    investment_stages = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=FundingStage.objects.all(),
+        required=False,
+        many=True,
+    )
 
     class Meta:
         model = Company
@@ -236,7 +278,7 @@ class CompanyListSerializer(ModelSerializer):
             'actively_hiring',
             'last_layoff_date',
             'last_key_employee_change',
-            'ipo_status_type',
+            'ipo_status',
             'last_funding_type',
             'funding_stage',
             'last_equity_funding_stage',
@@ -301,6 +343,20 @@ class CompanyListSerializer(ModelSerializer):
         ]
 
 
+class CompanyReadSerializer(CompanySerializer):
+
+    founders = RelatedCompanyFounderSerializer(source='foundings', read_only=True, many=True)
+    advisors = RelatedCompanyAdvisorSerializer(source='company_advisors', read_only=True, many=True)
+    technology_type = RelatedTechnologyTypeSerializer(read_only=True)
+    industries = RelatedIndustrySerializer(read_only=True, many=True)
+    ipo_status = RelatedIPOStatusSerializer(read_only=True)
+    last_funding_type = RelatedFundingTypeSerializer(read_only=True)
+    funding_stage = RelatedFundingStageSerializer(read_only=True)
+    last_equity_funding_stage = RelatedFundingStageSerializer(read_only=True)
+    investment_types = RelatedInvestorTypeSerializer(read_only=True, many=True)
+    investment_stages = RelatedFundingStageSerializer(read_only=True, many=True)
+
+
 class CompanyCreateSerializer(ModelSerializer):
 
     hq_country = CountryField()
@@ -337,13 +393,6 @@ class CompanyCreateSerializer(ModelSerializer):
 
 class FounderSerializer(serializers.ModelSerializer):
     country = CountryField()
-    companies = RelatedFounderCompanySerializer(source='foundings', read_only=True, many=True)
-    company = serializers.UUIDField(write_only=True, required=False, help_text="Company UUID to associate this founder with")
-    
-    # Fields for creating Founding relationship
-    title = serializers.CharField(max_length=255, required=False, write_only=True)
-    age_at_founding = serializers.IntegerField(required=False, write_only=True)
-    past_significant_employments = serializers.CharField(required=False, write_only=True)
 
     class Meta:
         model = Founder
@@ -363,76 +412,20 @@ class FounderSerializer(serializers.ModelSerializer):
             'phd_school',
             'has_military_or_govt_background',
             'military_or_govt_background',
-            'companies',
             'created_at',
             'updated_at',
-            # Write-only fields for company association
-            'company',
-            'title',
-            'age_at_founding',
-            'past_significant_employments',
         ]
 
-    @transaction.atomic
-    def create(self, validated_data):
-        company_uuid = validated_data.pop('company', None)
-        
-        # Extract founding-specific fields
-        title = validated_data.pop('title', '')
-        age_at_founding = validated_data.pop('age_at_founding', None)
-        past_employments = validated_data.pop('past_significant_employments', '')
-        
-        # Parse past employments if it's a string
-        past_employments_list = []
-        if past_employments:
-            # Split by newlines or commas and clean up
-            past_employments_list = [
-                emp.strip() for emp in past_employments.replace('\n', ',').split(',') 
-                if emp.strip()
-            ]
 
-        # Create the Founder
-        founder = Founder.objects.create(**validated_data)
-        
-        # Create the Founding relationship if company is provided
-        if company_uuid:
-            from ..models import Company
-            try:
-                company = Company.objects.get(uuid=company_uuid)
-                founding = Founding.objects.create(
-                    founder=founder,
-                    company=company,
-                    title=title,
-                    age_at_founding=age_at_founding,
-                    past_significant_employments=past_employments_list,
-                )
-                # Return a representation that matches what the frontend expects
-                return {
-                    'uuid': founding.id,  # Use id instead of uuid for Founding
-                    'founder': {
-                        'uuid': founder.uuid,
-                        'name': founder.name,
-                        'email': getattr(founder, 'email', None),
-                        'bio': founder.bio,
-                        'linkedin_url': founder.linkedin_url,
-                    },
-                    'title': founding.title,
-                    'age_at_founding': founding.age_at_founding,
-                    'past_significant_employments': founding.past_significant_employments,
-                    'start_date': getattr(founding, 'start_date', None),
-                    'end_date': getattr(founding, 'end_date', None),
-                }
-            except Company.DoesNotExist:
-                # If company doesn't exist, just return the founder
-                pass
-        
-        return founder
+class FounderReadSerializer(FounderSerializer):
+    companies = RelatedFounderCompanySerializer(source='foundings', read_only=True, many=True)
+
+    class Meta(FounderSerializer.Meta):
+        fields = FounderSerializer.Meta.fields + ['companies']
 
 
 class AdvisorSerializer(serializers.ModelSerializer):
     country = CountryField()
-    companies = RelatedAdvisorCompanySerializer(source='company_advisors', read_only=True, many=True)
-    company = serializers.UUIDField(write_only=True, required=False, help_text="Company UUID to associate this advisor with")
 
     class Meta:
         model = Advisor
@@ -452,49 +445,17 @@ class AdvisorSerializer(serializers.ModelSerializer):
             'phd_school',
             'has_military_or_govt_background',
             'military_or_govt_background',
-            'companies',
             'created_at',
             'updated_at',
-            # Write-only field for company association
-            'company',
         ]
 
-    @transaction.atomic
-    def create(self, validated_data):
-        company_uuid = validated_data.pop('company', None)
-        
-        # Create the Advisor
-        advisor = Advisor.objects.create(**validated_data)
-        
-        # Create the CompanyAdvisor relationship if company is provided
-        if company_uuid:
-            from ..models import Company
-            try:
-                company = Company.objects.get(uuid=company_uuid)
-                company_advisor = CompanyAdvisor.objects.create(
-                    advisor=advisor,
-                    company=company,
-                )
-                # Return a representation that matches what the frontend expects
-                return {
-                    'uuid': company_advisor.id,  # Use id instead of uuid for CompanyAdvisor
-                    'advisor': {
-                        'uuid': advisor.uuid,
-                        'name': advisor.name,
-                        'bio': advisor.bio,
-                        'linkedin_url': advisor.linkedin_url,
-                        'website': advisor.website,
-                        'country': advisor.country,
-                        'location': advisor.location,
-                    },
-                    'created_at': company_advisor.created_at,
-                    'updated_at': company_advisor.updated_at,
-                }
-            except Company.DoesNotExist:
-                # If company doesn't exist, just return the advisor
-                pass
-        
-        return advisor
+
+class AdvisorReadSerializer(AdvisorSerializer):
+    companies = RelatedAdvisorCompanySerializer(source='company_advisors', read_only=True, many=True)
+
+    class Meta(AdvisorSerializer.Meta):
+        model = Founder
+        fields = AdvisorSerializer.Meta.fields + ['companies']
 
 
 class GrantSerializer(serializers.ModelSerializer):

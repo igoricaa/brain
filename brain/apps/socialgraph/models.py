@@ -224,7 +224,6 @@ class Profile(PolymorphicModel):
         if not extra_attrs:
             return
 
-        print(extra_attrs)
         update_fields = [
             'bachelor_degree_type',
             'bachelor_grad_year',

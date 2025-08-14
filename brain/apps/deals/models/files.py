@@ -9,12 +9,14 @@ from django.utils.translation import gettext_lazy as _
 
 from imagekit.models import ImageSpecField
 from pilkit.processors import ResizeToFit
-from polymorphic.managers import PolymorphicManager
 
+from aindex.utils import get_country
 from aindex.vertexai import DealAssistant
 
+from companies.models import Founder, Founding
 from library.models import AbstractPaper
 from library.models import File as LibraryFile
+from library.models import FileManager
 
 from ..managers import MailboxDeckManager
 from ..storage import deck_page_screenshot_path, decks_file_storage
@@ -32,7 +34,7 @@ class DealFile(LibraryFile):
         related_name='files',
         related_query_name='file',
         blank=True,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         verbose_name=_('deal'),
     )
 
@@ -65,7 +67,7 @@ class DealFile(LibraryFile):
         elif document_type == 'paper':
             Paper.objects.convert(self, defaults=_defaults)
 
-        return response.json()
+        return response.to_json_dict()
 
 
 class Paper(AbstractPaper, DealFile):
@@ -106,9 +108,9 @@ class Paper(AbstractPaper, DealFile):
 
         if text:
             self.text = text
-            type(self).objects.update(text=self.text, updated_at=now())
+            type(self).filter(pk=self.pk).objects.update(text=self.text, updated_at=now())
 
-        return response.json()
+        return response.to_json_dict()
 
 
 class Deck(DealFile):
@@ -124,7 +126,7 @@ class Deck(DealFile):
 
     is_from_mailbox = models.BooleanField(_('is from mailbox'), blank=True, default=False, db_index=True)
 
-    objects = PolymorphicManager()
+    objects = FileManager()
     from_mailbox = MailboxDeckManager()
 
     class Meta:
@@ -165,7 +167,7 @@ class Deck(DealFile):
 
         if text:
             self.raw_text = text
-            type(self).objects.update(raw_text=self.raw_text, updated_at=now())
+            type(self).objects.filter(pk=self.pk).update(raw_text=self.raw_text, updated_at=now())
 
     def clean_raw_text(self):
         if not self.raw_text:
@@ -179,9 +181,100 @@ class Deck(DealFile):
 
         if text:
             self.text = text
-            type(self).objects.update(text=self.text, updated_at=now())
+            type(self).objects.filter(pk=self.pk).update(text=self.text, updated_at=now())
 
-        return response.json()
+        return response.to_json_dict()
+
+    def gen_deal_info(self):
+        assistant = DealAssistant()
+        response = assistant.gen_deck_basic_info(self.text)
+        response_data = json.loads(response.text)
+
+        deck_updates = {}
+        deal_updates = {}
+        company_updates = {}
+
+        company_name = response_data.get('company_name')
+        if company_name:
+            deck_updates['title'] = company_name
+            deal_updates['name'] = company_name
+            company_updates['name'] = company_name
+
+        website = response_data.get('website')
+        if website:
+            deal_updates['website'] = website
+            company_updates['website'] = website
+
+        location = response_data.get('location') or {}
+        country = location.get('country')
+        if country:
+            try:
+                country = get_country(country)
+                company_updates['hq_country'] = country.alpha_2
+            except LookupError:
+                pass
+        state = location.get('state')
+        if state:
+            company_updates['hq_state_name'] = state
+        city = location.get('city')
+        if state:
+            company_updates['hq_city_name'] = city
+
+        # update deck
+        deck_updates = {k: v for k, v in deck_updates.items() if not getattr(self, k, None)}
+        if deck_updates:
+            type(self).objects.filter(pk=self.py).update(updated_at=now(), **deck_updates)
+
+        # update deal
+        if self.deal:
+            deal_updates = {k: v for k, v in deal_updates.items() if not getattr(self.deal, k, None)}
+            if deal_updates:
+                type(self.deal)._default_manager.filter(pk=self.deal.pk).update(updated_at=now(), **deal_updates)
+
+        # update company
+        if self.deal and self.deal.company:
+            company_updates = {k: v for k, v in company_updates.items() if not getattr(self.deal.company, k, None)}
+            if company_updates:
+                type(self.deal.company).objects.filter(pk=self.deal.company.pk).update(
+                    updated_at=now(), **company_updates
+                )
+        elif self.deal:
+            self.deal.set_company(defaults=company_updates)
+            type(self.deal)._default_manager.filter(pk=self.deal.pk).update(
+                updated_at=now(), company=self.deal.company
+            )
+
+        # update company founders
+        founders = response_data.get('founders') or []
+        for founder_attrs in founders:
+            founder_name = founder_attrs.get('name', '')
+            founder_bio = founder_attrs.get('bio', '')
+
+            founder, founder_created = Founder.objects.update_or_create(
+                company=self.deal.company,
+                name=founder_name,
+                defaults={
+                    'name': founder_name,
+                    'bio': founder_bio,
+                },
+            )
+            founder_attrs['founder'] = founder
+
+        for founder_attrs in founders:
+            founder = founder_attrs.get('founder', '')
+            founder_title = founder_attrs.get('title', '')
+
+            Founding.objects.update_or_create(
+                company=self.deal.company,
+                founder=founder,
+                defaults={
+                    'founder': founder,
+                    'company': self.deal.company,
+                    'title': founder_title,
+                },
+            )
+
+        return response.to_json_dict()
 
     def generate_pdf_pages(self, parser=None):
         parser = parser or self.pdf_parser

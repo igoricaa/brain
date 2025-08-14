@@ -90,11 +90,13 @@ class BaseDealAdmin(PolymorphicInlineSupportMixin, ImportExportModelAdmin):
         'funding_target',
         'funding_raised',
         'sent_to_affinity',
+        'is_draft',
         'creator',
         'created_at',
     ]
     list_display_links = ['display_name']
     list_filter = [
+        'is_draft',
         'status',
         'industries',
         'dual_use_signals',
@@ -126,15 +128,32 @@ class BaseDealAdmin(PolymorphicInlineSupportMixin, ImportExportModelAdmin):
 
 @admin.register(Deal)
 class DealAdmin(BaseDealAdmin):
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(is_draft=False)
+    pass
 
 
 @admin.register(DraftDeal)
 class DraftDealAdmin(BaseDealAdmin):
-    pass
+    list_display = [
+        'display_name',
+        'status',
+        'funding_type',
+        'funding_target',
+        'funding_raised',
+        'sent_to_affinity',
+        'creator',
+        'created_at',
+    ]
+    list_filter = [
+        'status',
+        'industries',
+        'dual_use_signals',
+        'funding_stage',
+        'funding_type',
+        'sent_to_affinity',
+        'has_civilian_use',
+        ('created_at', DateRangeQuickSelectListFilterBuilder()),
+        ('updated_at', DateRangeQuickSelectListFilterBuilder()),
+    ]
 
 
 @admin.register(DealFile)

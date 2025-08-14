@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import mixins, viewsets
+from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import PageNumberPagination
 
@@ -37,10 +37,12 @@ from .filters import (
     TechnologyTypeFilter,
 )
 from .serializers import (
+    AdvisorReadSerializer,
     AdvisorSerializer,
     ClinicalStudySerializer,
-    CompanyCreateSerializer,
-    CompanyListSerializer,
+    CompanyReadSerializer,
+    CompanySerializer,
+    FounderReadSerializer,
     FounderSerializer,
     FundingStageSerializer,
     FundingTypeSerializer,
@@ -66,22 +68,31 @@ from .serializers import (
         summary=_('Create Company'),
         description=_('Add a new company.'),
     ),
+    update=extend_schema(
+        summary=_('Update Company'),
+        description=_('Update a company.'),
+    ),
+    partial_update=extend_schema(
+        summary=_('Partially Update Company'),
+        description=_('Partially update a company.'),
+    ),
+    destroy=extend_schema(
+        summary=_('Delete Company'),
+        description=_('Delete a company.'),
+    ),
 )
-class CompanyViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+class CompanyViewSet(viewsets.ModelViewSet):
 
     lookup_field = 'uuid'
     ordering_fields = ['created_at', 'updated_at', 'name']
     ordering = ['-created_at']
     required_scopes = ['default']
 
-    action_serializers = {
-        "list": CompanyListSerializer,
-        "retrieve": CompanyListSerializer,
-        "create": CompanyCreateSerializer,
-    }
-
     def get_serializer_class(self):
-        return self.action_serializers.get(self.action, CompanyListSerializer)
+        if self.action in ['list', 'retrieve']:
+            return CompanyReadSerializer
+        else:
+            return CompanySerializer
 
     def get_queryset(self):
         return Company.objects.select_related(
@@ -108,10 +119,25 @@ class CompanyViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         summary=_('Founder Details'),
         description=_('Retrieve details of a specific founder.'),
     ),
+    create=extend_schema(
+        summary=_('Create Founder'),
+        description=_('Add a new founder.'),
+    ),
+    update=extend_schema(
+        summary=_('Update Founder'),
+        description=_('Update a founder.'),
+    ),
+    partial_update=extend_schema(
+        summary=_('Partially Update Founder'),
+        description=_('Partially update a founder.'),
+    ),
+    destroy=extend_schema(
+        summary=_('Delete Founder'),
+        description=_('Delete a founder.'),
+    ),
 )
 class FounderViewSet(viewsets.ModelViewSet):
 
-    serializer_class = FounderSerializer
     filterset_class = FounderFilter
     lookup_field = 'uuid'
     ordering_fields = ['created_at', 'updated_at', 'name']
@@ -123,6 +149,12 @@ class FounderViewSet(viewsets.ModelViewSet):
             Prefetch('foundings', queryset=Founding.objects.select_related('company')),
         )
 
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return FounderReadSerializer
+        else:
+            return FounderSerializer
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -133,10 +165,25 @@ class FounderViewSet(viewsets.ModelViewSet):
         summary=_('Advisor Details'),
         description=_('Retrieve details of a specific advisor.'),
     ),
+    create=extend_schema(
+        summary=_('Create Advisor'),
+        description=_('Add a new advisor.'),
+    ),
+    update=extend_schema(
+        summary=_('Update Advisor'),
+        description=_('Update a advisor.'),
+    ),
+    partial_update=extend_schema(
+        summary=_('Partially Update Advisor'),
+        description=_('Partially update a advisor.'),
+    ),
+    destroy=extend_schema(
+        summary=_('Delete Advisor'),
+        description=_('Delete a advisor.'),
+    ),
 )
 class AdvisorViewSet(viewsets.ModelViewSet):
 
-    serializer_class = AdvisorSerializer
     filterset_class = AdvisorFilter
     lookup_field = 'uuid'
     ordering_fields = ['created_at', 'updated_at', 'name']
@@ -147,6 +194,12 @@ class AdvisorViewSet(viewsets.ModelViewSet):
         return Advisor.objects.prefetch_related(
             Prefetch('company_advisors', queryset=CompanyAdvisor.objects.select_related('company')),
         )
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return AdvisorReadSerializer
+        else:
+            return AdvisorSerializer
 
 
 @extend_schema_view(
@@ -159,7 +212,7 @@ class AdvisorViewSet(viewsets.ModelViewSet):
         description=_('Retrieve details of a specific grant.'),
     ),
 )
-class GrantViewSet(viewsets.ModelViewSet):
+class GrantViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = GrantSerializer
     lookup_field = 'uuid'

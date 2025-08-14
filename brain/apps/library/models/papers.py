@@ -58,7 +58,7 @@ class AbstractPaper(models.Model):
         if text:
             self.raw_text = text
             self.text = text
-            type(self).objects.update(raw_text=self.raw_text, text=self.text, updated_at=now())
+            type(self).objects.filter(pk=self.pk).update(raw_text=self.raw_text, text=self.text, updated_at=now())
 
     def generate_pdf_pages(self, parser=None):
         parser = parser or self.pdf_parser

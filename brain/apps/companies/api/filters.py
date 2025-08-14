@@ -33,8 +33,8 @@ __all__ = [
 
 class FounderFilter(filters.FilterSet):
 
-    company = filters.UUIDFilter(field_name='founding__company__uuid')
-    deal = filters.UUIDFilter(field_name='founding__company__deal__uuid')
+    company = filters.UUIDFilter(field_name='company__uuid')
+    deal = filters.UUIDFilter(field_name='company__deal__uuid')
 
     updated = filters.DateTimeFromToRangeFilter(
         field_name='updated_at',
@@ -56,8 +56,8 @@ class FounderFilter(filters.FilterSet):
 
 class AdvisorFilter(filters.FilterSet):
 
-    company = filters.UUIDFilter(field_name='company_advisor__company__uuid')
-    deal = filters.UUIDFilter(field_name='company_advisor__company__deal__uuid')
+    company = filters.UUIDFilter(field_name='company__uuid')
+    deal = filters.UUIDFilter(field_name='company__deal__uuid')
 
     updated = filters.DateTimeFromToRangeFilter(
         field_name='updated_at',

@@ -26,7 +26,7 @@ from common.models import ProcessingStatus
 from ..storage import default_file_path, library_file_storage
 from ..tasks import download_file_src
 
-__all__ = ['File', 'mimetype_validator']
+__all__ = ['File', 'FileManager', 'mimetype_validator']
 
 
 def mimetype_validator(value):

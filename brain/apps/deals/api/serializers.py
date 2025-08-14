@@ -78,7 +78,7 @@ class DealSerializer(serializers.ModelSerializer):
         required=False,
     )
     funding_type = serializers.SlugRelatedField(
-        slug_field='uuid', queryset=FundingType.objects.all(), required=False
+        slug_field='uuid', queryset=FundingType.objects.all(), required=False, many=True
     )
 
     class Meta:
@@ -190,7 +190,7 @@ class DealAssessmentReadSerializer(DealAssessmentSerializer):
 class DealFileSerializer(FileSerializer):
     deal = serializers.SlugRelatedField(
         slug_field='uuid',
-        queryset=Deal.all_objects.all(),  # Include drafts for file uploads
+        queryset=Deal.objects.all(),
         required=True,
     )
 
@@ -269,7 +269,7 @@ class PaperSerializer(LibraryPaperSerializer):
 
     deal = serializers.SlugRelatedField(
         slug_field='uuid',
-        queryset=Deal.all_objects.all(),  # Include drafts for paper uploads
+        queryset=Deal.objects.all(),
         required=True,
     )
 

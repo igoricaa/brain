@@ -1,22 +1,34 @@
+import json
+import logging
 import uuid
 from urllib.parse import urljoin
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from django.db.models import CheckConstraint, Max, Q
+from django.db.models import CheckConstraint, Max, Prefetch, Q
 from django.db.models.utils import resolve_callables
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 
 from aindex.affinity import AffinityAPI
+from aindex.vertexai import DealAssistant
 
 from common.models import ProcessingStatus
-from companies.models import Company
+from companies.api.serializers import (
+    ClinicalStudySerializer,
+    FounderSerializer,
+    GrantSerializer,
+    PatentApplicationSerializer,
+)
+from companies.models import Company, Founding, FundingStage, FundingType, Industry
 
-from .base import DealStatus
+from .base import DealStatus, DualUseSignal
 
 __all__ = ['Deal', 'DraftDeal', 'DraftDealManager']
+
+logger = logging.getLogger(__name__)
 
 
 class DealManager(models.Manager):
@@ -162,13 +174,12 @@ class Deal(models.Model):
     created_at = models.DateTimeField('created at', auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'), auto_now=True, null=True, blank=True)
 
-    objects = DealManager()
-    all_objects = models.Manager()
+    objects = models.Manager()
+    ready_objects = DealManager()
 
     class Meta:
         verbose_name = _('Deal')
         verbose_name_plural = _('Deals')
-        default_manager_name = 'all_objects'
         constraints = [
             CheckConstraint(
                 condition=~Q(company=None) | Q(is_draft=True),
@@ -238,18 +249,22 @@ class Deal(models.Model):
         last_assessment = self.assessments.aggregate(created_at=Max('created_at'))
         return self.files.filter(created_at__gte=last_assessment['created_at'])
 
-    def set_company(self, **kwargs):
+    def set_company(self, defaults=None, **kwargs):
         """Prepare the company object and link it with the deal.
 
         Creates the new company if it does not exist yet.
 
         Args:
+            defaults (dict):
+                Additional default values for company attributes.
             kwargs:
                 values used for company lookup. If not provided the company will be looked up using either
                 company nid , website or name.
         """
 
+        defaults = defaults or {}
         attrs = {
+            **defaults,
             'name': self.name,
             'summary': self.description,
             'website': self.website or None,
@@ -287,6 +302,167 @@ class Deal(models.Model):
                 raise
 
         self.company = company
+
+    def _get_assistant_context(self, fields=None):
+        """Returns common contextual data related to deal assistant
+
+        Args:
+
+            fields:
+                A list of fields to include. if not specified all available fields will be retuned.
+
+        Returns:
+            dict
+        """
+
+        context = {}
+
+        fields = fields or [
+            'deck_text',
+            'founders',
+            'grants',
+            'clinical_studies',
+            'patent_applications',
+            'industries',
+            'deeptech_signals',
+            'strategic_domain_signals',
+        ]
+
+        if 'deck_text' in fields:
+            deck_model = apps.get_registered_model('deals', 'Deck')
+            last_deck = deck_model.objects.filter(deal=self).order_by('-created_at').first()
+
+            if last_deck:
+                context['deck_text'] = last_deck.text
+            else:
+                context['deck_text'] = None
+
+        if 'grants' in fields:
+            context['grants'] = GrantSerializer(self.company.grants.select_related('company'), many=True).data
+
+        if 'founders' in fields:
+            context['founders'] = FounderSerializer(
+                self.company.founders.prefetch_related(
+                    Prefetch('foundings', queryset=Founding.objects.select_related('company'))
+                ),
+                many=True,
+            ).data
+
+        if 'clinical_studies' in fields:
+            context['clinical_studies'] = ClinicalStudySerializer(
+                self.company.clinical_studies.select_related('company'), many=True
+            ).data
+
+        if 'patent_application' in fields:
+            context['patent_application'] = PatentApplicationSerializer(
+                self.company.patent_applications.select_related('company'), many=True
+            ).data
+
+        if 'industries' in fields:
+            context['industries'] = Industry.objects.values('name')
+
+        if 'deeptech_signals' in fields:
+            context['deeptech_signals'] = DualUseSignal.objects.filter(category__code='deeptech').values('name')
+
+        if 'strategic_domain_signals' in fields:
+            context['strategic_domain_signals'] = DualUseSignal.objects.filter(
+                category__code='strategic-domain'
+            ).values('name')
+
+        return context
+
+    def gen_attributes(self):
+        """Generate deal attributes using LLM and some of the available context."""
+        assistant = DealAssistant()
+        context = self._get_assistant_context(
+            fields=[
+                'deck_text',
+                'founders',
+                'grants',
+                'clinical_studies',
+                'patent_applications',
+                'industries',
+                'deeptech_signals',
+                'strategic_domain_signals',
+            ]
+        )
+        response = assistant.gen_deal_attributes(**context)
+        response_data = json.loads(response.text)
+
+        update_fields = ['updated_at']
+
+        funding_stage_code = response_data.get('funding_stage')
+        if funding_stage_code:
+            try:
+                funding_stage = FundingStage.objects.get(code=funding_stage_code)
+                self.funding_stage = funding_stage
+                update_fields.append('funding_stage')
+            except FundingStage.DoesNotExist:
+                logger.warning(_('Ignoring funding stage: %s, deal: %d'), funding_stage_code, self.id)
+
+        funding_type_code = response_data.get('funding_type')
+        if funding_stage_code:
+            try:
+                funding_type = FundingType.objects.get(code=funding_type_code)
+                self.funding_type = funding_type
+                update_fields.append('funding_type')
+            except FundingType.DoesNotExist:
+                logger.warning(_('Ignoring funding type: %s, deal: %d'), funding_type_code, self.id)
+
+        funding_round_target = response_data.get('fundraise_target_m')
+        if funding_round_target:
+            funding_round_target = funding_round_target * 1000000  # from millions
+            self.funding_target = funding_round_target
+            update_fields.append('funding_target')
+
+        investors_names = response_data.get('investors', [])
+        if investors_names:
+            self.investors_names = investors_names
+            update_fields.append('investors')
+
+        govt_relationships = response_data.get('govt_relationships', [])
+        if govt_relationships:
+            self.govt_relationships = govt_relationships
+            update_fields.append('govt_relationships')
+
+        has_civilian_use = response_data.get('has_civilian_use')
+        if has_civilian_use is not None:
+            self.has_civilian_use = has_civilian_use
+            update_fields.append('has_civilian_use')
+
+        self.save(update_fields=update_fields)
+
+        # industry info
+        industries_names = response_data.get('industries', [])
+        if isinstance(industries_names, str):
+            industries_names = [industries_names]
+        if industries_names:
+            industry_q = Q()
+            for name in industries_names:
+                industry_q |= Q(name__iexact=name)
+            industries = Industry.objects.filter(industry_q).distinct()
+            if industries:
+                self.industries.add(*industries)
+
+        # dual use signals
+        deeptech_areas = response_data.get('deeptech_signals', [])
+        if isinstance(deeptech_areas, str):
+            deeptech_areas = [deeptech_areas]
+
+        strategic_domains = response_data.get('strategic_domain_signals', [])
+        if isinstance(strategic_domains, str):
+            strategic_domains = [strategic_domains]
+
+        du_signals_names = deeptech_areas + strategic_domains
+        if du_signals_names:
+            du_q = Q()
+            for name in du_signals_names:
+                du_q |= Q(name__iexact=name)
+            du_signals = DualUseSignal.objects.filter(du_q).distinct()
+            if du_signals:
+                self.dual_use_signals.add(*du_signals)
+
+        return response.to_json_dict()
 
     def compose_affinity_note(self):
         content = render_to_string(

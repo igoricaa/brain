@@ -104,3 +104,43 @@ def clean_deck_raw_text(pk):
         'parameters': {'pk': pk},
         'response': response,
     }
+
+
+@shared_task
+def gen_deck_deal_info(pk):
+    """Generate basic deal info from the deck."""
+
+    start_time = time.perf_counter()
+
+    _model = apps.get_registered_model('deals', 'Deck')
+    deck = _model.objects.get(pk=pk)
+
+    response = deck.gen_deal_info()
+
+    end_time = time.perf_counter()
+
+    return {
+        'execution_time': end_time - start_time,
+        'parameters': {'pk': pk},
+        'response': response,
+    }
+
+
+@shared_task
+def gen_deal_attributes(pk):
+    """Generate deal attributes from available context."""
+
+    start_time = time.perf_counter()
+
+    _model = apps.get_registered_model('deals', 'Deal')
+    deal = _model.objects.get(pk=pk)
+
+    response = deal.gen_attributes()
+
+    end_time = time.perf_counter()
+
+    return {
+        'execution_time': end_time - start_time,
+        'parameters': {'pk': pk},
+        'response': response,
+    }

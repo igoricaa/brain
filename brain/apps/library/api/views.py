@@ -1,8 +1,10 @@
 from django.db.models import Prefetch
 from django.utils.translation import gettext_lazy as _
 
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
@@ -52,9 +54,14 @@ __all__ = ['FileViewSet', 'PaperViewSet', 'SourceViewSet', 'CategoryViewSet', 'D
     ),
 )
 class FileViewSet(ModelViewSet):
-
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+        OrderingFilter,
+    ]
     filterset_class = FileFilter
     lookup_field = 'uuid'
+    search_fields = ['file']
     ordering_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
     required_scopes = ['default']
@@ -103,9 +110,14 @@ class FileViewSet(ModelViewSet):
     ),
 )
 class PaperViewSet(ModelViewSet):
-
-    filterset_class = PaperFilter
     lookup_field = 'uuid'
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+        OrderingFilter,
+    ]
+    filterset_class = PaperFilter
+    search_fields = ['title']
     ordering_fields = ['created_at', 'updated_at', 'title', 'citation_count']
     ordering = ['-created_at']
     required_scopes = ['default']
