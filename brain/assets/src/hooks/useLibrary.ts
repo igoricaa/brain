@@ -62,8 +62,14 @@ export function useLibrarySources(enabled = true) {
  * @param enabled - Whether the query should be enabled (default: true)
  */
 export function useLibraryFiles(filters: LibraryFilesFilters = {}, enabled = true) {
+    // Use deals endpoint when company filter is provided for proper filtering
+    const endpoint = filters.company ? '/deals/files/' : '/library/files/';
+    const queryKey = filters.company 
+        ? queryKeys.dealFiles('company-filtered', filters)
+        : queryKeys.libraryFiles(filters);
+
     return useQuery({
-        queryKey: queryKeys.libraryFiles(filters),
+        queryKey,
         queryFn: async ({ signal }) => {
             const params = new URLSearchParams();
 
@@ -74,7 +80,7 @@ export function useLibraryFiles(filters: LibraryFilesFilters = {}, enabled = tru
             if (filters.search) params.set('search', filters.search);
             if (filters.mime_type) params.set('mime_type', filters.mime_type);
 
-            const url = `/library/files/${params.toString() ? `?${params.toString()}` : ''}`;
+            const url = `${endpoint}${params.toString() ? `?${params.toString()}` : ''}`;
             const response = await http.get(url, { signal });
 
             // Handle both array and paginated response formats

@@ -393,8 +393,8 @@
       "_index-BkyGPiGb.js"
     ]
   },
-  "_useCompanyData-C9TZkMQR.js": {
-    "file": "assets/useCompanyData-C9TZkMQR.js",
+  "_useCompanyData-CS1RxdLo.js": {
+    "file": "assets/useCompanyData-CS1RxdLo.js",
     "name": "useCompanyData",
     "imports": [
       "_index-BkyGPiGb.js",
@@ -488,7 +488,7 @@
     ]
   },
   "src/main.tsx": {
-    "file": "assets/main-DO0HLaUu.js",
+    "file": "assets/main-BTCi9VS7.js",
     "name": "main",
     "src": "src/main.tsx",
     "isEntry": true,
@@ -535,7 +535,7 @@
     ]
   },
   "src/pages/company_detail.tsx": {
-    "file": "assets/company_detail-9Y1EH8L5.js",
+    "file": "assets/company_detail-CCINHHP7.js",
     "name": "company_detail",
     "src": "src/pages/company_detail.tsx",
     "isEntry": true,
@@ -547,7 +547,7 @@
       "_useBaseQuery-hvmUCseZ.js",
       "_queryClient-BTYG6gBl.js",
       "_separator-DeDMyIe5.js",
-      "_useCompanyData-C9TZkMQR.js",
+      "_useCompanyData-CS1RxdLo.js",
       "_external-link-HzTlsmZA.js",
       "_index-CQdUICOM.js",
       "_funnel-CCzxrPfj.js",
@@ -583,7 +583,7 @@
     ]
   },
   "src/pages/deal_detail.tsx": {
-    "file": "assets/deal_detail-yxUCm4o_.js",
+    "file": "assets/deal_detail-DdgpmDvN.js",
     "name": "deal_detail",
     "src": "src/pages/deal_detail.tsx",
     "isEntry": true,
@@ -600,7 +600,7 @@
       "_input-i7i6LqvR.js",
       "_index-D2MrVGv9.js",
       "_select-KUbHv8og.js",
-      "_useCompanyData-C9TZkMQR.js",
+      "_useCompanyData-CS1RxdLo.js",
       "_table-4l_MKZ5p.js",
       "_progress-IuGOAEyz.js",
       "_alert-dialog-AayB7Vry.js",
@@ -725,7 +725,7 @@
     ]
   },
   "src/pages/deals_list.tsx": {
-    "file": "assets/deals_list-BZabM3cR.js",
+    "file": "assets/deals_list-CG75YNak.js",
     "name": "deals_list",
     "src": "src/pages/deals_list.tsx",
     "isDynamicEntry": true,
