@@ -25,8 +25,8 @@
       "_createLucideIcon-DpLiT-Jh.js"
     ]
   },
-  "_FormRenderer-_OhYEiPj.js": {
-    "file": "assets/FormRenderer-_OhYEiPj.js",
+  "_FormRenderer-CVZhvPht.js": {
+    "file": "assets/FormRenderer-CVZhvPht.js",
     "name": "FormRenderer",
     "imports": [
       "_index-BkyGPiGb.js",
@@ -38,8 +38,8 @@
       "_schemas-BXxpUR64.js"
     ]
   },
-  "_PeopleList-nGhxhTRr.js": {
-    "file": "assets/PeopleList-nGhxhTRr.js",
+  "_PeopleList-4rlv6tGL.js": {
+    "file": "assets/PeopleList-4rlv6tGL.js",
     "name": "PeopleList",
     "imports": [
       "_index-BkyGPiGb.js",
@@ -488,7 +488,7 @@
     ]
   },
   "src/main.tsx": {
-    "file": "assets/main-OBseARMc.js",
+    "file": "assets/main-DO0HLaUu.js",
     "name": "main",
     "src": "src/main.tsx",
     "isEntry": true,
@@ -513,7 +513,7 @@
     ]
   },
   "src/pages/advisors.tsx": {
-    "file": "assets/advisors-BW8AdGvE.js",
+    "file": "assets/advisors-CsWMJWoj.js",
     "name": "advisors",
     "src": "src/pages/advisors.tsx",
     "isDynamicEntry": true,
@@ -521,7 +521,7 @@
       "_index-BkyGPiGb.js",
       "_client-CUge36-7.js",
       "_useBaseQuery-hvmUCseZ.js",
-      "_PeopleList-nGhxhTRr.js",
+      "_PeopleList-4rlv6tGL.js",
       "_queryClient-DiBKSQ1n.js",
       "_input-i7i6LqvR.js",
       "_createLucideIcon-DpLiT-Jh.js",
@@ -535,7 +535,7 @@
     ]
   },
   "src/pages/company_detail.tsx": {
-    "file": "assets/company_detail-BkJ8YkBF.js",
+    "file": "assets/company_detail-9Y1EH8L5.js",
     "name": "company_detail",
     "src": "src/pages/company_detail.tsx",
     "isEntry": true,
@@ -543,7 +543,7 @@
     "imports": [
       "_index-BkyGPiGb.js",
       "_client-CUge36-7.js",
-      "_FormRenderer-_OhYEiPj.js",
+      "_FormRenderer-CVZhvPht.js",
       "_useBaseQuery-hvmUCseZ.js",
       "_queryClient-BTYG6gBl.js",
       "_separator-DeDMyIe5.js",
@@ -564,7 +564,7 @@
     ]
   },
   "src/pages/deal_assessment.tsx": {
-    "file": "assets/deal_assessment-aSHQStGb.js",
+    "file": "assets/deal_assessment-CdRrqhgd.js",
     "name": "deal_assessment",
     "src": "src/pages/deal_assessment.tsx",
     "isDynamicEntry": true,
@@ -573,7 +573,7 @@
       "_client-CUge36-7.js",
       "_useBaseQuery-hvmUCseZ.js",
       "_queryClient-BTYG6gBl.js",
-      "_FormRenderer-_OhYEiPj.js",
+      "_FormRenderer-CVZhvPht.js",
       "_http-BAGqUxAR.js",
       "_queryClient-DiBKSQ1n.js",
       "_zod-BgU4_-eY.js",
@@ -583,7 +583,7 @@
     ]
   },
   "src/pages/deal_detail.tsx": {
-    "file": "assets/deal_detail-6UlmKNuv.js",
+    "file": "assets/deal_detail-yxUCm4o_.js",
     "name": "deal_detail",
     "src": "src/pages/deal_detail.tsx",
     "isEntry": true,
@@ -628,7 +628,7 @@
     ]
   },
   "src/pages/deal_upload.tsx": {
-    "file": "assets/deal_upload-q1yXPPEi.js",
+    "file": "assets/deal_upload-nTWfCWam.js",
     "name": "deal_upload",
     "src": "src/pages/deal_upload.tsx",
     "isDynamicEntry": true,
@@ -657,8 +657,8 @@
       "_scroll-area-CCwpfs0f.js",
       "_separator-DeDMyIe5.js",
       "_alert-dialog-AayB7Vry.js",
-      "_ellipsis-BLagkTLj.js",
       "_chevron-left-jonhkywz.js",
+      "_ellipsis-BLagkTLj.js",
       "_loader-circle-D1PIBQ4h.js",
       "_http-BAGqUxAR.js",
       "_building-2-C8qaIDTT.js",
@@ -685,7 +685,7 @@
     ]
   },
   "src/pages/deals_fresh.tsx": {
-    "file": "assets/deals_fresh-BVo9AjgA.js",
+    "file": "assets/deals_fresh-BsEQSLut.js",
     "name": "deals_fresh",
     "src": "src/pages/deals_fresh.tsx",
     "isDynamicEntry": true,
@@ -725,7 +725,7 @@
     ]
   },
   "src/pages/deals_list.tsx": {
-    "file": "assets/deals_list-B5lQvk3h.js",
+    "file": "assets/deals_list-BZabM3cR.js",
     "name": "deals_list",
     "src": "src/pages/deals_list.tsx",
     "isDynamicEntry": true,
@@ -818,7 +818,7 @@
     ]
   },
   "src/pages/founders.tsx": {
-    "file": "assets/founders-BXocUQb0.js",
+    "file": "assets/founders-DIlSaQ0k.js",
     "name": "founders",
     "src": "src/pages/founders.tsx",
     "isDynamicEntry": true,
@@ -826,7 +826,7 @@
       "_index-BkyGPiGb.js",
       "_client-CUge36-7.js",
       "_useBaseQuery-hvmUCseZ.js",
-      "_PeopleList-nGhxhTRr.js",
+      "_PeopleList-4rlv6tGL.js",
       "_queryClient-DiBKSQ1n.js",
       "_input-i7i6LqvR.js",
       "_createLucideIcon-DpLiT-Jh.js",
@@ -840,7 +840,7 @@
     ]
   },
   "src/pages/library.tsx": {
-    "file": "assets/library-CcetfK1r.js",
+    "file": "assets/library-BQKm0WU-.js",
     "name": "library",
     "src": "src/pages/library.tsx",
     "isDynamicEntry": true,

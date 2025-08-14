@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -113,62 +113,50 @@ export default function BulkMetadataDialog({
     const { watch, setValue, resetField } = form;
     const watchedTags = watch('tags') || [];
 
-    const handleSubmit = useCallback(
-        async (data: BulkMetadataFormData) => {
-            // Only include fields that are actually set (not undefined)
-            const updateData: UpdateFileRequest = {};
+    const handleSubmit = async (data: BulkMetadataFormData) => {
+        // Only include fields that are actually set (not undefined)
+        const updateData: UpdateFileRequest = {};
 
-            if (data.category !== undefined) updateData.category = data.category;
-            if (data.document_type !== undefined) updateData.document_type = data.document_type;
-            if (data.proprietary !== undefined) updateData.proprietary = data.proprietary;
-            if (data.tldr !== undefined && data.tldr.trim()) updateData.tldr = data.tldr.trim();
-            if (data.tags !== undefined && data.tags.length > 0) updateData.tags = data.tags;
+        if (data.category !== undefined) updateData.category = data.category;
+        if (data.document_type !== undefined) updateData.document_type = data.document_type;
+        if (data.proprietary !== undefined) updateData.proprietary = data.proprietary;
+        if (data.tldr !== undefined && data.tldr.trim()) updateData.tldr = data.tldr.trim();
+        if (data.tags !== undefined && data.tags.length > 0) updateData.tags = data.tags;
 
-            // Library-specific fields
-            if (mode === 'library') {
-                if (data.is_public !== undefined) (updateData as any).is_public = data.is_public;
-                if (data.source !== undefined && data.source.trim())
-                    (updateData as any).source = data.source.trim();
-            }
+        // Library-specific fields
+        if (mode === 'library') {
+            if (data.is_public !== undefined) (updateData as any).is_public = data.is_public;
+            if (data.source !== undefined && data.source.trim())
+                (updateData as any).source = data.source.trim();
+        }
 
-            try {
-                await onSubmit(updateData);
-                onOpenChange(false);
-                form.reset();
-            } catch (error) {
-                console.error('Error updating files:', error);
-            }
-        },
-        [onSubmit, onOpenChange, form, mode],
-    );
+        try {
+            await onSubmit(updateData);
+            onOpenChange(false);
+            form.reset();
+        } catch (error) {
+            console.error('Error updating files:', error);
+        }
+    };
 
-    const addTag = useCallback(
-        (tag: string) => {
-            if (!tag.trim()) return;
+    const addTag = (tag: string) => {
+        if (!tag.trim()) return;
 
-            const currentTags = watchedTags || [];
-            if (!currentTags.includes(tag.trim())) {
-                setValue('tags', [...currentTags, tag.trim()]);
-            }
-        },
-        [watchedTags, setValue],
-    );
+        const currentTags = watchedTags || [];
+        if (!currentTags.includes(tag.trim())) {
+            setValue('tags', [...currentTags, tag.trim()]);
+        }
+    };
 
-    const removeTag = useCallback(
-        (tagIndex: number) => {
-            const currentTags = watchedTags || [];
-            const newTags = currentTags.filter((_, index) => index !== tagIndex);
-            setValue('tags', newTags);
-        },
-        [watchedTags, setValue],
-    );
+    const removeTag = (tagIndex: number) => {
+        const currentTags = watchedTags || [];
+        const newTags = currentTags.filter((_, index) => index !== tagIndex);
+        setValue('tags', newTags);
+    };
 
-    const clearField = useCallback(
-        (fieldName: keyof BulkMetadataFormData) => {
-            resetField(fieldName);
-        },
-        [resetField],
-    );
+    const clearField = (fieldName: keyof BulkMetadataFormData) => {
+        resetField(fieldName);
+    };
 
     // Reset form when dialog opens
     useEffect(() => {

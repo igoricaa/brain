@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -282,68 +282,62 @@ const FileUploader = ({
         onUploadProgress(uploads);
     }, [uploads, onUploadProgress]);
 
-    const handleFileSelect = useCallback(
-        (files: FileList | null) => {
-            if (!files || files.length === 0) return;
+    const handleFileSelect = (files: FileList | null) => {
+        if (!files || files.length === 0) return;
 
-            const fileArray = Array.from(files);
+        const fileArray = Array.from(files);
 
-            // Validate files
-            const maxSize = 15 * 1024 * 1024; // 15MB
-            const allowedTypes = [
-                'application/pdf',
-                'application/msword',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'text/plain',
-                'text/markdown',
-            ];
+        // Validate files
+        const maxSize = 15 * 1024 * 1024; // 15MB
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            'text/markdown',
+        ];
 
-            const validFiles: File[] = [];
-            const errors: string[] = [];
+        const validFiles: File[] = [];
+        const errors: string[] = [];
 
-            fileArray.forEach((file) => {
-                if (file.size > maxSize) {
-                    errors.push(`${file.name}: File too large (max 15MB)`);
-                    return;
-                }
-
-                if (!allowedTypes.includes(file.type)) {
-                    errors.push(`${file.name}: File type not supported`);
-                    return;
-                }
-
-                validFiles.push(file);
-            });
-
-            if (errors.length > 0) {
-                toast.error(`Validation errors:\n${errors.join('\n')}`);
+        fileArray.forEach((file) => {
+            if (file.size > maxSize) {
+                errors.push(`${file.name}: File too large (max 15MB)`);
+                return;
             }
 
-            if (validFiles.length > 0) {
-                uploadMutation.mutate(validFiles);
+            if (!allowedTypes.includes(file.type)) {
+                errors.push(`${file.name}: File type not supported`);
+                return;
             }
-        },
-        [uploadMutation],
-    );
 
-    const handleDrop = useCallback(
-        (e: React.DragEvent) => {
-            e.preventDefault();
-            setIsDragging(false);
-            handleFileSelect(e.dataTransfer.files);
-        },
-        [handleFileSelect],
-    );
+            validFiles.push(file);
+        });
 
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    }, []);
+        if (errors.length > 0) {
+            toast.error(`Validation errors:\n${errors.join('\n')}`);
+        }
 
-    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        if (validFiles.length > 0) {
+            uploadMutation.mutate(validFiles);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
-    }, []);
+        handleFileSelect(e.dataTransfer.files);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
 
     return (
         <div className="space-y-4">
@@ -458,12 +452,12 @@ const FileTable = ({
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredFiles = useMemo(() => {
+    const filteredFiles = (() => {
         if (!searchTerm) return files;
         return files.filter((file) =>
             file.file_name.toLowerCase().includes(searchTerm.toLowerCase()),
         );
-    }, [files, searchTerm]);
+    })();
 
     if (files.length === 0) {
         return (
@@ -610,39 +604,33 @@ export const FileManagementModal: React.FC<FileManagementModalProps> = ({
         },
     });
 
-    const handleDelete = useCallback(
-        (fileId: string) => {
-            const fileType =
-                activeTab === 'decks' ? 'decks' : activeTab === 'papers' ? 'papers' : 'files';
-            deleteMutation.mutate({ fileId, type: fileType });
-            setDeleteConfirm(null);
-        },
-        [deleteMutation, activeTab],
-    );
+    const handleDelete = (fileId: string) => {
+        const fileType =
+            activeTab === 'decks' ? 'decks' : activeTab === 'papers' ? 'papers' : 'files';
+        deleteMutation.mutate({ fileId, type: fileType });
+        setDeleteConfirm(null);
+    };
 
-    const handleReprocess = useCallback(
-        (fileId: string) => {
-            const fileType =
-                activeTab === 'decks' ? 'decks' : activeTab === 'papers' ? 'papers' : 'files';
-            reprocessMutation.mutate({ fileId, type: fileType });
-        },
-        [reprocessMutation, activeTab],
-    );
+    const handleReprocess = (fileId: string) => {
+        const fileType =
+            activeTab === 'decks' ? 'decks' : activeTab === 'papers' ? 'papers' : 'files';
+        reprocessMutation.mutate({ fileId, type: fileType });
+    };
 
-    const handleDownload = useCallback((file: DealFile) => {
+    const handleDownload = (file: DealFile) => {
         const url = file.file || file.src_url;
         if (url) {
             window.open(url, '_blank');
         } else {
             toast.error('File URL not available');
         }
-    }, []);
+    };
 
-    const handleUploadSuccess = useCallback(() => {
+    const handleUploadSuccess = () => {
         queryClient.invalidateQueries({ queryKey: ['deal-decks', dealUuid] });
         queryClient.invalidateQueries({ queryKey: ['deal-papers', dealUuid] });
         queryClient.invalidateQueries({ queryKey: ['deal-files', dealUuid] });
-    }, [queryClient, dealUuid]);
+    };
 
     const isLoading = decksLoading || papersLoading || filesLoading;
 

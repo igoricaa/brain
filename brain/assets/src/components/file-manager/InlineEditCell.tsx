@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -110,7 +110,7 @@ export default function InlineEditCell({
         }
     }, [isEditing, field]);
 
-    const handleSave = useCallback(async () => {
+    const handleSave = async () => {
         const formData = form.getValues();
         const newValue = formData[field];
 
@@ -132,48 +132,39 @@ export default function InlineEditCell({
         } finally {
             setIsSaving(false);
         }
-    }, [form, field, value, onSave, file.uuid]);
+    };
 
-    const handleCancel = useCallback(() => {
+    const handleCancel = () => {
         form.setValue(field, value);
         setIsEditing(false);
         setError(null);
-    }, [form, field, value]);
+    };
 
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                form.handleSubmit(handleSave)();
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                handleCancel();
-            }
-        },
-        [form, handleSave, handleCancel],
-    );
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            form.handleSubmit(handleSave)();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            handleCancel();
+        }
+    };
 
     // Tags-specific handlers
-    const addTag = useCallback(
-        (tag: string) => {
-            if (!tag.trim()) return;
+    const addTag = (tag: string) => {
+        if (!tag.trim()) return;
 
-            const currentTags = (form.getValues('tags') as string[]) || [];
-            if (!currentTags.includes(tag.trim())) {
-                form.setValue('tags', [...currentTags, tag.trim()]);
-            }
-        },
-        [form],
-    );
+        const currentTags = (form.getValues('tags') as string[]) || [];
+        if (!currentTags.includes(tag.trim())) {
+            form.setValue('tags', [...currentTags, tag.trim()]);
+        }
+    };
 
-    const removeTag = useCallback(
-        (tagIndex: number) => {
-            const currentTags = (form.getValues('tags') as string[]) || [];
-            const newTags = currentTags.filter((_, index) => index !== tagIndex);
-            form.setValue('tags', newTags);
-        },
-        [form],
-    );
+    const removeTag = (tagIndex: number) => {
+        const currentTags = (form.getValues('tags') as string[]) || [];
+        const newTags = currentTags.filter((_, index) => index !== tagIndex);
+        form.setValue('tags', newTags);
+    };
 
     // Render different cell types based on field
     const renderDisplayValue = () => {

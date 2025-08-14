@@ -39,6 +39,7 @@ from .filters import (
 from .serializers import (
     AdvisorReadSerializer,
     AdvisorSerializer,
+    ClinicalStudyReadSerializer,
     ClinicalStudySerializer,
     CompanyReadSerializer,
     CompanySerializer,
@@ -46,10 +47,12 @@ from .serializers import (
     FounderSerializer,
     FundingStageSerializer,
     FundingTypeSerializer,
+    GrantReadSerializer,
     GrantSerializer,
     IndustrySerializer,
     InvestorTypeSerializer,
     IPOStatusSerializer,
+    PatentApplicationReadSerializer,
     PatentApplicationSerializer,
     TechnologyTypeSerializer,
 )
@@ -171,15 +174,15 @@ class FounderViewSet(viewsets.ModelViewSet):
     ),
     update=extend_schema(
         summary=_('Update Advisor'),
-        description=_('Update a advisor.'),
+        description=_('Update an advisor.'),
     ),
     partial_update=extend_schema(
         summary=_('Partially Update Advisor'),
-        description=_('Partially update a advisor.'),
+        description=_('Partially update an advisor.'),
     ),
     destroy=extend_schema(
         summary=_('Delete Advisor'),
-        description=_('Delete a advisor.'),
+        description=_('Delete an advisor.'),
     ),
 )
 class AdvisorViewSet(viewsets.ModelViewSet):
@@ -211,10 +214,25 @@ class AdvisorViewSet(viewsets.ModelViewSet):
         summary=_('Grant Details'),
         description=_('Retrieve details of a specific grant.'),
     ),
+    create=extend_schema(
+        summary=_('Create Grant'),
+        description=_('Add a new grant.'),
+    ),
+    update=extend_schema(
+        summary=_('Update Grant'),
+        description=_('Update a grant.'),
+    ),
+    partial_update=extend_schema(
+        summary=_('Partially Update Grant'),
+        description=_('Partially update a grant.'),
+    ),
+    destroy=extend_schema(
+        summary=_('Delete Grant'),
+        description=_('Delete a grant.'),
+    ),
 )
-class GrantViewSet(viewsets.ReadOnlyModelViewSet):
+class GrantViewSet(viewsets.ModelViewSet):
 
-    serializer_class = GrantSerializer
     lookup_field = 'uuid'
     filterset_class = GrantFilter
     ordering_fields = ['created_at', 'updated_at', 'company__name', 'award_date', 'potential_amount']
@@ -223,6 +241,12 @@ class GrantViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return Grant.objects.select_related('company')
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return GrantReadSerializer
+        else:
+            return GrantSerializer
 
 
 @extend_schema_view(
@@ -234,10 +258,25 @@ class GrantViewSet(viewsets.ReadOnlyModelViewSet):
         summary=_('Clinical Study Details'),
         description=_('Retrieve details of a specific clinical study.'),
     ),
+    create=extend_schema(
+        summary=_('Create Clinical Study'),
+        description=_('Add a new clinical study.'),
+    ),
+    update=extend_schema(
+        summary=_('Update Clinical Study'),
+        description=_('Update a clinical study.'),
+    ),
+    partial_update=extend_schema(
+        summary=_('Partially Update Clinical Study'),
+        description=_('Partially update a clinical study.'),
+    ),
+    destroy=extend_schema(
+        summary=_('Delete Clinical Study'),
+        description=_('Delete a clinical study.'),
+    ),
 )
-class ClinicalStudyViewSet(viewsets.ReadOnlyModelViewSet):
+class ClinicalStudyViewSet(viewsets.ModelViewSet):
 
-    serializer_class = ClinicalStudySerializer
     lookup_field = 'uuid'
     filterset_class = ClinicalStudyFilter
     ordering_fields = ['created_at', 'updated_at', 'company__name', 'start_date_str', 'completion_date_str']
@@ -246,6 +285,12 @@ class ClinicalStudyViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return ClinicalStudy.objects.select_related('company')
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return ClinicalStudyReadSerializer
+        else:
+            return ClinicalStudySerializer
 
 
 @extend_schema_view(
@@ -257,8 +302,24 @@ class ClinicalStudyViewSet(viewsets.ReadOnlyModelViewSet):
         summary=_('Patent Application Details'),
         description=_('Retrieve details of a specific patent application.'),
     ),
+    create=extend_schema(
+        summary=_('Create Patent Application'),
+        description=_('Add a new patent application.'),
+    ),
+    update=extend_schema(
+        summary=_('Update Patent Application'),
+        description=_('Update a patent application.'),
+    ),
+    partial_update=extend_schema(
+        summary=_('Partially Update Patent Application'),
+        description=_('Partially update a patent application.'),
+    ),
+    destroy=extend_schema(
+        summary=_('Delete Patent Application'),
+        description=_('Delete a patent application.'),
+    ),
 )
-class PatentApplicationViewSet(viewsets.ReadOnlyModelViewSet):
+class PatentApplicationViewSet(viewsets.ModelViewSet):
 
     serializer_class = PatentApplicationSerializer
     lookup_field = 'uuid'
@@ -269,6 +330,12 @@ class PatentApplicationViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return PatentApplication.objects.select_related('company')
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return PatentApplicationReadSerializer
+        else:
+            return PatentApplicationSerializer
 
 
 @extend_schema_view(

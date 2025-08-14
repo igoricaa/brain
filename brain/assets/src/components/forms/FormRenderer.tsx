@@ -187,9 +187,9 @@ export function FormRenderer<TOutput extends Record<string, unknown> = Record<st
     });
 
     // Handle field touch
-    const handleFieldTouch = React.useCallback((fieldName: string) => {
+    const handleFieldTouch = (fieldName: string) => {
         setTouchedFields((prev) => new Set([...prev, fieldName]));
-    }, []);
+    };
 
     const mutation = useMutation({
         mutationFn: async (values: Record<string, unknown>) => {

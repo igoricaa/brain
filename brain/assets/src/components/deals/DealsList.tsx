@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,14 +18,11 @@ export function DealsList({
     // Debounce the search query with 300ms delay
     const debouncedSearchQuery = useDebounce(inputValue, 300);
 
-    // Memoize search parameters to ensure React Query detects changes
-    const searchParams = useMemo(
-        () => ({
-            q: debouncedSearchQuery,
-            status: 'new' as const,
-        }),
-        [debouncedSearchQuery],
-    );
+    // Search parameters
+    const searchParams = {
+        q: debouncedSearchQuery,
+        status: 'new' as const,
+    };
 
     const { deals, loading, error, hasMore, loadMore, clearFilters, refetch } =
         useSearchDeals(searchParams);
@@ -43,14 +40,14 @@ export function DealsList({
     }, [debouncedSearchQuery, onSearchChange]);
 
     // Handle search input changes (immediate UI update, debounced API call)
-    const handleSearchChange = useCallback((value: string) => {
+    const handleSearchChange = (value: string) => {
         setInputValue(value);
-    }, []);
+    };
 
     // Handle clear search
-    const handleClearSearch = useCallback(() => {
+    const handleClearSearch = () => {
         setInputValue('');
-    }, []);
+    };
 
     // Infinite scroll with Intersection Observer
     useEffect(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState, StrictMode } from 'react';
+import { useEffect, useRef, useState, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Search, X } from 'lucide-react';
@@ -92,14 +92,14 @@ function ReviewedDealsList({
     }, [debouncedSearchQuery, onSearchChange]);
 
     // Handle search input changes (immediate UI update, debounced API call)
-    const handleSearchChange = useCallback((value: string) => {
+    const handleSearchChange = (value: string) => {
         setInputValue(value);
-    }, []);
+    };
 
     // Handle clear search
-    const handleClearSearch = useCallback(() => {
+    const handleClearSearch = () => {
         setInputValue('');
-    }, []);
+    };
 
     // Infinite scroll with Intersection Observer
     useEffect(() => {

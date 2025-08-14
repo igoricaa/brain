@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import {
     Table,
@@ -122,81 +122,69 @@ export default function LibraryFileTable({
     const [processingFiles, setProcessingFiles] = useState<Set<string>>(new Set());
 
     // Handle individual file selection
-    const handleFileSelect = useCallback(
-        (fileId: string, selected: boolean) => {
-            if (selected) {
-                onSelectionChange([...selectedFiles, fileId]);
-            } else {
-                onSelectionChange(selectedFiles.filter((id) => id !== fileId));
-            }
-        },
-        [selectedFiles, onSelectionChange],
-    );
+    const handleFileSelect = (fileId: string, selected: boolean) => {
+        if (selected) {
+            onSelectionChange([...selectedFiles, fileId]);
+        } else {
+            onSelectionChange(selectedFiles.filter((id) => id !== fileId));
+        }
+    };
 
     // Handle select all
-    const handleSelectAll = useCallback(
-        (selected: boolean) => {
-            if (selected) {
-                onSelectionChange(files.map((file) => file.uuid));
-            } else {
-                onSelectionChange([]);
-            }
-        },
-        [files, onSelectionChange],
-    );
+    const handleSelectAll = (selected: boolean) => {
+        if (selected) {
+            onSelectionChange(files.map((file) => file.uuid));
+        } else {
+            onSelectionChange([]);
+        }
+    };
 
     // Handle file actions
-    const handleFileAction = useCallback(
-        async (action: string, fileId: string) => {
-            try {
-                switch (action) {
-                    case 'download':
-                        await onFileDownload(fileId);
-                        break;
-                    case 'delete':
-                        setDeletingFiles((prev) => new Set(prev).add(fileId));
-                        await onFileDelete(fileId);
-                        setDeletingFiles((prev) => {
-                            const next = new Set(prev);
-                            next.delete(fileId);
-                            return next;
-                        });
-                        break;
-                    case 'reprocess':
-                        setProcessingFiles((prev) => new Set(prev).add(fileId));
-                        await onFileReprocess(fileId);
-                        setProcessingFiles((prev) => {
-                            const next = new Set(prev);
-                            next.delete(fileId);
-                            return next;
-                        });
-                        break;
-                }
-            } catch (error) {
-                setDeletingFiles((prev) => {
-                    const next = new Set(prev);
-                    next.delete(fileId);
-                    return next;
-                });
-                setProcessingFiles((prev) => {
-                    const next = new Set(prev);
-                    next.delete(fileId);
-                    return next;
-                });
+    const handleFileAction = async (action: string, fileId: string) => {
+        try {
+            switch (action) {
+                case 'download':
+                    await onFileDownload(fileId);
+                    break;
+                case 'delete':
+                    setDeletingFiles((prev) => new Set(prev).add(fileId));
+                    await onFileDelete(fileId);
+                    setDeletingFiles((prev) => {
+                        const next = new Set(prev);
+                        next.delete(fileId);
+                        return next;
+                    });
+                    break;
+                case 'reprocess':
+                    setProcessingFiles((prev) => new Set(prev).add(fileId));
+                    await onFileReprocess(fileId);
+                    setProcessingFiles((prev) => {
+                        const next = new Set(prev);
+                        next.delete(fileId);
+                        return next;
+                    });
+                    break;
             }
-        },
-        [onFileDownload, onFileDelete, onFileReprocess],
-    );
+        } catch (error) {
+            setDeletingFiles((prev) => {
+                const next = new Set(prev);
+                next.delete(fileId);
+                return next;
+            });
+            setProcessingFiles((prev) => {
+                const next = new Set(prev);
+                next.delete(fileId);
+                return next;
+            });
+        }
+    };
 
     // Handle column sorting
-    const handleSort = useCallback(
-        (column: string) => {
-            if (onSort) {
-                onSort(column);
-            }
-        },
-        [onSort],
-    );
+    const handleSort = (column: string) => {
+        if (onSort) {
+            onSort(column);
+        }
+    };
 
     // Check if all files are selected
     const allSelected = files.length > 0 && selectedFiles.length === files.length;

@@ -42,8 +42,11 @@ __all__ = [
     'AdvisorSerializer',
     'AdvisorReadSerializer',
     'GrantSerializer',
+    'GrantReadSerializer',
     'ClinicalStudySerializer',
+    'ClinicalStudyReadSerializer',
     'PatentApplicationSerializer',
+    'PatentApplicationReadSerializer',
     'IPOStatusSerializer',
     'InvestorTypeSerializer',
     'FundingTypeSerializer',
@@ -459,27 +462,48 @@ class AdvisorReadSerializer(AdvisorSerializer):
 
 
 class GrantSerializer(serializers.ModelSerializer):
-    company = RelatedCompanySerializer(read_only=True)
+    company = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=Company.objects.all(),
+    )
 
     class Meta:
         model = Grant
         exclude = ['id', 'extras']
 
 
-class ClinicalStudySerializer(serializers.ModelSerializer):
+class GrantReadSerializer(GrantSerializer):
     company = RelatedCompanySerializer(read_only=True)
+
+
+class ClinicalStudySerializer(serializers.ModelSerializer):
+    company = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=Company.objects.all(),
+    )
 
     class Meta:
         model = ClinicalStudy
         exclude = ['id']
 
 
-class PatentApplicationSerializer(serializers.ModelSerializer):
+class ClinicalStudyReadSerializer(ClinicalStudySerializer):
     company = RelatedCompanySerializer(read_only=True)
+
+
+class PatentApplicationSerializer(serializers.ModelSerializer):
+    company = serializers.SlugRelatedField(
+        slug_field='uuid',
+        queryset=Company.objects.all(),
+    )
 
     class Meta:
         model = PatentApplication
         exclude = ['id', 'extras']
+
+
+class PatentApplicationReadSerializer(PatentApplicationSerializer):
+    company = RelatedCompanySerializer(read_only=True)
 
 
 class IPOStatusSerializer(serializers.ModelSerializer):

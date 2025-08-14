@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -24,15 +24,12 @@ export function PeopleList({
 
     const debouncedQuery = useDebounce(inputValue, 300);
 
-    const searchParams = useMemo(
-        () => ({
-            q: debouncedQuery || undefined,
-            page,
-            page_size: pageSize,
-            ordering: '-created_at',
-        }),
-        [debouncedQuery, page, pageSize],
-    );
+    const searchParams = {
+        q: debouncedQuery || undefined,
+        page,
+        page_size: pageSize,
+        ordering: '-created_at',
+    };
 
     const query = variant === 'founders' ? useFounders(searchParams) : useAdvisors(searchParams);
 
@@ -51,7 +48,7 @@ export function PeopleList({
         setPage(1);
     }, [debouncedQuery]);
 
-    const handleClearSearch = useCallback(() => setInputValue(''), []);
+    const handleClearSearch = () => setInputValue('');
 
     const total = query.data?.count ?? 0;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));

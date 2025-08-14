@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -113,106 +113,97 @@ export default function LibraryUploadArea({
     const { uploadLibraryFile } = useFileManagement();
 
     // Handle file selection
-    const handleFileSelect = useCallback(
-        (selectedFiles: FileList | File[]) => {
-            const fileArray = Array.from(selectedFiles);
-            const validFiles: UploadFile[] = [];
-            const errors: string[] = [];
+    const handleFileSelect = (selectedFiles: FileList | File[]) => {
+        const fileArray = Array.from(selectedFiles);
+        const validFiles: UploadFile[] = [];
+        const errors: string[] = [];
 
-            for (const file of fileArray) {
-                // Check file size
-                if (file.size > maxFileSize * 1024 * 1024) {
-                    errors.push(`${file.name}: File size exceeds ${maxFileSize}MB limit`);
-                    continue;
-                }
-
-                // Check file type
-                if (!acceptedTypes.includes(file.type)) {
-                    errors.push(`${file.name}: File type not supported`);
-                    continue;
-                }
-
-                // Check total file count
-                if (files.length + validFiles.length >= maxFiles) {
-                    errors.push(`Maximum ${maxFiles} files allowed`);
-                    break;
-                }
-
-                const uploadFile: UploadFile = {
-                    id: `${Date.now()}_${Math.random()}`,
-                    file,
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    progress: 0,
-                    status: 'pending',
-                    metadata: {
-                        category: globalMetadata.category,
-                        source: globalMetadata.source,
-                        document_type: globalMetadata.document_type,
-                        tags: [...globalMetadata.tags],
-                        is_public: globalMetadata.is_public,
-                    },
-                };
-
-                validFiles.push(uploadFile);
+        for (const file of fileArray) {
+            // Check file size
+            if (file.size > maxFileSize * 1024 * 1024) {
+                errors.push(`${file.name}: File size exceeds ${maxFileSize}MB limit`);
+                continue;
             }
 
-            if (errors.length > 0) {
-                toast.error('File validation errors', {
-                    description: errors.join('\n'),
-                });
+            // Check file type
+            if (!acceptedTypes.includes(file.type)) {
+                errors.push(`${file.name}: File type not supported`);
+                continue;
             }
 
-            if (validFiles.length > 0) {
-                setFiles((prev) => [...prev, ...validFiles]);
+            // Check total file count
+            if (files.length + validFiles.length >= maxFiles) {
+                errors.push(`Maximum ${maxFiles} files allowed`);
+                break;
             }
-        },
-        [files.length, maxFiles, maxFileSize, acceptedTypes, globalMetadata],
-    );
+
+            const uploadFile: UploadFile = {
+                id: `${Date.now()}_${Math.random()}`,
+                file,
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                progress: 0,
+                status: 'pending',
+                metadata: {
+                    category: globalMetadata.category,
+                    source: globalMetadata.source,
+                    document_type: globalMetadata.document_type,
+                    tags: [...globalMetadata.tags],
+                    is_public: globalMetadata.is_public,
+                },
+            };
+
+            validFiles.push(uploadFile);
+        }
+
+        if (errors.length > 0) {
+            toast.error('File validation errors', {
+                description: errors.join('\n'),
+            });
+        }
+
+        if (validFiles.length > 0) {
+            setFiles((prev) => [...prev, ...validFiles]);
+        }
+    };
 
     // Handle drag and drop
-    const handleDragOver = useCallback((e: React.DragEvent) => {
+    const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragOver(true);
-    }, []);
+    };
 
-    const handleDragLeave = useCallback((e: React.DragEvent) => {
+    const handleDragLeave = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragOver(false);
-    }, []);
+    };
 
-    const handleDrop = useCallback(
-        (e: React.DragEvent) => {
-            e.preventDefault();
-            setIsDragOver(false);
-            const droppedFiles = e.dataTransfer.files;
-            handleFileSelect(droppedFiles);
-        },
-        [handleFileSelect],
-    );
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const droppedFiles = e.dataTransfer.files;
+        handleFileSelect(droppedFiles);
+    };
 
     // Handle file input click
-    const handleFileInputClick = useCallback(() => {
+    const handleFileInputClick = () => {
         fileInputRef.current?.click();
-    }, []);
+    };
 
-    const handleFileInputChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.files) {
-                handleFileSelect(e.target.files);
-            }
-        },
-        [handleFileSelect],
-    );
+    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            handleFileSelect(e.target.files);
+        }
+    };
 
     // Remove file
-    const handleRemoveFile = useCallback((fileId: string) => {
+    const handleRemoveFile = (fileId: string) => {
         setFiles((prev) => prev.filter((f) => f.id !== fileId));
-    }, []);
+    };
 
     // Update file metadata
-    const handleFileMetadataChange = useCallback((fileId: string, field: string, value: any) => {
+    const handleFileMetadataChange = (fileId: string, field: string, value: any) => {
         setFiles((prev) =>
             prev.map((file) =>
                 file.id === fileId
@@ -220,10 +211,10 @@ export default function LibraryUploadArea({
                     : file,
             ),
         );
-    }, []);
+    };
 
     // Handle global metadata changes
-    const handleGlobalMetadataChange = useCallback((field: string, value: any) => {
+    const handleGlobalMetadataChange = (field: string, value: any) => {
         setGlobalMetadata((prev) => ({ ...prev, [field]: value }));
 
         // Apply to all files
@@ -233,31 +224,25 @@ export default function LibraryUploadArea({
                 metadata: { ...file.metadata, [field]: value },
             })),
         );
-    }, []);
+    };
 
     // Add tag
-    const handleAddTag = useCallback(
-        (tag: string) => {
-            if (tag.trim() && !globalMetadata.tags.includes(tag.trim())) {
-                const newTags = [...globalMetadata.tags, tag.trim()];
-                handleGlobalMetadataChange('tags', newTags);
-            }
-            setTagInput('');
-        },
-        [globalMetadata.tags, handleGlobalMetadataChange],
-    );
+    const handleAddTag = (tag: string) => {
+        if (tag.trim() && !globalMetadata.tags.includes(tag.trim())) {
+            const newTags = [...globalMetadata.tags, tag.trim()];
+            handleGlobalMetadataChange('tags', newTags);
+        }
+        setTagInput('');
+    };
 
     // Remove tag
-    const handleRemoveTag = useCallback(
-        (tagToRemove: string) => {
-            const newTags = globalMetadata.tags.filter((tag) => tag !== tagToRemove);
-            handleGlobalMetadataChange('tags', newTags);
-        },
-        [globalMetadata.tags, handleGlobalMetadataChange],
-    );
+    const handleRemoveTag = (tagToRemove: string) => {
+        const newTags = globalMetadata.tags.filter((tag) => tag !== tagToRemove);
+        handleGlobalMetadataChange('tags', newTags);
+    };
 
     // Upload files
-    const handleUpload = useCallback(async () => {
+    const handleUpload = async () => {
         if (files.length === 0) return;
 
         setIsUploading(true);
@@ -328,7 +313,7 @@ export default function LibraryUploadArea({
         if (failedFiles > 0) {
             toast.error(`Failed to upload ${failedFiles} file(s)`);
         }
-    }, [files, uploadLibraryFile, onUploadComplete]);
+    };
 
     const pendingFiles = files.filter((f) => f.status === 'pending');
     const uploadingFiles = files.filter((f) => f.status === 'uploading');

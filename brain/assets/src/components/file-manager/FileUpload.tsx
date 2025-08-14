@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -80,24 +80,23 @@ export default function FileUpload({
     const [errors, setErrors] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const validateFiles = useCallback(
-        (fileList: FileList): { valid: File[]; errors: string[] } => {
-            const validFiles: File[] = [];
-            const errors: string[] = [];
-            const currentFileCount = files.length;
+    const validateFiles = (fileList: FileList): { valid: File[]; errors: string[] } => {
+        const validFiles: File[] = [];
+        const errors: string[] = [];
+        const currentFileCount = files.length;
 
-            Array.from(fileList).forEach((file) => {
-                // Check file count limit
-                if (currentFileCount + validFiles.length >= maxFiles) {
-                    errors.push(`Maximum ${maxFiles} files allowed`);
-                    return;
-                }
+        Array.from(fileList).forEach((file) => {
+            // Check file count limit
+            if (currentFileCount + validFiles.length >= maxFiles) {
+                errors.push(`Maximum ${maxFiles} files allowed`);
+                return;
+            }
 
-                // Check file size
-                if (file.size > maxSize) {
-                    errors.push(
-                        `File "${file.name}" is too large (max ${formatFileSize(maxSize)})`,
-                    );
+            // Check file size
+            if (file.size > maxSize) {
+                errors.push(
+                    `File "${file.name}" is too large (max ${formatFileSize(maxSize)})`,
+                );
                     return;
                 }
 
@@ -111,67 +110,53 @@ export default function FileUpload({
                 validFiles.push(file);
             });
 
-            return { valid: validFiles, errors };
-        },
-        [files, maxFiles, maxSize],
-    );
+            return { valid: validFiles, errors: [...new Set(errors)] };
+        };
 
-    const handleFileSelect = useCallback(
-        (fileList: FileList | null) => {
-            if (!fileList || disabled) return;
+    const handleFileSelect = (fileList: FileList | null) => {
+        if (!fileList || disabled) return;
 
-            const { valid, errors } = validateFiles(fileList);
-            setErrors(errors);
+        const { valid, errors } = validateFiles(fileList);
+        setErrors(errors);
 
-            if (valid.length > 0) {
-                onFilesAdd(valid);
-            }
-        },
-        [validateFiles, onFilesAdd, disabled],
-    );
+        if (valid.length > 0) {
+            onFilesAdd(valid);
+        }
+    };
 
-    const handleDrop = useCallback(
-        (e: React.DragEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setDragOver(false);
-
-            handleFileSelect(e.dataTransfer.files);
-        },
-        [handleFileSelect],
-    );
-
-    const handleDragOver = useCallback(
-        (e: React.DragEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!disabled) {
-                setDragOver(true);
-            }
-        },
-        [disabled],
-    );
-
-    const handleDragLeave = useCallback((e: React.DragEvent) => {
+    const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         setDragOver(false);
-    }, []);
 
-    const handleFileInputChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            handleFileSelect(e.target.files);
-            // Reset input value to allow selecting the same file again
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        },
-        [handleFileSelect],
-    );
+        handleFileSelect(e.dataTransfer.files);
+    };
 
-    const handleBrowseClick = useCallback(() => {
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!disabled) {
+            setDragOver(true);
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOver(false);
+    };
+
+    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleFileSelect(e.target.files);
+        // Reset input value to allow selecting the same file again
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleBrowseClick = () => {
         fileInputRef.current?.click();
-    }, []);
+    };
 
     const getStatusBadge = (status: UploadFile['status']) => {
         switch (status) {

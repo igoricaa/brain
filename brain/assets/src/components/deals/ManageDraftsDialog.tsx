@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import {
     Dialog,
@@ -47,7 +47,7 @@ export default function ManageDraftsDialog({
     const { getDealFiles } = useFileManagement();
 
     // Load drafts when dialog opens
-    const loadDrafts = useCallback(async () => {
+    const loadDrafts = async () => {
         if (!isOpen) return;
 
         try {
@@ -82,40 +82,34 @@ export default function ManageDraftsDialog({
         } finally {
             setLoading(false);
         }
-    }, [isOpen, getDraftDeals, getDealFiles]);
+    };
 
     useEffect(() => {
         loadDrafts();
-    }, [loadDrafts]);
+    }, [isOpen]);
 
-    const handleDeleteDraft = useCallback(
-        async (draftUuid: string) => {
-            try {
-                await deleteDraftDeal(draftUuid);
-                setDrafts((prev) => prev.filter((draft) => draft.uuid !== draftUuid));
-                toast.success('Draft deleted successfully');
-            } catch (error) {
-                console.error('Failed to delete draft:', error);
-                toast.error('Failed to delete draft');
-            } finally {
-                setDeleteConfirm(null);
-            }
-        },
-        [deleteDraftDeal],
-    );
+    const handleDeleteDraft = async (draftUuid: string) => {
+        try {
+            await deleteDraftDeal(draftUuid);
+            setDrafts((prev) => prev.filter((draft) => draft.uuid !== draftUuid));
+            toast.success('Draft deleted successfully');
+        } catch (error) {
+            console.error('Failed to delete draft:', error);
+            toast.error('Failed to delete draft');
+        } finally {
+            setDeleteConfirm(null);
+        }
+    };
 
-    const confirmDelete = useCallback((draftUuid: string, e: React.MouseEvent) => {
+    const confirmDelete = (draftUuid: string, e: React.MouseEvent) => {
         e.stopPropagation();
         setDeleteConfirm(draftUuid);
-    }, []);
+    };
 
-    const handleSelectDraft = useCallback(
-        (draftUuid: string) => {
-            onSelectDraft(draftUuid);
-            onClose();
-        },
-        [onSelectDraft, onClose],
-    );
+    const handleSelectDraft = (draftUuid: string) => {
+        onSelectDraft(draftUuid);
+        onClose();
+    };
 
     return (
         <>

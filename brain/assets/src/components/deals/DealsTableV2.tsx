@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
     useReactTable,
     getCoreRowModel,
@@ -50,92 +50,89 @@ export function DealsTableV2({
     const [bulkDeleting, setBulkDeleting] = useState(false);
 
     // TanStack Table column definitions
-    const columns = useMemo<ColumnDef<Deal>[]>(
-        () => [
-            // Selection column
-            {
-                id: 'select',
-                header: ({ table }) => (
-                    <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
-                        }
-                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label="Select all"
-                        className="translate-y-[2px]"
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                        className="translate-y-[2px]"
-                    />
-                ),
-                enableSorting: false,
-                enableHiding: false,
-                size: 40,
+    const columns: ColumnDef<Deal>[] = [
+        // Selection column
+        {
+            id: 'select',
+            header: ({ table }) => (
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && 'indeterminate')
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                    className="translate-y-[2px]"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                    className="translate-y-[2px]"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+            size: 40,
+        },
+        // Company column
+        {
+            accessorKey: 'company',
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                    className="h-auto p-0 font-medium hover:bg-transparent"
+                >
+                    Company
+                    {column.getIsSorted() === 'asc' && <ChevronUp className="ml-2 h-4 w-4" />}
+                    {column.getIsSorted() === 'desc' && (
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                    )}
+                </Button>
+            ),
+            cell: ({ row }) => (
+                <CompanyCell
+                    deal={row.original}
+                    onClick={() => onDealSelect?.(row.original.uuid)}
+                />
+            ),
+            sortingFn: (rowA, rowB) => {
+                return rowA.original.company.name.localeCompare(rowB.original.company.name);
             },
-            // Company column
-            {
-                accessorKey: 'company',
-                header: ({ column }) => (
-                    <Button
-                        variant="ghost"
-                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                        className="h-auto p-0 font-medium hover:bg-transparent"
-                    >
-                        Company
-                        {column.getIsSorted() === 'asc' && <ChevronUp className="ml-2 h-4 w-4" />}
-                        {column.getIsSorted() === 'desc' && (
-                            <ChevronDown className="ml-2 h-4 w-4" />
-                        )}
-                    </Button>
-                ),
-                cell: ({ row }) => (
-                    <CompanyCell
-                        deal={row.original}
-                        onClick={() => onDealSelect?.(row.original.uuid)}
-                    />
-                ),
-                sortingFn: (rowA, rowB) => {
-                    return rowA.original.company.name.localeCompare(rowB.original.company.name);
-                },
-                size: 280,
-            },
-            // Fundraise column
-            {
-                accessorKey: 'fundraise',
-                header: 'Fundraise',
-                cell: ({ row }) => <FundraisingCell deal={row.original} />,
-                enableSorting: false,
-            },
-            // Industries column
-            {
-                accessorKey: 'industries',
-                header: 'Industries',
-                cell: ({ row }) => <IndustriesCell industries={row.original.industries} />,
-                enableSorting: false,
-            },
-            // Dual-use signals column
-            {
-                accessorKey: 'dual_use_signals',
-                header: 'Dual-use Signal',
-                cell: ({ row }) => <DualUseSignalsCell signals={row.original.dual_use_signals} />,
-                enableSorting: false,
-            },
-            // Grants column
-            {
-                accessorKey: 'grants_count',
-                header: 'Grants',
-                cell: ({ row }) => <GrantsCell count={row.original.grants_count} />,
-                enableSorting: false,
-            },
-        ],
-        [onDealSelect],
-    );
+            size: 280,
+        },
+        // Fundraise column
+        {
+            accessorKey: 'fundraise',
+            header: 'Fundraise',
+            cell: ({ row }) => <FundraisingCell deal={row.original} />,
+            enableSorting: false,
+        },
+        // Industries column
+        {
+            accessorKey: 'industries',
+            header: 'Industries',
+            cell: ({ row }) => <IndustriesCell industries={row.original.industries} />,
+            enableSorting: false,
+        },
+        // Dual-use signals column
+        {
+            accessorKey: 'dual_use_signals',
+            header: 'Dual-use Signal',
+            cell: ({ row }) => <DualUseSignalsCell signals={row.original.dual_use_signals} />,
+            enableSorting: false,
+        },
+        // Grants column
+        {
+            accessorKey: 'grants_count',
+            header: 'Grants',
+            cell: ({ row }) => <GrantsCell count={row.original.grants_count} />,
+            enableSorting: false,
+        },
+    ];
 
     const table = useReactTable({
         data: deals || [],

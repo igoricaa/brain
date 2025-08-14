@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import {
     flexRender,
     getCoreRowModel,
@@ -166,103 +166,90 @@ export default function FileTable({
 
     const selectedFileObjects = files.filter((file) => selectedFileIds.includes(file.uuid));
 
-    const handleFileAction = useCallback(
-        async (
-            action: 'update' | 'delete' | 'reprocess' | 'download',
-            fileId: string,
-            data?: Partial<FileTableData>,
-        ) => {
-            try {
-                switch (action) {
-                    case 'update':
-                        if (onFileUpdate && data) {
-                            await onFileUpdate(fileId, data);
-                            onFilesChange?.();
-                        }
-                        break;
-                    case 'delete':
-                        if (onFileDelete) {
-                            await onFileDelete(fileId);
-                            onFilesChange?.();
-                        }
-                        break;
-                    case 'reprocess':
-                        if (onFileReprocess) {
-                            await onFileReprocess(fileId);
-                            onFilesChange?.();
-                        }
-                        break;
-                    case 'download':
-                        if (onFileDownload) {
-                            onFileDownload(fileId);
-                        }
-                        break;
-                }
-            } catch (error) {
-                console.error(`Error ${action}ing file:`, error);
+    const handleFileAction = async (
+        action: 'update' | 'delete' | 'reprocess' | 'download',
+        fileId: string,
+        data?: Partial<FileTableData>,
+    ) => {
+        try {
+            switch (action) {
+                case 'update':
+                    if (onFileUpdate && data) {
+                        await onFileUpdate(fileId, data);
+                        onFilesChange?.();
+                    }
+                    break;
+                case 'delete':
+                    if (onFileDelete) {
+                        await onFileDelete(fileId);
+                        onFilesChange?.();
+                    }
+                    break;
+                case 'reprocess':
+                    if (onFileReprocess) {
+                        await onFileReprocess(fileId);
+                        onFilesChange?.();
+                    }
+                    break;
+                case 'download':
+                    if (onFileDownload) {
+                        onFileDownload(fileId);
+                    }
+                    break;
             }
-        },
-        [onFileUpdate, onFileDelete, onFileReprocess, onFileDownload, onFilesChange],
-    );
+        } catch (error) {
+            console.error(`Error ${action}ing file:`, error);
+        }
+    };
 
-    const handleBulkAction = useCallback(
-        async (action: 'delete' | 'update' | 'reprocess', data?: Partial<FileTableData>) => {
-            if (selectedFileIds.length === 0) return;
+    const handleBulkAction = async (action: 'delete' | 'update' | 'reprocess', data?: Partial<FileTableData>) => {
+        if (selectedFileIds.length === 0) return;
 
-            try {
-                switch (action) {
-                    case 'delete':
-                        setBulkDeleteDialogOpen(true);
-                        break;
-                    case 'update':
-                        setBulkMetadataDialogOpen(true);
-                        break;
-                    case 'reprocess':
-                        if (onBulkReprocess) {
-                            await onBulkReprocess(selectedFileIds);
-                            setRowSelection({});
-                            onFilesChange?.();
-                        }
-                        break;
-                }
-            } catch (error) {
-                console.error(`Error ${action}ing files:`, error);
+        try {
+            switch (action) {
+                case 'delete':
+                    setBulkDeleteDialogOpen(true);
+                    break;
+                case 'update':
+                    setBulkMetadataDialogOpen(true);
+                    break;
+                case 'reprocess':
+                    if (onBulkReprocess) {
+                        await onBulkReprocess(selectedFileIds);
+                        setRowSelection({});
+                        onFilesChange?.();
+                    }
+                    break;
             }
-        },
-        [selectedFileIds, onBulkReprocess, onFilesChange],
-    );
+        } catch (error) {
+            console.error(`Error ${action}ing files:`, error);
+        }
+    };
 
-    const handleBulkMetadataSubmit = useCallback(
-        async (data: any) => {
-            if (onBulkUpdate && selectedFileIds.length > 0) {
-                await onBulkUpdate(selectedFileIds, data);
-                setRowSelection({});
-                onFilesChange?.();
-            }
-        },
-        [onBulkUpdate, selectedFileIds, onFilesChange],
-    );
+    const handleBulkMetadataSubmit = async (data: any) => {
+        if (onBulkUpdate && selectedFileIds.length > 0) {
+            await onBulkUpdate(selectedFileIds, data);
+            setRowSelection({});
+            onFilesChange?.();
+        }
+    };
 
-    const handleBulkDeleteConfirm = useCallback(async () => {
+    const handleBulkDeleteConfirm = async () => {
         if (onBulkDelete && selectedFileIds.length > 0) {
             await onBulkDelete(selectedFileIds);
             setRowSelection({});
             onFilesChange?.();
         }
-    }, [onBulkDelete, selectedFileIds, onFilesChange]);
+    };
 
-    const handleInlineEdit = useCallback(
-        async (fileId: string, field: string, value: any) => {
-            if (onFileUpdate) {
-                await onFileUpdate(fileId, { [field]: value });
-                onFilesChange?.();
-            }
-        },
-        [onFileUpdate, onFilesChange],
-    );
+    const handleInlineEdit = async (fileId: string, field: string, value: any) => {
+        if (onFileUpdate) {
+            await onFileUpdate(fileId, { [field]: value });
+            onFilesChange?.();
+        }
+    };
 
-    const columns = useMemo<ColumnDef<FileTableData>[]>(
-        () => [
+    const columns: ColumnDef<FileTableData>[] = [
             {
                 id: 'select',
                 header: ({ table }) => (
@@ -464,9 +451,7 @@ export default function FileTable({
                     </div>
                 ),
             },
-        ],
-        [handleFileAction],
-    );
+        ];
 
     const table = useReactTable({
         data: files,

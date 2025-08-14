@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -167,87 +167,75 @@ export default function FileMetadataModal({
     }, [file, reset]);
 
     // Handle category selection
-    const handleCategoryChange = useCallback(
-        (categoryId: string, checked: boolean) => {
-            const currentCategories = watchedCategories;
-            if (checked) {
-                setValue('categories', [...currentCategories, categoryId], { shouldDirty: true });
-            } else {
-                setValue(
-                    'categories',
-                    currentCategories.filter((id) => id !== categoryId),
-                    { shouldDirty: true },
-                );
-            }
-        },
-        [watchedCategories, setValue],
-    );
+    const handleCategoryChange = (categoryId: string, checked: boolean) => {
+        const currentCategories = watchedCategories;
+        if (checked) {
+            setValue('categories', [...currentCategories, categoryId], { shouldDirty: true });
+        } else {
+            setValue(
+                'categories',
+                currentCategories.filter((id) => id !== categoryId),
+                { shouldDirty: true },
+            );
+        }
+    };
 
     // Handle document type selection
-    const handleDocumentTypeChange = useCallback(
-        (typeId: string, checked: boolean) => {
-            const currentTypes = watchedDocumentTypes;
-            if (checked) {
-                setValue('document_types', [...currentTypes, typeId], { shouldDirty: true });
-            } else {
-                setValue(
-                    'document_types',
-                    currentTypes.filter((id) => id !== typeId),
-                    { shouldDirty: true },
-                );
-            }
-        },
-        [watchedDocumentTypes, setValue],
-    );
+    const handleDocumentTypeChange = (typeId: string, checked: boolean) => {
+        const currentTypes = watchedDocumentTypes;
+        if (checked) {
+            setValue('document_types', [...currentTypes, typeId], { shouldDirty: true });
+        } else {
+            setValue(
+                'document_types',
+                currentTypes.filter((id) => id !== typeId),
+                { shouldDirty: true },
+            );
+        }
+    };
 
     // Handle tag addition
-    const handleAddTag = useCallback(() => {
+    const handleAddTag = () => {
         if (tagInput.trim() && !watchedTags.includes(tagInput.trim())) {
             setValue('tags', [...watchedTags, tagInput.trim()], { shouldDirty: true });
             setTagInput('');
         }
-    }, [tagInput, watchedTags, setValue]);
+    };
 
     // Handle tag removal
-    const handleRemoveTag = useCallback(
-        (tagToRemove: string) => {
-            setValue(
-                'tags',
-                watchedTags.filter((tag) => tag !== tagToRemove),
-                { shouldDirty: true },
-            );
-        },
-        [watchedTags, setValue],
-    );
+    const handleRemoveTag = (tagToRemove: string) => {
+        setValue(
+            'tags',
+            watchedTags.filter((tag) => tag !== tagToRemove),
+            { shouldDirty: true },
+        );
+    };
 
     // Handle form submission
-    const handleFormSubmit = useCallback(
-        async (data: FileMetadataFormData) => {
-            if (!file) return;
+    const handleFormSubmit = async (data: FileMetadataFormData) => {
+        if (!file) return;
 
-            setIsSaving(true);
-            try {
-                await onSave(file.uuid, {
-                    categories: data.categories,
-                    source: data.source || null,
-                    document_types: data.document_types,
-                    tags: data.tags,
-                    tldr: data.tldr,
-                    is_public: data.is_public,
-                    src_url: data.src_url || null,
-                    src_download_url: data.src_download_url || null,
-                });
-                toast.success('File metadata updated successfully');
-                onClose();
-            } catch (error) {
-                console.error('Error updating file metadata:', error);
-                toast.error('Failed to update file metadata');
-            } finally {
-                setIsSaving(false);
-            }
-        },
-        [file, onSave, onClose],
-    );
+        setIsSaving(true);
+        try {
+            await onSave(file.uuid, {
+                categories: data.categories,
+                source: data.source || null,
+                document_types: data.document_types,
+                tags: data.tags,
+                tldr: data.tldr,
+                is_public: data.is_public,
+                src_url: data.src_url || null,
+                src_download_url: data.src_download_url || null,
+            });
+            toast.success('File metadata updated successfully');
+            onClose();
+        } catch (error) {
+            console.error('Error updating file metadata:', error);
+            toast.error('Failed to update file metadata');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     if (!file) return null;
 

@@ -9,9 +9,6 @@ export default defineConfig(({ mode }) => ({
     root: __dirname,
     plugins: [
         react({
-            // Exclude dynamically imported page modules from React refresh
-            // This prevents the preamble detection error
-            exclude: mode === 'development' ? [/src\/pages\/.*\.tsx$/] : [],
             babel: {
                 plugins: [
                     [

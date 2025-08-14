@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -124,7 +124,6 @@ export default function FileManager({
 
             setLoadingDraftFiles(true);
             try {
-                clearFileManagementError();
                 const response = await getDealFiles(currentDraftId);
                 setExistingDraftFiles(response.results);
             } catch (error) {
@@ -144,9 +143,9 @@ export default function FileManager({
         };
 
         loadDraftFiles();
-    }, [mode, currentDraftId, getDealFiles, clearFileManagementError]);
+    }, [mode, currentDraftId]); // Keep only primitive dependencies to prevent infinite loops
 
-    const handleFileAdd = useCallback((newFiles: File[]) => {
+    const handleFileAdd = (newFiles: File[]) => {
         const uploadFiles: UploadFile[] = newFiles.map((file, index) => ({
             id: `${Date.now()}_${index}`,
             file,
@@ -159,20 +158,18 @@ export default function FileManager({
         }));
 
         setFiles((prev) => [...prev, ...uploadFiles]);
-    }, []);
+    };
 
-    const handleFileRemove = useCallback((fileId: string) => {
+    const handleFileRemove = (fileId: string) => {
         setFiles((prev) => prev.filter((f) => f.id !== fileId));
-    }, []);
+    };
 
     // Load files based on mode
-    const loadFiles = useCallback(async () => {
+    const loadFiles = async () => {
         if (mode === 'draft-deal') return;
 
         setFilesLoading(true);
         try {
-            clearFileManagementError();
-
             if (mode === 'existing-deal' && dealId) {
                 const response = await getDealFiles(dealId);
                 setDealFiles(response.results);
@@ -191,92 +188,97 @@ export default function FileManager({
         } finally {
             setFilesLoading(false);
         }
-    }, [mode, dealId, getDealFiles, getLibraryFiles, clearFileManagementError]);
+    };
+
 
     // Load files on mount and when mode/dealId changes
     useEffect(() => {
-        loadFiles();
-    }, [loadFiles]);
+        const loadFilesEffect = async () => {
+            if (mode === 'draft-deal') return;
 
-    // File table handlers
-    const handleFileUpdate = useCallback(
-        async (fileId: string, data: any) => {
-            if (mode === 'existing-deal') {
-                await updateDealFile(fileId, data);
-            } else if (mode === 'library') {
-                await updateLibraryFile(fileId, data);
-            }
-        },
-        [mode, updateDealFile, updateLibraryFile],
-    );
-
-    const handleFileDelete = useCallback(
-        async (fileId: string) => {
+            setFilesLoading(true);
             try {
-                if (mode === 'existing-deal') {
-                    await deleteDealFile(fileId);
+                if (mode === 'existing-deal' && dealId) {
+                    const response = await getDealFiles(dealId);
+                    setDealFiles(response.results);
                 } else if (mode === 'library') {
-                    await deleteLibraryFile(fileId);
-                } else if (mode === 'draft-deal') {
-                    // Delete draft file using the same API endpoint
-                    await deleteDealFile(fileId);
-                    // Remove the file from existingDraftFiles state immediately
-                    setExistingDraftFiles((prev) => prev.filter((file) => file.uuid !== fileId));
-                    toast.success('File removed successfully');
+                    const response = await getLibraryFiles();
+                    setLibraryFiles(response.results);
                 }
             } catch (error) {
-                console.error('Error deleting file:', error);
-                const sanitizedError = sanitizeError(error, 'File deletion');
-                const userFriendlyMessage = getUserFriendlyMessage(sanitizedError, 'File deletion');
-                toast.error('Failed to delete file', {
+                console.error('Error loading files:', error);
+                const sanitizedError = sanitizeError(error, 'File loading');
+                const userFriendlyMessage = getUserFriendlyMessage(sanitizedError, 'File loading');
+                toast.error('Failed to load files', {
                     description: userFriendlyMessage,
                     duration: 4000,
                 });
+            } finally {
+                setFilesLoading(false);
             }
-        },
-        [mode, deleteDealFile, deleteLibraryFile, setExistingDraftFiles],
-    );
+        };
 
-    const handleFileReprocess = useCallback(
-        async (fileId: string) => {
+        loadFilesEffect();
+    }, [mode, dealId]); // Use primitive dependencies to prevent infinite loops
+
+    // File table handlers
+    const handleFileUpdate = async (fileId: string, data: any) => {
+        if (mode === 'existing-deal') {
+            await updateDealFile(fileId, data);
+        } else if (mode === 'library') {
+            await updateLibraryFile(fileId, data);
+        }
+    };
+
+    const handleFileDelete = async (fileId: string) => {
+        try {
             if (mode === 'existing-deal') {
-                await reprocessDealFile(fileId);
+                await deleteDealFile(fileId);
             } else if (mode === 'library') {
-                await reprocessLibraryFile(fileId);
+                await deleteLibraryFile(fileId);
+            } else if (mode === 'draft-deal') {
+                // Delete draft file using the same API endpoint
+                await deleteDealFile(fileId);
+                // Remove the file from existingDraftFiles state immediately
+                setExistingDraftFiles((prev) => prev.filter((file) => file.uuid !== fileId));
+                toast.success('File removed successfully');
             }
-        },
-        [mode, reprocessDealFile, reprocessLibraryFile],
-    );
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            const sanitizedError = sanitizeError(error, 'File deletion');
+            const userFriendlyMessage = getUserFriendlyMessage(sanitizedError, 'File deletion');
+            toast.error('Failed to delete file', {
+                description: userFriendlyMessage,
+                duration: 4000,
+            });
+        }
+    };
 
-    const handleFileDownload = useCallback(
-        async (fileId: string) => {
-            await downloadFile(fileId, mode === 'existing-deal' ? 'deal' : 'library');
-        },
-        [downloadFile, mode],
-    );
+    const handleFileReprocess = async (fileId: string) => {
+        if (mode === 'existing-deal') {
+            await reprocessDealFile(fileId);
+        } else if (mode === 'library') {
+            await reprocessLibraryFile(fileId);
+        }
+    };
 
-    const handleBulkDelete = useCallback(
-        async (fileIds: string[]) => {
-            await bulkDeleteFiles(fileIds, mode === 'existing-deal' ? 'deal' : 'library');
-        },
-        [bulkDeleteFiles, mode],
-    );
+    const handleFileDownload = async (fileId: string) => {
+        await downloadFile(fileId, mode === 'existing-deal' ? 'deal' : 'library');
+    };
 
-    const handleBulkUpdate = useCallback(
-        async (fileIds: string[], data: any) => {
-            await bulkUpdateFiles(fileIds, data, mode === 'existing-deal' ? 'deal' : 'library');
-        },
-        [bulkUpdateFiles, mode],
-    );
+    const handleBulkDelete = async (fileIds: string[]) => {
+        await bulkDeleteFiles(fileIds, mode === 'existing-deal' ? 'deal' : 'library');
+    };
 
-    const handleBulkReprocess = useCallback(
-        async (fileIds: string[]) => {
-            await bulkReprocessFiles(fileIds, mode === 'existing-deal' ? 'deal' : 'library');
-        },
-        [bulkReprocessFiles, mode],
-    );
+    const handleBulkUpdate = async (fileIds: string[], data: any) => {
+        await bulkUpdateFiles(fileIds, data, mode === 'existing-deal' ? 'deal' : 'library');
+    };
 
-    const handleCloseUploadOverlay = useCallback(() => {
+    const handleBulkReprocess = async (fileIds: string[]) => {
+        await bulkReprocessFiles(fileIds, mode === 'existing-deal' ? 'deal' : 'library');
+    };
+
+    const handleCloseUploadOverlay = () => {
         setUploadState({
             isUploading: false,
             currentFile: 0,
@@ -287,10 +289,10 @@ export default function FileManager({
             errors: [],
             isCompleted: false,
         });
-    }, []);
+    };
 
     // Simple save draft handler for new UI
-    const handleSimpleSaveDraft = useCallback(async () => {
+    const handleSimpleSaveDraft = async () => {
         try {
             clearError();
             setSubmitError(null);
@@ -339,10 +341,10 @@ export default function FileManager({
                 description: userFriendlyMessage,
             });
         }
-    }, [files, currentDraftId, createDraftDeal, uploadDraftFile, clearError]);
+    };
 
     // Simple submit handler for new UI
-    const handleSimpleSubmit = useCallback(async () => {
+    const handleSimpleSubmit = async () => {
         try {
             clearError();
             setSubmitError(null);
@@ -462,52 +464,40 @@ export default function FileManager({
                 errors: [userFriendlyMessage],
             }));
         }
-    }, [
-        files,
-        currentDraftId,
-        existingDraftFiles,
-        createDraftDeal,
-        uploadDraftFile,
-        finalizeDraftDeal,
-        clearError,
-        onDraftSubmit,
-    ]);
+    };
 
     // File upload for existing deals and library
-    const handleUploadToExistingMode = useCallback(
-        async (newFiles: File[]) => {
-            for (const file of newFiles) {
-                const fileData = {
-                    file,
-                    category: 'other',
-                    proprietary: false,
-                };
+    const handleUploadToExistingMode = async (newFiles: File[]) => {
+        for (const file of newFiles) {
+            const fileData = {
+                file,
+                category: 'other',
+                proprietary: false,
+            };
 
-                try {
-                    if (mode === 'existing-deal' && dealId) {
-                        await uploadDealFile(dealId, fileData);
-                    } else if (mode === 'library') {
-                        await uploadLibraryFile(fileData);
-                    }
-                } catch (error) {
-                    console.error('Error uploading file:', error);
-                    const sanitizedError = sanitizeError(error, 'File upload');
-                    const userFriendlyMessage = getUserFriendlyMessage(
-                        sanitizedError,
-                        'File upload',
-                    );
-                    toast.error('File upload failed', {
-                        description: `${file.name}: ${userFriendlyMessage}`,
-                        duration: 4000,
-                    });
+            try {
+                if (mode === 'existing-deal' && dealId) {
+                    await uploadDealFile(dealId, fileData);
+                } else if (mode === 'library') {
+                    await uploadLibraryFile(fileData);
                 }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                const sanitizedError = sanitizeError(error, 'File upload');
+                const userFriendlyMessage = getUserFriendlyMessage(
+                    sanitizedError,
+                    'File upload',
+                );
+                toast.error('File upload failed', {
+                    description: `${file.name}: ${userFriendlyMessage}`,
+                    duration: 4000,
+                });
             }
+        }
 
-            // Reload files after upload
-            await loadFiles();
-        },
-        [mode, dealId, uploadDealFile, uploadLibraryFile, loadFiles],
-    );
+        // Reload files after upload
+        await loadFiles();
+    };
 
     const renderModeContent = () => {
         switch (mode) {
