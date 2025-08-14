@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
     useQueryStates,
@@ -383,18 +383,18 @@ function LibraryPage() {
         clearError,
     } = useFileManagement();
 
-    const handleFileView = useCallback((file: LibraryFile) => {
+    const handleFileView = (file: LibraryFile) => {
         setCurrentFile(file);
         setIsMetadataModalOpen(true);
-    }, []);
+    };
 
-    const handleMetadataModalClose = useCallback(() => {
+    const handleMetadataModalClose = () => {
         setIsMetadataModalOpen(false);
         setCurrentFile(null);
-    }, []);
+    };
 
     // Load metadata (categories, sources, document types)
-    const loadMetadata = useCallback(async () => {
+    const loadMetadata = async () => {
         try {
             const [categoriesResp, sourcesResp, docTypesResp] = await Promise.all([
                 http.get<{ results: LibraryCategory[] }>('/api/library/categories/'),
@@ -409,20 +409,20 @@ function LibraryPage() {
             console.error('Failed to load metadata:', error);
             toast.error('Failed to load library metadata');
         }
-    }, []);
+    };
 
     // Load library stats
-    const loadStats = useCallback(async () => {
+    const loadStats = async () => {
         try {
             const response = await http.get<LibraryStats>('/api/library/stats/');
             setStats(response.data);
         } catch (error) {
             console.error('Failed to load stats:', error);
         }
-    }, []);
+    };
 
     // Load files based on current filters
-    const loadFiles = useCallback(async () => {
+    const loadFiles = async () => {
         setIsLoading(true);
         clearError();
 
@@ -459,68 +459,56 @@ function LibraryPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [urlState, getLibraryFiles, clearError]);
+    };
 
     // File operation handlers (defined after loadFiles)
-    const handleFileUpdate = useCallback(
-        async (fileId: string, data: any) => {
-            try {
-                await updateLibraryFile(fileId, data);
-                loadFiles(); // Refresh the file list
-                toast.success('File updated successfully');
-            } catch (error) {
-                console.error('Error updating file:', error);
-                toast.error('Failed to update file');
-            }
-        },
-        [updateLibraryFile, loadFiles],
-    );
+    const handleFileUpdate = async (fileId: string, data: any) => {
+        try {
+            await updateLibraryFile(fileId, data);
+            loadFiles(); // Refresh the file list
+            toast.success('File updated successfully');
+        } catch (error) {
+            console.error('Error updating file:', error);
+            toast.error('Failed to update file');
+        }
+    };
 
-    const handleFileDelete = useCallback(
-        async (fileId: string) => {
-            try {
-                await deleteLibraryFile(fileId);
-                loadFiles(); // Refresh the file list
-                setSelectedFiles((prev) => prev.filter((id) => id !== fileId));
-                toast.success('File deleted successfully');
-            } catch (error) {
-                console.error('Error deleting file:', error);
-                toast.error('Failed to delete file');
-            }
-        },
-        [deleteLibraryFile, loadFiles],
-    );
+    const handleFileDelete = async (fileId: string) => {
+        try {
+            await deleteLibraryFile(fileId);
+            loadFiles(); // Refresh the file list
+            setSelectedFiles((prev) => prev.filter((id) => id !== fileId));
+            toast.success('File deleted successfully');
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            toast.error('Failed to delete file');
+        }
+    };
 
-    const handleFileReprocess = useCallback(
-        async (fileId: string) => {
-            try {
-                await reprocessLibraryFile(fileId);
-                loadFiles(); // Refresh the file list
-                toast.success('File reprocessing started');
-            } catch (error) {
-                console.error('Error reprocessing file:', error);
-                toast.error('Failed to reprocess file');
-            }
-        },
-        [reprocessLibraryFile, loadFiles],
-    );
+    const handleFileReprocess = async (fileId: string) => {
+        try {
+            await reprocessLibraryFile(fileId);
+            loadFiles(); // Refresh the file list
+            toast.success('File reprocessing started');
+        } catch (error) {
+            console.error('Error reprocessing file:', error);
+            toast.error('Failed to reprocess file');
+        }
+    };
 
-    const handleFileDownload = useCallback(
-        async (fileId: string) => {
-            try {
-                await downloadFile(fileId, 'library');
-            } catch (error) {
-                console.error('Error downloading file:', error);
-                toast.error('Failed to download file');
-            }
-        },
-        [downloadFile],
-    );
+    const handleFileDownload = async (fileId: string) => {
+        try {
+            await downloadFile(fileId, 'library');
+        } catch (error) {
+            console.error('Error downloading file:', error);
+            toast.error('Failed to download file');
+        }
+    };
 
-    const handleUploadComplete = useCallback(() => {
+    const handleUploadComplete = () => {
         loadFiles();
         loadStats();
-    }, [loadFiles, loadStats]);
+    };
 
     // Load data on mount and when URL state changes
     useEffect(() => {
@@ -533,58 +521,43 @@ function LibraryPage() {
     }, [loadFiles]);
 
     // Handle filter changes
-    const handleFiltersChange = useCallback(
-        (newFilters: any) => {
-            setUrlState({
-                ...newFilters,
-                page: 1, // Reset to first page when filters change
-            });
-        },
-        [setUrlState],
-    );
+    const handleFiltersChange = (newFilters: any) => {
+        setUrlState({
+            ...newFilters,
+            page: 1, // Reset to first page when filters change
+        });
+    };
 
     // Handle search
-    const handleSearch = useCallback(
-        (searchTerm: string) => {
-            setUrlState({
-                search: searchTerm || null,
-                page: 1,
-            });
-        },
-        [setUrlState],
-    );
+    const handleSearch = (searchTerm: string) => {
+        setUrlState({
+            search: searchTerm || null,
+            page: 1,
+        });
+    };
 
     // Handle view change
-    const handleViewChange = useCallback(
-        (view: 'table' | 'grid') => {
-            setUrlState({ view });
-        },
-        [setUrlState],
-    );
+    const handleViewChange = (view: 'table' | 'grid') => {
+        setUrlState({ view });
+    };
 
     // Handle pagination
-    const handlePageChange = useCallback(
-        (page: number) => {
-            setUrlState({ page });
-        },
-        [setUrlState],
-    );
+    const handlePageChange = (page: number) => {
+        setUrlState({ page });
+    };
 
     // Refresh all data
-    const handleRefresh = useCallback(() => {
+    const handleRefresh = () => {
         loadFiles();
         loadStats();
-    }, [loadFiles, loadStats]);
+    };
 
-    const currentFilters = useMemo(
-        () => ({
-            categories: urlState.categories,
-            sources: urlState.sources,
-            document_types: urlState.document_types,
-            processing_status: urlState.processing_status,
-        }),
-        [urlState],
-    );
+    const currentFilters = {
+        categories: urlState.categories,
+        sources: urlState.sources,
+        document_types: urlState.document_types,
+        processing_status: urlState.processing_status,
+    };
 
     return (
         <div className="min-h-screen bg-slate-50">

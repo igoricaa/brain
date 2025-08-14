@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import { http } from '@/lib/http';
 import type {
     Deal,
@@ -68,15 +68,13 @@ export function useInfiniteDeals(params: DealSearchParams = {}): UseDealsResult 
         staleTime: 30 * 1000, // 30 seconds
     });
 
-    const deals = useMemo(() => {
-        return data?.pages.flatMap((page) => page.results) ?? [];
-    }, [data]);
+    const deals = data?.pages.flatMap((page) => page.results) ?? [];
 
-    const loadMore = useCallback(() => {
+    const loadMore = () => {
         if (hasNextPage && !isFetching) {
             fetchNextPage();
         }
-    }, [hasNextPage, isFetching, fetchNextPage]);
+    };
 
     return {
         deals,
@@ -102,21 +100,18 @@ export function useSearchDeals(searchParams: DealSearchParams = {}): UseSearchDe
     });
 
     // Combine external params with internal filters
-    const finalParams = useMemo(
-        () => ({
-            ...filters,
-            ...searchParams, // External params take precedence
-            ordering: searchParams.ordering || '-created_at',
-            page_size: searchParams.page_size || 20,
-        }),
-        [searchParams, filters],
-    );
+    const finalParams = {
+        ...filters,
+        ...searchParams, // External params take precedence
+        ordering: searchParams.ordering || '-created_at',
+        page_size: searchParams.page_size || 20,
+    };
 
     const result = useInfiniteDeals(finalParams);
 
-    const clearFilters = useCallback(() => {
+    const clearFilters = () => {
         setFilters({});
-    }, []);
+    };
 
     return {
         ...result,
@@ -143,64 +138,58 @@ export function useDeal(uuid: string) {
 
 // Hook for deal columns configuration
 export function useDealColumns() {
-    return useMemo(
-        () => [
-            {
-                key: 'company',
-                label: 'Company',
-                sortable: true,
-                className: 'w-[280px]',
-            },
-            {
-                key: 'fundraise',
-                label: 'Fundraise',
-                sortable: false,
-                className: '',
-            },
-            {
-                key: 'industries',
-                label: 'Industries',
-                sortable: false,
-                className: '',
-            },
-            {
-                key: 'dual_use_signal',
-                label: 'Dual-use Signal',
-                sortable: false,
-                className: '',
-            },
-            {
-                key: 'grants',
-                label: 'Grants',
-                sortable: false,
-                className: '',
-            },
-            {
-                key: 'actions',
-                label: 'Actions',
-                sortable: false,
-                className: 'w-[100px]',
-            },
-        ],
-        [],
-    );
+    return [
+        {
+            key: 'company',
+            label: 'Company',
+            sortable: true,
+            className: 'w-[280px]',
+        },
+        {
+            key: 'fundraise',
+            label: 'Fundraise',
+            sortable: false,
+            className: '',
+        },
+        {
+            key: 'industries',
+            label: 'Industries',
+            sortable: false,
+            className: '',
+        },
+        {
+            key: 'dual_use_signal',
+            label: 'Dual-use Signal',
+            sortable: false,
+            className: '',
+        },
+        {
+            key: 'grants',
+            label: 'Grants',
+            sortable: false,
+            className: '',
+        },
+        {
+            key: 'actions',
+            label: 'Actions',
+            sortable: false,
+            className: 'w-[100px]',
+        },
+    ];
 }
 
 // Utility hook for URL state synchronization
 export function useUrlParams() {
     const [params, setParams] = useState(() => new URLSearchParams(window.location.search));
 
-    const updateParams = useCallback(
-        (updater: (p: URLSearchParams) => void) => {
-            const next = new URLSearchParams(params.toString());
-            updater(next);
-            const qs = next.toString();
-            const href = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-            window.history.replaceState({}, '', href);
-            setParams(next);
-        },
-        [params],
-    );
+    const updateParams = (updater: (p: URLSearchParams) => void) => {
+        const next = new URLSearchParams(params.toString());
+        updater(next);
+        const qs = next.toString();
+        const href = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+        window.history.replaceState({}, '', href);
+        setParams(next);
+    };
 
     return { params, updateParams };
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
     useLibrarySources,
     useCompanyLibraryFiles,
@@ -79,12 +79,12 @@ export function RelatedDocumentsPanel({
     );
     const sources = useSourcesWrapper();
 
-    const showingRange = useMemo(() => {
+    const showingRange = (() => {
         if (!data.results || typeof data.count !== 'number') return null;
         const start = (page - 1) * size + 1;
         const end = Math.min(page * size, data.count);
         return { start, end, total: data.count };
-    }, [data.results, data.count, page, size]);
+    })();
 
     if (!companyUuid) {
         return (

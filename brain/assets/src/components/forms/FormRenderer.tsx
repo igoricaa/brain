@@ -148,13 +148,9 @@ export function FormRenderer<TOutput extends Record<string, unknown> = Record<st
     // Determine if async validation is enabled
     const hasAsyncValidation = fields.some((field) => field.asyncValidation);
 
-    const schema = React.useMemo(
-        () =>
-            buildSchema(fields, {
-                asyncValidationEnabled: hasAsyncValidation,
-            }),
-        [fields, hasAsyncValidation],
-    );
+    const schema = buildSchema(fields, {
+        asyncValidationEnabled: hasAsyncValidation,
+    });
 
     const form = useForm<Record<string, unknown>>({
         resolver: zodResolver(schema),
@@ -171,17 +167,15 @@ export function FormRenderer<TOutput extends Record<string, unknown> = Record<st
     const [touchedFields, setTouchedFields] = React.useState<Set<string>>(new Set());
 
     // Create async validation rules from fields
-    const asyncValidationRules = React.useMemo(() => {
-        return fields.reduce(
-            (acc, field) => {
-                if (field.asyncValidation) {
-                    acc[field.name] = field.asyncValidation;
-                }
-                return acc;
-            },
-            {} as Record<string, AsyncValidationRule>,
-        );
-    }, [fields]);
+    const asyncValidationRules = fields.reduce(
+        (acc, field) => {
+            if (field.asyncValidation) {
+                acc[field.name] = field.asyncValidation;
+            }
+            return acc;
+        },
+        {} as Record<string, AsyncValidationRule>,
+    );
 
     // Use async validation hook
     const asyncValidation = useFormAsyncValidation({

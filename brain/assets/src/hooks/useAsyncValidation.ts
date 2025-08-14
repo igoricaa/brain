@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
     AsyncValidationRule,
     AsyncValidationResult,
@@ -91,21 +91,21 @@ export function useAsyncValidation({
     );
 
     // Manual validation trigger
-    const validate = useCallback(() => {
+    const validate = () => {
         if (shouldValidate) {
             query.refetch();
         }
-    }, [shouldValidate, query]);
+    };
 
     // Clear validation state
-    const clear = useCallback(() => {
+    const clear = () => {
         queryClient.removeQueries({ queryKey: cacheKey });
-    }, [queryClient, cacheKey]);
+    };
 
     // Cancel ongoing validation
-    const cancel = useCallback(() => {
+    const cancel = () => {
         queryClient.cancelQueries({ queryKey: cacheKey });
-    }, [queryClient, cacheKey]);
+    };
 
     // Handle value changes (with debouncing)
     useEffect(() => {
@@ -122,11 +122,11 @@ export function useAsyncValidation({
     }, [dependencies, validate, isTouched]);
 
     // Handle blur events (immediate validation)
-    const validateOnBlur = useCallback(() => {
+    const validateOnBlur = () => {
         if (shouldTriggerValidation('blur', rule, config)) {
             validate();
         }
-    }, [validate, rule, config]);
+    };
 
     // Expose blur handler for external use
     useEffect(() => {
@@ -235,14 +235,14 @@ export function useFormAsyncValidation({
         );
 
     // Manual validation for all fields
-    const validateAll = useCallback(() => {
+    const validateAll = () => {
         Object.values(validationResults).forEach((result) => result.validate());
-    }, [validationResults]);
+    };
 
     // Clear all validation states
-    const clearAll = useCallback(() => {
+    const clearAll = () => {
         Object.values(validationResults).forEach((result) => result.clear());
-    }, [validationResults]);
+    };
 
     return {
         validationResults,

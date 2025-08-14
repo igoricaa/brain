@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     useReactTable,
     getCoreRowModel,
@@ -101,7 +101,6 @@ const deleteDeal = async (dealId: string): Promise<void> => {
     await http.delete(`/deals/deals/${dealId}/`);
 };
 
-
 // Format funding amount
 const formatFundingAmount = (amount?: number): string => {
     if (!amount) return '-';
@@ -197,7 +196,7 @@ export default function DealsListPage() {
     // URL state management
     const [urlState, setUrlState] = useQueryStates(urlStateConfig);
     const { q: searchQuery, status, page } = urlState;
-    
+
     // Local search state for immediate input updates
     const [localSearchValue, setLocalSearchValue] = useState(searchQuery);
 
@@ -205,7 +204,7 @@ export default function DealsListPage() {
     const debouncedSearch = useDebouncedCallback((value: string) => {
         setUrlState({ q: value, page: 1 });
     }, 300);
-    
+
     // Sync URL state back to local state when it changes
     useEffect(() => {
         setLocalSearchValue(searchQuery);
@@ -254,251 +253,246 @@ export default function DealsListPage() {
     });
 
     // Table columns definition
-    const columns = useMemo<ColumnDef<Deal>[]>(
-        () => [
-            {
-                id: 'select',
-                header: ({ table }) => (
-                    <Checkbox
-                        checked={table.getIsAllPageRowsSelected()}
-                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label="Select all"
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                    />
-                ),
-                enableSorting: false,
-                enableHiding: false,
-            },
-            {
-                accessorKey: 'company.name',
-                header: 'Company Name',
-                cell: ({ row }) => {
-                    const deal = row.original;
-                    return (
-                        <div className="flex flex-col">
-                            <a
-                                href={`/deals/${deal.uuid}/`}
-                                className="font-medium text-blue-600 hover:text-blue-800"
-                            >
-                                {deal.company.name}
-                            </a>
-                            {deal.company.hq_location && (
-                                <span className="text-sm text-gray-500">
-                                    {deal.company.hq_location}
-                                </span>
-                            )}
-                        </div>
-                    );
-                },
-            },
-            {
-                accessorKey: 'funding_target',
-                header: 'Fundraise',
-                cell: ({ row }) => {
-                    const deal = row.original;
-                    return (
-                        <span className="text-sm">{formatFundingAmount(deal.funding_target)}</span>
-                    );
-                },
-            },
-            {
-                accessorKey: 'status',
-                header: 'Deal Status',
-                cell: ({ row }) => {
-                    const deal = row.original;
-                    const statusColors = {
-                        new: 'bg-blue-100 text-blue-800',
-                        active: 'bg-green-100 text-green-800',
-                        'subcommittee vetting': 'bg-yellow-100 text-yellow-800',
-                    };
-
-                    // Count number of assessments (for now just show 1 if there's a last assessment date)
-                    const assessmentCount = deal.last_assessment_created_at ? 1 : 0;
-                    const statusText =
-                        deal.status === 'active' && assessmentCount > 0
-                            ? `Active (${assessmentCount}x run)`
-                            : deal.status;
-
-                    return (
-                        <Badge
-                            className={
-                                statusColors[deal.status as keyof typeof statusColors] ||
-                                'bg-gray-100 text-gray-800'
-                            }
+    const columns: ColumnDef<Deal>[] = [
+        {
+            id: 'select',
+            header: ({ table }) => (
+                <Checkbox
+                    checked={table.getIsAllPageRowsSelected()}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+        },
+        {
+            accessorKey: 'company.name',
+            header: 'Company Name',
+            cell: ({ row }) => {
+                const deal = row.original;
+                return (
+                    <div className="flex flex-col">
+                        <a
+                            href={`/deals/${deal.uuid}/`}
+                            className="font-medium text-blue-600 hover:text-blue-800"
                         >
-                            {statusText}
-                        </Badge>
-                    );
-                },
+                            {deal.company.name}
+                        </a>
+                        {deal.company.hq_location && (
+                            <span className="text-sm text-gray-500">
+                                {deal.company.hq_location}
+                            </span>
+                        )}
+                    </div>
+                );
             },
-            {
-                accessorKey: 'industries',
-                header: 'Industries',
-                cell: ({ row }) => {
-                    const industries = row.original.industries;
-                    if (!industries?.length) return <span className="text-gray-400">-</span>;
+        },
+        {
+            accessorKey: 'funding_target',
+            header: 'Fundraise',
+            cell: ({ row }) => {
+                const deal = row.original;
+                return <span className="text-sm">{formatFundingAmount(deal.funding_target)}</span>;
+            },
+        },
+        {
+            accessorKey: 'status',
+            header: 'Deal Status',
+            cell: ({ row }) => {
+                const deal = row.original;
+                const statusColors = {
+                    new: 'bg-blue-100 text-blue-800',
+                    active: 'bg-green-100 text-green-800',
+                    'subcommittee vetting': 'bg-yellow-100 text-yellow-800',
+                };
 
-                    return (
-                        <div className="flex flex-wrap gap-1">
-                            {industries.slice(0, 2).map((industry) => (
-                                <Badge
-                                    key={industry.uuid}
-                                    style={{
-                                        backgroundColor: industry.bg_color,
-                                        color: industry.text_color,
-                                    }}
-                                    className="text-xs"
+                // Count number of assessments (for now just show 1 if there's a last assessment date)
+                const assessmentCount = deal.last_assessment_created_at ? 1 : 0;
+                const statusText =
+                    deal.status === 'active' && assessmentCount > 0
+                        ? `Active (${assessmentCount}x run)`
+                        : deal.status;
+
+                return (
+                    <Badge
+                        className={
+                            statusColors[deal.status as keyof typeof statusColors] ||
+                            'bg-gray-100 text-gray-800'
+                        }
+                    >
+                        {statusText}
+                    </Badge>
+                );
+            },
+        },
+        {
+            accessorKey: 'industries',
+            header: 'Industries',
+            cell: ({ row }) => {
+                const industries = row.original.industries;
+                if (!industries?.length) return <span className="text-gray-400">-</span>;
+
+                return (
+                    <div className="flex flex-wrap gap-1">
+                        {industries.slice(0, 2).map((industry) => (
+                            <Badge
+                                key={industry.uuid}
+                                style={{
+                                    backgroundColor: industry.bg_color,
+                                    color: industry.text_color,
+                                }}
+                                className="text-xs"
+                            >
+                                {industry.name}
+                            </Badge>
+                        ))}
+                        {industries.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                                +{industries.length - 2}
+                            </Badge>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: 'dual_use_signals',
+            header: 'Dual-use Signals',
+            cell: ({ row }) => {
+                const signals = row.original.dual_use_signals;
+                if (!signals?.length) return <span className="text-gray-400">-</span>;
+
+                return (
+                    <div className="flex flex-wrap gap-1">
+                        {signals.slice(0, 2).map((signal) => (
+                            <Badge
+                                key={signal.uuid}
+                                style={{
+                                    backgroundColor: signal?.category?.bg_color || '#e5e7eb',
+                                    color: signal?.category?.text_color || '#374151',
+                                }}
+                                className="text-xs"
+                            >
+                                {signal.code}
+                            </Badge>
+                        ))}
+                        {signals.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                                +{signals.length - 2}
+                            </Badge>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            id: 'external_signals',
+            header: 'External Signals',
+            cell: ({ row }) => {
+                const deal = row.original;
+                const company = deal.company;
+
+                // Get actual counts from data (we'll need to add these to the API response)
+                const foundersCount = (company as any)?.founders_count || 0;
+                const grantsCount = (deal as any).grants_count || 0;
+                const patentsCount = (company as any)?.patents_count || 0;
+
+                const signals = [];
+                if (foundersCount > 0) {
+                    signals.push({
+                        icon: Users,
+                        count: foundersCount,
+                        label: 'Founder profiles',
+                    });
+                }
+                if (grantsCount > 0) {
+                    signals.push({ icon: FileText, count: grantsCount, label: 'Grants' });
+                }
+                if (patentsCount > 0) {
+                    signals.push({
+                        icon: Building2,
+                        count: patentsCount,
+                        label: 'Patent applications',
+                    });
+                }
+
+                if (signals.length === 0) {
+                    return <span className="text-gray-400 text-xs">No external data</span>;
+                }
+
+                return (
+                    <div className="space-y-1">
+                        {signals.map((signal, idx) => (
+                            <div
+                                key={idx}
+                                className="flex items-center gap-1 text-xs text-gray-600"
+                            >
+                                <signal.icon className="h-3 w-3" />
+                                <span>
+                                    {signal.count} {signal.label}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                );
+            },
+        },
+        {
+            id: 'actions',
+            header: 'Actions',
+            cell: ({ row }) => {
+                const deal = row.original;
+
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                                <a
+                                    href={`/deals/${deal.uuid}/`}
+                                    className="flex items-center gap-2"
                                 >
-                                    {industry.name}
-                                </Badge>
-                            ))}
-                            {industries.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                    +{industries.length - 2}
-                                </Badge>
-                            )}
-                        </div>
-                    );
-                },
-            },
-            {
-                accessorKey: 'dual_use_signals',
-                header: 'Dual-use Signals',
-                cell: ({ row }) => {
-                    const signals = row.original.dual_use_signals;
-                    if (!signals?.length) return <span className="text-gray-400">-</span>;
-
-                    return (
-                        <div className="flex flex-wrap gap-1">
-                            {signals.slice(0, 2).map((signal) => (
-                                <Badge
-                                    key={signal.uuid}
-                                    style={{
-                                        backgroundColor: signal?.category?.bg_color || '#e5e7eb',
-                                        color: signal?.category?.text_color || '#374151',
-                                    }}
-                                    className="text-xs"
+                                    <Eye className="h-4 w-4" />
+                                    View
+                                </a>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <a
+                                    href={`/deals/${deal.uuid}/assessment/`}
+                                    className="flex items-center gap-2"
                                 >
-                                    {signal.code}
-                                </Badge>
-                            ))}
-                            {signals.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                    +{signals.length - 2}
-                                </Badge>
-                            )}
-                        </div>
-                    );
-                },
+                                    <Edit className="h-4 w-4" />
+                                    Edit
+                                </a>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    setSelectedDealForDelete(deal.uuid);
+                                    setDeleteDialogOpen(true);
+                                }}
+                                className="text-red-600"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                );
             },
-            {
-                id: 'external_signals',
-                header: 'External Signals',
-                cell: ({ row }) => {
-                    const deal = row.original;
-                    const company = deal.company;
-
-                    // Get actual counts from data (we'll need to add these to the API response)
-                    const foundersCount = (company as any)?.founders_count || 0;
-                    const grantsCount = (deal as any).grants_count || 0;
-                    const patentsCount = (company as any)?.patents_count || 0;
-
-                    const signals = [];
-                    if (foundersCount > 0) {
-                        signals.push({
-                            icon: Users,
-                            count: foundersCount,
-                            label: 'Founder profiles',
-                        });
-                    }
-                    if (grantsCount > 0) {
-                        signals.push({ icon: FileText, count: grantsCount, label: 'Grants' });
-                    }
-                    if (patentsCount > 0) {
-                        signals.push({
-                            icon: Building2,
-                            count: patentsCount,
-                            label: 'Patent applications',
-                        });
-                    }
-
-                    if (signals.length === 0) {
-                        return <span className="text-gray-400 text-xs">No external data</span>;
-                    }
-
-                    return (
-                        <div className="space-y-1">
-                            {signals.map((signal, idx) => (
-                                <div
-                                    key={idx}
-                                    className="flex items-center gap-1 text-xs text-gray-600"
-                                >
-                                    <signal.icon className="h-3 w-3" />
-                                    <span>
-                                        {signal.count} {signal.label}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    );
-                },
-            },
-            {
-                id: 'actions',
-                header: 'Actions',
-                cell: ({ row }) => {
-                    const deal = row.original;
-
-                    return (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild>
-                                    <a
-                                        href={`/deals/${deal.uuid}/`}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Eye className="h-4 w-4" />
-                                        View
-                                    </a>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <a
-                                        href={`/deals/${deal.uuid}/assessment/`}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Edit className="h-4 w-4" />
-                                        Edit
-                                    </a>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => {
-                                        setSelectedDealForDelete(deal.uuid);
-                                        setDeleteDialogOpen(true);
-                                    }}
-                                    className="text-red-600"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                    Delete
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    );
-                },
-            },
-        ],
-        [],
-    );
+        },
+    ];
 
     // Table instance
     const table = useReactTable({
@@ -517,31 +511,25 @@ export default function DealsListPage() {
     });
 
     // Event handlers
-    const handleStatusFilterChange = useCallback(
-        (value: string) => {
-            setRowSelection({}); // Clear selection when switching tabs
-            setUrlState({ status: value as any, page: 1 });
-        },
-        [setUrlState],
-    );
+    const handleStatusFilterChange = (value: string) => {
+        setRowSelection({}); // Clear selection when switching tabs
+        setUrlState({ status: value as any, page: 1 });
+    };
 
-    const handleSearchChange = useCallback(
-        (value: string) => {
-            setLocalSearchValue(value); // Update local state immediately
-            debouncedSearch(value);
-        },
-        [debouncedSearch],
-    );
+    const handleSearchChange = (value: string) => {
+        setLocalSearchValue(value); // Update local state immediately
+        debouncedSearch(value);
+    };
 
-    const handleSingleDelete = useCallback(() => {
+    const handleSingleDelete = () => {
         if (selectedDealForDelete) {
             deleteMutation.mutate(selectedDealForDelete);
             setDeleteDialogOpen(false);
             setSelectedDealForDelete(null);
         }
-    }, [selectedDealForDelete, deleteMutation]);
+    };
 
-    const handleBulkDelete = useCallback(() => {
+    const handleBulkDelete = () => {
         const selectedRows = table.getFilteredSelectedRowModel().rows;
         const dealIds = selectedRows.map((row) => row.original.uuid);
 
@@ -549,7 +537,7 @@ export default function DealsListPage() {
             bulkDeleteMutation.mutate(dealIds);
             setBulkDeleteDialogOpen(false);
         }
-    }, [table, bulkDeleteMutation]);
+    };
 
     const selectedRowsCount = Object.keys(rowSelection).length;
     const totalCount = data?.count || 0;
@@ -605,7 +593,7 @@ export default function DealsListPage() {
                         Delete {selectedRowsCount > 0 ? `(${selectedRowsCount})` : ''}
                     </Button>
                 </div>
-                
+
                 {/* Status Tabs */}
                 <Tabs value={status} onValueChange={handleStatusFilterChange}>
                     <TabsList className="grid w-full grid-cols-4">

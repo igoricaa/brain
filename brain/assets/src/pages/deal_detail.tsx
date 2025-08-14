@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@/lib/http';
@@ -503,90 +503,68 @@ function AnalystAssessmentSection({
     const [savingFields, setSavingFields] = useState<Set<string>>(new Set());
 
     // Original values for dirty state comparison
-    const originalValues = useMemo(
-        () => ({
-            problem_solved: assessment?.problem_solved || '',
-            solution: assessment?.solution || '',
-            customer_traction: assessment?.customer_traction || '',
-            intellectual_property: assessment?.intellectual_property || '',
-            business_model: assessment?.business_model || '',
-            tam: assessment?.tam || '',
-            competition: assessment?.competition || '',
-            investment_rationale: assessment?.investment_rationale || '',
-            pros: assessment?.pros || '',
-            cons: assessment?.cons || '',
-            recommendation: assessment?.recommendation || '',
-            quality_percentile: assessment?.quality_percentile || '',
-        }),
-        [assessment],
-    );
+    const originalValues = {
+        problem_solved: assessment?.problem_solved || '',
+        solution: assessment?.solution || '',
+        customer_traction: assessment?.customer_traction || '',
+        intellectual_property: assessment?.intellectual_property || '',
+        business_model: assessment?.business_model || '',
+        tam: assessment?.tam || '',
+        competition: assessment?.competition || '',
+        investment_rationale: assessment?.investment_rationale || '',
+        pros: assessment?.pros || '',
+        cons: assessment?.cons || '',
+        recommendation: assessment?.recommendation || '',
+        quality_percentile: assessment?.quality_percentile || '',
+    };
 
     // Current values for dirty state comparison
-    const currentValues = useMemo(
-        () => ({
-            problem_solved: problemSolved,
-            solution: solution,
-            customer_traction: customerTraction,
-            intellectual_property: intellectualProperty,
-            business_model: businessModel,
-            tam: tam,
-            competition: competition,
-            investment_rationale: rationale,
-            pros: pros,
-            cons: cons,
-            recommendation: recommendation,
-            quality_percentile: quality,
-        }),
-        [
-            problemSolved,
-            solution,
-            customerTraction,
-            intellectualProperty,
-            businessModel,
-            tam,
-            competition,
-            rationale,
-            pros,
-            cons,
-            recommendation,
-            quality,
-        ],
-    );
+    const currentValues = {
+        problem_solved: problemSolved,
+        solution: solution,
+        customer_traction: customerTraction,
+        intellectual_property: intellectualProperty,
+        business_model: businessModel,
+        tam: tam,
+        competition: competition,
+        investment_rationale: rationale,
+        pros: pros,
+        cons: cons,
+        recommendation: recommendation,
+        quality_percentile: quality,
+    };
 
     // Save on blur handler
-    const handleBlur = useCallback(
-        async (field: string) => {
-            // Check if field value has changed
-            const currentValue = currentValues[field as keyof typeof currentValues];
-            const originalValue = originalValues[field as keyof typeof originalValues];
+    const handleBlur = async (field: string) => {
+        // Check if field value has changed
+        const currentValue = currentValues[field as keyof typeof currentValues];
+        const originalValue = originalValues[field as keyof typeof originalValues];
 
-            if (currentValue === originalValue) {
-                return; // No change, don't save
-            }
+        if (currentValue === originalValue) {
+            return; // No change, don't save
+        }
 
-            // Check if already saving this field
-            if (savingFields.has(field)) {
-                return;
-            }
+        // Check if already saving this field
+        if (savingFields.has(field)) {
+            return;
+        }
 
-            setSavingFields((prev) => new Set([...prev, field]));
+        setSavingFields((prev) => new Set([...prev, field]));
 
-            try {
-                await onSave({ [field]: currentValue });
-                toast.success('Changes saved successfully');
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Failed to save';
-                toast.error(`Failed to save: ${errorMessage}`);
-            } finally {
-                setSavingFields((prev) => {
-                    const next = new Set(prev);
-                    next.delete(field);
-                    return next;
-                });
-            }
-        },
-        [currentValues, originalValues, savingFields, onSave],
-    );
+        try {
+            await onSave({ [field]: currentValue });
+            toast.success('Changes saved successfully');
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to save';
+            toast.error(`Failed to save: ${errorMessage}`);
+        } finally {
+            setSavingFields((prev) => {
+                const next = new Set(prev);
+                next.delete(field);
+                return next;
+            });
+        }
+    };
 
     // Sync state when data changes
     useEffect(() => {
@@ -981,14 +959,14 @@ function DealDetailApp({ uuid }: { uuid: string }) {
     const [isDualUseSignalsModalOpen, setIsDualUseSignalsModalOpen] = useState(false);
 
     // Calculate new files count for actions bar
-    const newFilesCount = useMemo(() => {
+    const newFilesCount = (() => {
         if (!deal?.last_assessment_created_at) return 0;
 
         const allFiles = [...decks, ...papers, ...files];
         return allFiles.filter((file) =>
             isNewSinceLastAssessment(file.created_at, deal.last_assessment_created_at),
         ).length;
-    }, [decks, papers, files, deal?.last_assessment_created_at]);
+    })();
 
     async function saveAssessment(patch: Partial<DealAssessment>): Promise<DealAssessment> {
         // Validate input data

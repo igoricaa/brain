@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Line, Pie, Bar } from 'react-chartjs-2';
-import { colorPalette, simpleLineOptions, simpleBarOptions, simplePieOptions } from '../lib/charts';
+import { colorPalette, simpleLineOptions, simplePieOptions } from '../lib/charts';
 import { queryClient } from '../lib/queryClient';
 import {
     useDashboardData,
@@ -184,11 +184,8 @@ function RecentActivity() {
 function DealsDashboardApp() {
     const { data, loading, error } = useDashboardDataWithParams();
 
-    const trendData = useMemo(
-        () => (data ? toLineData(data.date_count_trend, 'Deals per day') : null),
-        [data],
-    );
-    const fundingData = useMemo(() => (data ? toPieData(data.funding_stage_count) : null), [data]);
+    const trendData = data ? toLineData(data.date_count_trend, 'Deals per day') : null;
+    const fundingData = data ? toPieData(data.funding_stage_count) : null;
 
     const chartOptions = {
         ...simpleLineOptions,

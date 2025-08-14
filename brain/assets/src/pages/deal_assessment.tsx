@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../lib/queryClient';
 import FormRenderer, { type FormFieldDef } from '../components/forms/FormRenderer';
@@ -74,40 +74,37 @@ function DealAssessmentApp({ dealUuid }: { dealUuid: string }) {
     const { data: latest, loading, error } = useLatestAssessment(dealUuid);
     const [saved, setSaved] = useState(false);
 
-    const fields = useMemo<FormFieldDef[]>(
-        () => [
-            {
-                name: 'quality_percentile',
-                label: 'Quality Percentile',
-                type: 'select',
-                required: false,
-                options: [
-                    { label: 'Most interesting (Top 1%)', value: 'top 1%' },
-                    { label: 'Very interesting (Top 5%)', value: 'top 5%' },
-                    { label: 'Interesting (Top 10%)', value: 'top 10%' },
-                    { label: 'Potentially interesting (Top 20%)', value: 'top 20%' },
-                    { label: 'Not interesting (Top 50%)', value: 'top 50%' },
-                ],
-            },
-            {
-                name: 'investment_rationale',
-                label: 'Investment Rationale',
-                type: 'textarea',
-                required: false,
-            },
-            { name: 'pros', label: 'Pros', type: 'textarea', required: false },
-            { name: 'cons', label: 'Cons', type: 'textarea', required: false },
-            {
-                name: 'send_to_affinity',
-                label: 'Send to Affinity',
-                type: 'checkbox',
-                required: false,
-            },
-        ],
-        [],
-    );
+    const fields: FormFieldDef[] = [
+        {
+            name: 'quality_percentile',
+            label: 'Quality Percentile',
+            type: 'select',
+            required: false,
+            options: [
+                { label: 'Most interesting (Top 1%)', value: 'top 1%' },
+                { label: 'Very interesting (Top 5%)', value: 'top 5%' },
+                { label: 'Interesting (Top 10%)', value: 'top 10%' },
+                { label: 'Potentially interesting (Top 20%)', value: 'top 20%' },
+                { label: 'Not interesting (Top 50%)', value: 'top 50%' },
+            ],
+        },
+        {
+            name: 'investment_rationale',
+            label: 'Investment Rationale',
+            type: 'textarea',
+            required: false,
+        },
+        { name: 'pros', label: 'Pros', type: 'textarea', required: false },
+        { name: 'cons', label: 'Cons', type: 'textarea', required: false },
+        {
+            name: 'send_to_affinity',
+            label: 'Send to Affinity',
+            type: 'checkbox',
+            required: false,
+        },
+    ];
 
-    const defaults = useMemo(() => {
+    const defaults = (() => {
         const base: Record<string, unknown> = {};
         if (latest) {
             base.quality_percentile = latest.quality_percentile || '';
@@ -117,7 +114,7 @@ function DealAssessmentApp({ dealUuid }: { dealUuid: string }) {
         }
         base.send_to_affinity = false;
         return base;
-    }, [latest]);
+    })();
 
     async function onSubmit(values: Record<string, unknown>) {
         // Separate the send_to_affinity toggle

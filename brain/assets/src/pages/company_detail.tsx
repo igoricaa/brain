@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import FormRenderer, { type FormFieldDef } from '../components/forms/FormRenderer';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -82,10 +82,7 @@ function stripTemplateArtifacts(input?: string | null): string {
 }
 
 function CompanyAbout({ company }: { company: Company }) {
-    const location = useMemo(
-        () => joinLocation(company.hq_country, company.hq_state_name, company.hq_city_name),
-        [company.hq_country, company.hq_state_name, company.hq_city_name],
-    );
+    const location = joinLocation(company.hq_country, company.hq_state_name, company.hq_city_name);
 
     return (
         <>

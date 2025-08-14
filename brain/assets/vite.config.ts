@@ -17,9 +17,9 @@ export default defineConfig(({ mode }) => ({
                     [
                         'babel-plugin-react-compiler',
                         {
-                            // Start with annotation mode for controlled rollout
-                            // Components must opt-in with "use memo" directive
-                            mode: 'annotation',
+                            // Switch to infer mode for automatic optimization
+                            // Compiler automatically detects components/hooks by naming patterns
+                            mode: 'infer',
                         },
                     ],
                 ],

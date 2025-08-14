@@ -42,7 +42,7 @@ export default function BulkDeleteConfirmDialog({
     };
 
     // Group files by processing status for better visibility
-    const filesByStatus = React.useMemo(() => {
+    const filesByStatus = (() => {
         const groups: Record<string, FileTableData[]> = {};
         selectedFiles.forEach((file) => {
             const status = file.processing_status;
@@ -52,7 +52,7 @@ export default function BulkDeleteConfirmDialog({
             groups[status].push(file);
         });
         return groups;
-    }, [selectedFiles]);
+    })();
 
     const hasProcessingFiles = selectedFiles.some(
         (file) => file.processing_status === 'processing' || file.processing_status === 'pending',

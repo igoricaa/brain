@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import {
     flexRender,
     getCoreRowModel,
@@ -162,13 +162,9 @@ export default function FileTable({
     const [bulkMetadataDialogOpen, setBulkMetadataDialogOpen] = useState(false);
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
-    const selectedFileIds = useMemo(() => {
-        return Object.keys(rowSelection).filter((key) => rowSelection[key]);
-    }, [rowSelection]);
+    const selectedFileIds = Object.keys(rowSelection).filter((key) => rowSelection[key]);
 
-    const selectedFileObjects = useMemo(() => {
-        return files.filter((file) => selectedFileIds.includes(file.uuid));
-    }, [files, selectedFileIds]);
+    const selectedFileObjects = files.filter((file) => selectedFileIds.includes(file.uuid));
 
     const handleFileAction = useCallback(
         async (

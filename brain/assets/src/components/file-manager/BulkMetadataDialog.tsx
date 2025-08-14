@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -178,20 +178,20 @@ export default function BulkMetadataDialog({
     }, [open, form]);
 
     // Get unique values from selected files for reference
-    const uniqueCategories = React.useMemo(() => {
+    const uniqueCategories = (() => {
         const categories = [...new Set(selectedFiles.map((f) => f.category))];
         return categories.filter(Boolean);
-    }, [selectedFiles]);
+    })();
 
-    const uniqueDocTypes = React.useMemo(() => {
+    const uniqueDocTypes = (() => {
         const docTypes = [...new Set(selectedFiles.map((f) => f.document_type).filter(Boolean))];
         return docTypes;
-    }, [selectedFiles]);
+    })();
 
-    const uniqueTags = React.useMemo(() => {
+    const uniqueTags = (() => {
         const allTags = selectedFiles.flatMap((f) => f.tags || []);
         return [...new Set(allTags)];
-    }, [selectedFiles]);
+    })();
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

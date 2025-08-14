@@ -1,15 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Pie, Bar } from 'react-chartjs-2';
 import { colorPalette, simplePieOptions, simpleBarOptions } from '../lib/charts';
 import { queryClient } from '../lib/queryClient';
-import {
-    useDualUseSummary,
-    useDualUseSignals,
-    type DualUseSummaryData,
-    type CountByName,
-} from '../hooks/useDashboard';
+import { useDualUseSummary, useDualUseSignals, type CountByName } from '../hooks/useDashboard';
 
 function useQueryParams() {
     const [params, setParams] = useState(() => new URLSearchParams(window.location.search));
@@ -103,31 +98,13 @@ function DuDashboardApp() {
     const categoryName = params.get('category_name') || '';
     const hqCountry = params.get('hq_country') || '';
 
-    const hqCountryData = useMemo(
-        () => (data ? toPieData(data.hq_country_company_count) : null),
-        [data],
-    );
-    const hqStateData = useMemo(
-        () => (data ? toPieData(data.hq_state_company_count) : null),
-        [data],
-    );
-    const hqCityData = useMemo(() => (data ? toPieData(data.hq_city_company_count) : null), [data]);
-    const techTypeData = useMemo(
-        () => (data ? toBarData(data.tech_type_company_count, 12) : null),
-        [data],
-    );
-    const industriesData = useMemo(
-        () => (data ? toBarData(data.industries_company_count, 12) : null),
-        [data],
-    );
-    const yearFoundedData = useMemo(
-        () => (data ? toBarData(data.year_founded_company_count, 20) : null),
-        [data],
-    );
-    const foundersCountData = useMemo(
-        () => (data ? toBarData(data.founders_count_company_count, 10) : null),
-        [data],
-    );
+    const hqCountryData = data ? toPieData(data.hq_country_company_count) : null;
+    const hqStateData = data ? toPieData(data.hq_state_company_count) : null;
+    const hqCityData = data ? toPieData(data.hq_city_company_count) : null;
+    const techTypeData = data ? toBarData(data.tech_type_company_count, 12) : null;
+    const industriesData = data ? toBarData(data.industries_company_count, 12) : null;
+    const yearFoundedData = data ? toBarData(data.year_founded_company_count, 20) : null;
+    const foundersCountData = data ? toBarData(data.founders_count_company_count, 10) : null;
 
     return (
         <div className="container-fluid">

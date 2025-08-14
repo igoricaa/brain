@@ -1,4 +1,4 @@
-import { StrictMode, useCallback, useState } from 'react';
+import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import FileManager from '@/components/file-manager/FileManager';
 import ManageDraftsDialog from '@/components/deals/ManageDraftsDialog';
@@ -10,22 +10,22 @@ function DealUploadApp() {
     const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
     const [isManageDraftsOpen, setIsManageDraftsOpen] = useState(false);
 
-    const handleDraftSubmit = useCallback((dealUuid: string) => {
+    const handleDraftSubmit = (dealUuid: string) => {
         // Add cache-busting parameter to ensure fresh data loads
         const timestamp = Date.now();
         const href = `/deals/${dealUuid}/?t=${timestamp}`;
         window.location.href = href;
-    }, []);
+    };
 
-    const handleCancel = useCallback(() => {
+    const handleCancel = () => {
         // Redirect back to deals list
         window.location.href = '/deals/fresh/';
-    }, []);
+    };
 
-    const handleSelectDraft = useCallback((draftUuid: string) => {
+    const handleSelectDraft = (draftUuid: string) => {
         setCurrentDraftId(draftUuid);
         setIsManageDraftsOpen(false);
-    }, []);
+    };
 
     return (
         <>

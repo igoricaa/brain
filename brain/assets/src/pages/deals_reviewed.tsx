@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState, useMemo, StrictMode } from 'react';
+import { useEffect, useRef, useCallback, useState, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Search, X } from 'lucide-react';
@@ -70,14 +70,11 @@ function ReviewedDealsList({
     // Debounce the search query with 300ms delay
     const debouncedSearchQuery = useDebounce(inputValue, 300);
 
-    // Memoize search parameters - using 'active' status for reviewed deals
-    const searchParams = useMemo(
-        () => ({
-            q: debouncedSearchQuery,
-            status: 'active' as const, // Reviewed deals typically have 'active' status
-        }),
-        [debouncedSearchQuery],
-    );
+    // Search parameters - using 'active' status for reviewed deals
+    const searchParams = {
+        q: debouncedSearchQuery,
+        status: 'active' as const, // Reviewed deals typically have 'active' status
+    };
 
     const { deals, loading, error, hasMore, loadMore, clearFilters, refetch } =
         useSearchDeals(searchParams);
