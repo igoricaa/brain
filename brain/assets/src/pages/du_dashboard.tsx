@@ -1,27 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Pie, Bar } from 'react-chartjs-2';
 import { colorPalette, simplePieOptions, simpleBarOptions } from '../lib/charts';
-
-type CountByName = { name: string; count: number };
-
-type SummaryData = {
-    hq_country_company_count: CountByName[];
-    hq_state_company_count: CountByName[];
-    hq_city_company_count: CountByName[];
-    tech_type_company_count: CountByName[];
-    industries_company_count: CountByName[];
-    year_founded_company_count: CountByName[];
-    founders_count_company_count: CountByName[];
-};
+import { queryClient } from '../lib/queryClient';
+import {
+    useDualUseSummary,
+    useDualUseSignals,
+    type DualUseSummaryData,
+    type CountByName,
+} from '../hooks/useDashboard';
 
 function useQueryParams() {
     const [params, setParams] = useState(() => new URLSearchParams(window.location.search));
-    useEffect(() => {
-        const onPop = () => setParams(new URLSearchParams(window.location.search));
-        window.addEventListener('popstate', onPop);
-        return () => window.removeEventListener('popstate', onPop);
-    }, []);
+
     const update = (updater: (p: URLSearchParams) => void) => {
         const next = new URLSearchParams(params.toString());
         updater(next);
@@ -30,77 +22,27 @@ function useQueryParams() {
         window.history.replaceState({}, '', href);
         setParams(next);
     };
+
     return { params, update };
 }
 
-async function fetchCategories(): Promise<string[]> {
-    try {
-        const resp = await fetch('/api/deals/du-signals/?page_size=500', {
-            credentials: 'same-origin',
-            headers: { Accept: 'application/json' },
-        });
-        if (!resp.ok) return [];
-        const data = await resp.json();
-        const results: any[] = Array.isArray(data.results) ? data.results : data;
-        const names = new Set<string>();
-        for (const sig of results) {
-            const name = sig?.category?.name;
-            if (typeof name === 'string' && name.trim()) names.add(name.trim());
-        }
-        return Array.from(names).sort((a, b) => a.localeCompare(b));
-    } catch {
-        return [];
-    }
-}
-
-function useSummaryData() {
+function useSummaryDataWithParams() {
     const { params, update } = useQueryParams();
     const categoryName = params.get('category_name') || '';
     const hqCountry = params.get('hq_country') || '';
-    const [data, setData] = useState<SummaryData | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
-    const [categories, setCategories] = useState<string[]>([]);
 
-    useEffect(() => {
-        let cancelled = false;
-        fetchCategories().then((cats) => !cancelled && setCategories(cats));
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    const filters = {
+        ...(categoryName ? { category_name: categoryName } : {}),
+        ...(hqCountry ? { hq_country: hqCountry } : {}),
+    };
 
-    useEffect(() => {
-        let cancelled = false;
-        async function run() {
-            setLoading(true);
-            setError(null);
-            try {
-                const qs = new URLSearchParams();
-                if (categoryName) qs.set('category_name', categoryName);
-                if (hqCountry) qs.set('hq_country', hqCountry);
-                const resp = await fetch(
-                    `/api/dual-use/summary/${qs.toString() ? `?${qs.toString()}` : ''}`,
-                    {
-                        credentials: 'same-origin',
-                        headers: { Accept: 'application/json' },
-                    },
-                );
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const json = (await resp.json()) as SummaryData;
-                if (!cancelled) setData(json);
-            } catch (e: unknown) {
-                const message = e instanceof Error ? e.message : 'Failed to load summary';
-                if (!cancelled) setError(message);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        }
-        run();
-        return () => {
-            cancelled = true;
-        };
-    }, [categoryName, hqCountry]);
+    // Fetch summary data
+    const { data, isLoading: loading, error: queryError } = useDualUseSummary(filters);
+    const error = queryError ? String(queryError) : null;
+
+    // Fetch categories for dropdown
+    const { data: signalsData } = useDualUseSignals();
+    const categories = signalsData?.categories || [];
 
     return { data, loading, error, params, update, categories };
 }
@@ -157,7 +99,7 @@ function InlineLegend({ labels, colors }: { labels: string[]; colors: string[] }
 }
 
 function DuDashboardApp() {
-    const { data, loading, error, params, update, categories } = useSummaryData();
+    const { data, loading, error, params, update, categories } = useSummaryDataWithParams();
     const categoryName = params.get('category_name') || '';
     const hqCountry = params.get('hq_country') || '';
 
@@ -324,7 +266,11 @@ function mount() {
     const el = document.getElementById('du-dashboard-root');
     if (!el) return;
     const root = createRoot(el);
-    root.render(<DuDashboardApp />);
+    root.render(
+        <QueryClientProvider client={queryClient}>
+            <DuDashboardApp />
+        </QueryClientProvider>,
+    );
 }
 
 export function initialize() {

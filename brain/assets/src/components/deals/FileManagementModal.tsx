@@ -226,32 +226,12 @@ const FileUploader = ({
                 ]);
 
                 try {
-                    // Get CSRF token
-                    const getCookie = (name: string) => {
-                        const match = document.cookie.match(
-                            '(?:^|; )' +
-                                name.replace(/([.$?*|{}()\[\]\\/\+^])/g, '\\$1') +
-                                '=([^;]*)',
-                        );
-                        return match ? decodeURIComponent(match[1]) : null;
-                    };
-
-                    const csrfToken = getCookie('csrftoken');
-                    const headers: HeadersInit = {};
-                    if (csrfToken) {
-                        headers['X-CSRFToken'] = csrfToken;
-                    }
-
-                    const response = await fetch('/api/deals/files/', {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'same-origin',
-                        headers,
+                    const response = await http.post('/deals/files/', formData, {
+                        headers: {
+                            // Let the browser set the Content-Type with boundary for FormData
+                            'Content-Type': undefined,
+                        },
                     });
-
-                    if (!response.ok) {
-                        throw new Error(`Upload failed: ${response.statusText}`);
-                    }
 
                     // Update success status
                     setUploads((prev) =>
@@ -262,7 +242,7 @@ const FileUploader = ({
                         ),
                     );
 
-                    return await response.json();
+                    return response;
                 } catch (error) {
                     // Update error status
                     setUploads((prev) =>

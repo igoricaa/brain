@@ -134,7 +134,7 @@ class FounderViewSet(viewsets.ModelViewSet):
         description=_('Retrieve details of a specific advisor.'),
     ),
 )
-class AdvisorViewSet(viewsets.ReadOnlyModelViewSet):
+class AdvisorViewSet(viewsets.ModelViewSet):
 
     serializer_class = AdvisorSerializer
     filterset_class = AdvisorFilter

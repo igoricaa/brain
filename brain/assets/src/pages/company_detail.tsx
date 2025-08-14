@@ -3,10 +3,14 @@ import { createRoot } from 'react-dom/client';
 import FormRenderer, { type FormFieldDef } from '../components/forms/FormRenderer';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../lib/queryClient';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
 import { Separator } from '../components/ui/separator';
 import { ExternalLink, Building, FileText, Filter } from 'lucide-react';
+import { useCompanyData } from '../hooks/useCompanyData';
+import {
+    useLibrarySources,
+    useCompanyLibraryFiles,
+    getLibraryFileDisplayName,
+} from '../hooks/useLibrary';
 // API helpers used by FormRenderer internally
 
 type Company = {
@@ -58,41 +62,6 @@ type LibrarySource = { uuid: string; name: string; code?: string | null };
 
 function joinLocation(country?: string | null, state?: string | null, city?: string | null) {
     return [city, state, country].filter(Boolean).join(', ');
-}
-
-function useCompany(uuid: string | null) {
-    const [data, setData] = useState<Company | null>(null);
-    const [loading, setLoading] = useState<boolean>(!!uuid);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        let cancelled = false;
-        async function run() {
-            if (!uuid) return;
-            setLoading(true);
-            setError(null);
-            try {
-                const resp = await fetch(`/api/companies/companies/${uuid}/`, {
-                    credentials: 'same-origin',
-                    headers: { Accept: 'application/json' },
-                });
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const json = (await resp.json()) as Company;
-                if (!cancelled) setData(json);
-            } catch (e: unknown) {
-                const message = e instanceof Error ? e.message : 'Failed to load company';
-                if (!cancelled) setError(message);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        }
-        run();
-        return () => {
-            cancelled = true;
-        };
-    }, [uuid]);
-
-    return { data, loading, error };
 }
 
 function stripTemplateArtifacts(input?: string | null): string {
@@ -205,92 +174,29 @@ function buildMergedLink(merge: Record<string, string | null>) {
     return qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
 }
 
-function useLibraryFiles(
+// Use TanStack Query hook for library files
+function useLibraryFilesWrapper(
     companyUuid: string,
     page: number,
     pageSize: number,
     source?: string | null,
 ) {
-    const [data, setData] = useState<ApiList<LibraryFile>>({});
-    const [loading, setLoading] = useState<boolean>(!!companyUuid);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        let cancelled = false;
-        async function run() {
-            if (!companyUuid) return;
-            setLoading(true);
-            setError(null);
-            try {
-                const sp = new URLSearchParams();
-                sp.set('company', companyUuid);
-                sp.set('page', String(page));
-                sp.set('page_size', String(pageSize));
-                if (source) sp.set('source', source);
-                const resp = await fetch(`/api/library/files/?${sp.toString()}`, {
-                    credentials: 'same-origin',
-                    headers: { Accept: 'application/json' },
-                });
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const json = (await resp.json()) as ApiList<LibraryFile> | LibraryFile[];
-                const normalized: ApiList<LibraryFile> = Array.isArray(json)
-                    ? { count: (json as LibraryFile[]).length, results: json as LibraryFile[] }
-                    : (json as ApiList<LibraryFile>);
-                if (!cancelled) setData(normalized);
-            } catch (e: unknown) {
-                const message = e instanceof Error ? e.message : 'Failed to load documents';
-                if (!cancelled) setError(message);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        }
-        run();
-        return () => {
-            cancelled = true;
-        };
-    }, [companyUuid, page, pageSize, source]);
-    return { data, loading, error };
+    const {
+        data,
+        isLoading: loading,
+        error: queryError,
+    } = useCompanyLibraryFiles(companyUuid, page, pageSize, source);
+    const error = queryError ? String(queryError) : null;
+    return { data: data || {}, loading, error };
 }
 
-function useLibrarySources() {
-    const [data, setData] = useState<LibrarySource[]>([]);
-    useEffect(() => {
-        let cancelled = false;
-        async function run() {
-            try {
-                const resp = await fetch('/api/library/sources/', {
-                    credentials: 'same-origin',
-                    headers: { Accept: 'application/json' },
-                });
-                if (!resp.ok) return;
-                const json = (await resp.json()) as ApiList<LibrarySource> | LibrarySource[];
-                const items = Array.isArray(json) ? json : json.results || [];
-                if (!cancelled) setData(items);
-            } catch (_) {
-                // noop
-            }
-        }
-        run();
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-    return data;
+// Use TanStack Query hook for sources
+function useLibrarySourcesWrapper() {
+    const { data } = useLibrarySources();
+    return data || [];
 }
 
-function fileDisplayName(f: LibraryFile) {
-    if (f.src_url) return f.src_url;
-    if (f.file) {
-        try {
-            const url = new URL(f.file, window.location.origin);
-            const parts = url.pathname.split('/');
-            return parts[parts.length - 1] || f.file;
-        } catch {
-            return f.file;
-        }
-    }
-    return f.uuid;
-}
+// Use the imported getLibraryFileDisplayName function
 
 function CompanyLibraryPanel({ uuid }: { uuid: string }) {
     const { params } = useQueryParams();
@@ -298,8 +204,8 @@ function CompanyLibraryPanel({ uuid }: { uuid: string }) {
     const page = parseInt(params.get('l_page') || '1', 10);
     const size = lAll ? 100 : parseInt(params.get('l_size') || '5', 10);
     const source = params.get('l_source');
-    const { data, loading, error } = useLibraryFiles(uuid, page, size, source);
-    const sources = useLibrarySources();
+    const { data, loading, error } = useLibraryFilesWrapper(uuid, page, size, source);
+    const sources = useLibrarySourcesWrapper();
 
     const prevLink = data.previous ? buildMergedLink({ l_page: String(page - 1) }) : null;
     const nextLink = data.next ? buildMergedLink({ l_page: String(page + 1) }) : null;
@@ -355,12 +261,12 @@ function CompanyLibraryPanel({ uuid }: { uuid: string }) {
                                             rel="noreferrer"
                                             className="text-sm font-medium text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
                                         >
-                                            {fileDisplayName(f)}
+                                            {getLibraryFileDisplayName(f)}
                                             <ExternalLink className="h-3 w-3" />
                                         </a>
                                     ) : (
                                         <span className="text-sm font-medium text-gray-900">
-                                            {fileDisplayName(f)}
+                                            {getLibraryFileDisplayName(f)}
                                         </span>
                                     )}
                                     {f.source?.name && (
@@ -424,13 +330,18 @@ function mountAbout() {
     // Prefer a proper component mount to leverage hooks
     const root = createRoot(el);
     function AboutShell({ uuid }: { uuid: string }) {
-        const { data, loading, error } = useCompany(uuid);
+        const { company, loading, errors } = useCompanyData(uuid);
+        const error = errors.company;
         if (loading) return <div className="text-muted small">Loading…</div>;
         if (error) return <div className="text-danger small">{error}</div>;
-        if (!data) return null;
-        return <CompanyAbout company={data} />;
+        if (!company) return null;
+        return <CompanyAbout company={company} />;
     }
-    root.render(<AboutShell uuid={uuid} />);
+    root.render(
+        <QueryClientProvider client={queryClient}>
+            <AboutShell uuid={uuid} />
+        </QueryClientProvider>,
+    );
 }
 
 function mountGrantForm() {
@@ -471,7 +382,11 @@ function mountLibrary() {
     const uuid = el.getAttribute('data-uuid');
     if (!uuid) return;
     const root = createRoot(el);
-    root.render(<CompanyLibraryPanel uuid={uuid} />);
+    root.render(
+        <QueryClientProvider client={queryClient}>
+            <CompanyLibraryPanel uuid={uuid} />
+        </QueryClientProvider>,
+    );
 }
 
 function mountAll() {

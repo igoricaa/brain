@@ -12,6 +12,18 @@ export default defineConfig(({ mode }) => ({
             // Exclude dynamically imported page modules from React refresh
             // This prevents the preamble detection error
             exclude: mode === 'development' ? [/src\/pages\/.*\.tsx$/] : [],
+            babel: {
+                plugins: [
+                    [
+                        'babel-plugin-react-compiler',
+                        {
+                            // Start with annotation mode for controlled rollout
+                            // Components must opt-in with "use memo" directive
+                            mode: 'annotation',
+                        },
+                    ],
+                ],
+            },
         }),
         tailwindcss(),
     ],

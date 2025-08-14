@@ -1,39 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Line, Pie, Bar } from 'react-chartjs-2';
 import { colorPalette, simpleLineOptions, simpleBarOptions, simplePieOptions } from '../lib/charts';
-
-type CountByName = { name: string; count: number };
-type DateCount = { date: string; count: number };
-
-type DashboardData = {
-    date_count_trend: DateCount[];
-    funding_stage_count: CountByName[];
-    industry_count: CountByName[];
-    du_signal_count: CountByName[];
-    today_count: number;
-    yesterday_count: number;
-    current_week_count: number;
-    previous_week_count: number;
-    current_month_count: number;
-    previous_month_count: number;
-    total_count: number;
-    current_year_count: number;
-    deals_with_grant_count: number;
-    deals_with_clinical_study_count: number;
-    quality_percentile_count: { key: number | string; count: number }[];
-    sent_to_affinity_count: DateCount[];
-    date_from: string;
-    date_to: string;
-};
+import { queryClient } from '../lib/queryClient';
+import {
+    useDashboardData,
+    type DashboardData,
+    type CountByName,
+    type DateCount,
+} from '../hooks/useDashboard';
 
 function useQueryParams() {
     const [params, setParams] = useState(() => new URLSearchParams(window.location.search));
-    useEffect(() => {
-        const onPop = () => setParams(new URLSearchParams(window.location.search));
-        window.addEventListener('popstate', onPop);
-        return () => window.removeEventListener('popstate', onPop);
-    }, []);
+
     const update = (updater: (p: URLSearchParams) => void) => {
         const next = new URLSearchParams(params.toString());
         updater(next);
@@ -42,48 +22,22 @@ function useQueryParams() {
         window.history.replaceState({}, '', href);
         setParams(next);
     };
+
     return { params, update };
 }
 
-function useDashboardData() {
+function useDashboardDataWithParams() {
     const { params, update } = useQueryParams();
     const dateFrom = params.get('date_from');
     const dateTo = params.get('date_to');
-    const [data, setData] = useState<DashboardData | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        let cancelled = false;
-        async function run() {
-            setLoading(true);
-            setError(null);
-            try {
-                const qs = new URLSearchParams();
-                if (dateFrom) qs.set('date_from', dateFrom);
-                if (dateTo) qs.set('date_to', dateTo);
-                const resp = await fetch(
-                    `/deals/dash/data/${qs.toString() ? `?${qs.toString()}` : ''}`,
-                    {
-                        credentials: 'same-origin',
-                        headers: { Accept: 'application/json' },
-                    },
-                );
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const json = (await resp.json()) as DashboardData;
-                if (!cancelled) setData(json);
-            } catch (e: unknown) {
-                const message = e instanceof Error ? e.message : 'Failed to load dashboard';
-                if (!cancelled) setError(message);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        }
-        run();
-        return () => {
-            cancelled = true;
-        };
-    }, [dateFrom, dateTo]);
+    const filters = {
+        ...(dateFrom ? { date_from: dateFrom } : {}),
+        ...(dateTo ? { date_to: dateTo } : {}),
+    };
+
+    const { data, isLoading: loading, error: queryError } = useDashboardData(filters);
+    const error = queryError ? String(queryError) : null;
 
     return { data, loading, error, params, update };
 }
@@ -228,7 +182,7 @@ function RecentActivity() {
 }
 
 function DealsDashboardApp() {
-    const { data, loading, error } = useDashboardData();
+    const { data, loading, error } = useDashboardDataWithParams();
 
     const trendData = useMemo(
         () => (data ? toLineData(data.date_count_trend, 'Deals per day') : null),
@@ -370,7 +324,11 @@ function mount() {
     const el = document.getElementById('deals-dashboard-root');
     if (!el) return;
     const root = createRoot(el);
-    root.render(<DealsDashboardApp />);
+    root.render(
+        <QueryClientProvider client={queryClient}>
+            <DealsDashboardApp />
+        </QueryClientProvider>,
+    );
 }
 
 export function initialize() {

@@ -3,6 +3,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@/lib/http';
+import {
+    useAssessments,
+    useCreateAssessment,
+    useUpdateAssessment,
+    type DealAssessment,
+} from '../hooks/useAssessments';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,42 +60,6 @@ type Deal = {
     grants_count?: number;
     patents_count?: number;
     clinical_trials_count?: number;
-};
-
-type DealAssessment = {
-    uuid?: string;
-    // Manual fields
-    problem_solved?: string | null;
-    solution?: string | null;
-    thesis_fit_evaluation?: string | null;
-    thesis_fit_score?: number | null;
-    customer_traction?: string | null;
-    intellectual_property?: string | null;
-    business_model?: string | null;
-    tam?: string | null;
-    competition?: string | null;
-    quality_percentile?: string | null;
-    recommendation?: string | null;
-    investment_rationale?: string | null;
-    pros?: string | null;
-    cons?: string | null;
-    // AI (auto) fields
-    auto_problem_solved?: string | null;
-    auto_solution?: string | null;
-    auto_thesis_fit_evaluation?: string | null;
-    auto_thesis_fit_score?: number | null;
-    auto_customer_traction?: string | null;
-    auto_intellectual_property?: string | null;
-    auto_business_model?: string | null;
-    auto_tam?: string | null;
-    auto_competition?: string | null;
-    auto_quality_percentile?: string | null;
-    auto_recommendation?: string | null;
-    auto_investment_rationale?: string | null;
-    auto_pros?: string | null;
-    auto_cons?: string | null;
-    created_at?: string;
-    updated_at?: string;
 };
 
 type ApiList<T> = {
@@ -867,7 +837,10 @@ function Industries({ items, onEdit }: { items: Related[] | undefined; onEdit?: 
             {items && items.length ? (
                 <div className="flex flex-wrap gap-1">
                     {items.map((it, index) => (
-                        <Tag key={it.uuid} color={['violet', 'blue', 'green', 'amber', 'slate'][index % 5] as any}>
+                        <Tag
+                            key={it.uuid}
+                            color={['violet', 'blue', 'green', 'amber', 'slate'][index % 5] as any}
+                        >
                             {it.name || '—'}
                         </Tag>
                     ))}
@@ -899,7 +872,10 @@ function Signals({ items, onEdit }: { items: RelatedSignal[] | undefined; onEdit
             {items && items.length ? (
                 <div className="flex flex-wrap gap-1">
                     {items.map((it, index) => (
-                        <Tag key={it.uuid} color={['amber', 'green', 'blue', 'violet', 'slate'][index % 5] as any}>
+                        <Tag
+                            key={it.uuid}
+                            color={['amber', 'green', 'blue', 'violet', 'slate'][index % 5] as any}
+                        >
                             {it.name}
                         </Tag>
                     ))}
@@ -985,9 +961,18 @@ function DealDetailApp({ uuid }: { uuid: string }) {
         counts: companyDataCounts,
     } = useCompanyData(deal?.company?.uuid || null, !!deal?.company?.uuid);
 
-    const [assessment, setAssessment] = useState<DealAssessment | null>(null);
-    const [assessLoading, setAssessLoading] = useState<boolean>(true);
-    const [assessError, setAssessError] = useState<string | null>(null);
+    // Use TanStack Query hooks for assessments
+    const {
+        data: assessments,
+        isLoading: assessLoading,
+        error: queryAssessError,
+    } = useAssessments(uuid, !!uuid);
+    const updateAssessmentMutation = useUpdateAssessment();
+    const createAssessmentMutation = useCreateAssessment();
+
+    // Get the latest assessment (first in the array since it's ordered by -created_at)
+    const assessment = assessments && assessments.length > 0 ? assessments[0] : null;
+    const assessError = queryAssessError ? String(queryAssessError) : null;
     const [isFileModalOpen, setIsFileModalOpen] = useState(false);
     const [isFoundersModalOpen, setIsFoundersModalOpen] = useState(false);
     const [isAdvisorsModalOpen, setIsAdvisorsModalOpen] = useState(false);
@@ -1005,83 +990,24 @@ function DealDetailApp({ uuid }: { uuid: string }) {
         ).length;
     }, [decks, papers, files, deal?.last_assessment_created_at]);
 
-    function getCookie(name: string) {
-        const match = document.cookie.match(
-            '(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\/\+^])/g, '\\$1') + '=([^;]*)',
-        );
-        return match ? decodeURIComponent(match[1]) : null;
-    }
-
-    // Load latest assessment
-    useEffect(() => {
-        let cancel = false;
-        async function run() {
-            if (!uuid) return;
-            setAssessLoading(true);
-            setAssessError(null);
-            try {
-                const sp = new URLSearchParams({
-                    deal: uuid,
-                    ordering: '-created_at',
-                    page_size: '1',
-                });
-                const resp = await fetch(`/api/deals/assessments/?${sp.toString()}`, {
-                    credentials: 'same-origin',
-                    headers: { Accept: 'application/json' },
-                });
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const json = (await resp.json()) as
-                    | { results?: DealAssessment[] }
-                    | DealAssessment[];
-                const item = Array.isArray(json) ? json[0] : (json.results?.[0] ?? null);
-                if (!cancel) setAssessment(item || null);
-            } catch (e: unknown) {
-                if (!cancel)
-                    setAssessError(e instanceof Error ? e.message : 'Failed to load assessment');
-            } finally {
-                if (!cancel) setAssessLoading(false);
-            }
-        }
-        run();
-        return () => {
-            cancel = true;
-        };
-    }, [uuid]);
-
-    async function saveAssessment(patch: Partial<DealAssessment>) {
+    async function saveAssessment(patch: Partial<DealAssessment>): Promise<DealAssessment> {
         // Validate input data
         const validatedPatch = DealAssessmentPatchSchema.parse(patch);
 
-        const token = getCookie('csrftoken');
-        const headers: HeadersInit = {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            ...(token ? { 'X-CSRFToken': token } : {}),
-        };
-        const body = JSON.stringify({ ...validatedPatch, deal: uuid });
-
         if (assessment?.uuid) {
-            const resp = await fetch(`/api/deals/assessments/${assessment.uuid}/`, {
-                method: 'PATCH',
-                credentials: 'same-origin',
-                headers,
-                body,
+            // Update existing assessment
+            const result = await updateAssessmentMutation.mutateAsync({
+                uuid: assessment.uuid,
+                patch: validatedPatch,
             });
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const json = (await resp.json()) as DealAssessment;
-            setAssessment(json);
-            return json;
+            return result;
         } else {
-            const resp = await fetch(`/api/deals/assessments/`, {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers,
-                body,
+            // Create new assessment
+            const result = await createAssessmentMutation.mutateAsync({
+                ...validatedPatch,
+                deal: uuid,
             });
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const json = (await resp.json()) as DealAssessment;
-            setAssessment(json);
-            return json;
+            return result;
         }
     }
 

@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import {
+    useLibrarySources,
+    useCompanyLibraryFiles,
+    getLibraryFileDisplayName,
+    type LibraryFile,
+    type LibrarySource,
+} from '../../hooks/useLibrary';
 
 type ApiList<T> = {
     count?: number;
@@ -7,111 +14,31 @@ type ApiList<T> = {
     results?: T[];
 };
 
-type LibrarySource = { uuid: string; name: string; code?: string | null };
-
-type LibraryFile = {
-    uuid: string;
-    file?: string | null;
-    src_url?: string | null;
-    mime_type?: string | null;
-    source?: LibrarySource | null;
-    created_at?: string;
-};
-
-function fileDisplayName(f: LibraryFile) {
-    if (f.src_url) return f.src_url;
-    if (f.file) {
-        try {
-            const url = new URL(f.file, window.location.origin);
-            const parts = url.pathname.split('/');
-            return parts[parts.length - 1] || f.file;
-        } catch {
-            return f.file;
-        }
-    }
-    return f.uuid;
+// Use TanStack Query hooks instead of manual fetch
+function useSourcesWrapper() {
+    const { data } = useLibrarySources();
+    return data || [];
 }
 
-function useSources() {
-    const [data, setData] = useState<LibrarySource[]>([]);
-    useEffect(() => {
-        let cancelled = false;
-        async function run() {
-            try {
-                const resp = await fetch('/api/library/sources/', {
-                    credentials: 'same-origin',
-                    headers: { Accept: 'application/json' },
-                });
-                if (!resp.ok) return;
-                const json = (await resp.json()) as ApiList<LibrarySource> | LibrarySource[];
-                const items = Array.isArray(json) ? json : json.results || [];
-                if (!cancelled) setData(items);
-            } catch {
-                // noop
-            }
-        }
-        run();
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-    return data;
-}
-
-function useLibraryFiles(
+// Use TanStack Query hook for library files
+function useLibraryFilesWrapper(
     companyUuid: string,
     page: number,
     pageSize: number,
     source?: string | null,
 ) {
-    const [data, setData] = useState<ApiList<LibraryFile>>({});
-    const [loading, setLoading] = useState<boolean>(!!companyUuid);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        let cancelled = false;
-        async function run() {
-            if (!companyUuid) return;
-            setLoading(true);
-            setError(null);
-            try {
-                const sp = new URLSearchParams();
-                sp.set('company', companyUuid);
-                sp.set('page', String(page));
-                sp.set('page_size', String(pageSize));
-                if (source) sp.set('source', source);
-                const resp = await fetch(`/api/library/files/?${sp.toString()}`, {
-                    credentials: 'same-origin',
-                    headers: { Accept: 'application/json' },
-                });
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const json = (await resp.json()) as ApiList<LibraryFile> | LibraryFile[];
-                const normalized: ApiList<LibraryFile> = Array.isArray(json)
-                    ? { count: (json as LibraryFile[]).length, results: json as LibraryFile[] }
-                    : (json as ApiList<LibraryFile>);
-                if (!cancelled) setData(normalized);
-            } catch (e: unknown) {
-                const message = e instanceof Error ? e.message : 'Failed to load documents';
-                if (!cancelled) setError(message);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        }
-        run();
-        return () => {
-            cancelled = true;
-        };
-    }, [companyUuid, page, pageSize, source]);
-    return { data, loading, error };
+    const {
+        data,
+        isLoading: loading,
+        error: queryError,
+    } = useCompanyLibraryFiles(companyUuid || null, page, pageSize, source);
+    const error = queryError ? String(queryError) : null;
+    return { data: data || {}, loading, error };
 }
 
 function useQueryParams() {
     const [params, setParams] = useState(() => new URLSearchParams(window.location.search));
-    useEffect(() => {
-        const onPop = () => setParams(new URLSearchParams(window.location.search));
-        window.addEventListener('popstate', onPop);
-        return () => window.removeEventListener('popstate', onPop);
-    }, []);
+
     const update = (updater: (p: URLSearchParams) => void) => {
         const next = new URLSearchParams(params.toString());
         updater(next);
@@ -120,6 +47,7 @@ function useQueryParams() {
         window.history.replaceState({}, '', href);
         setParams(next);
     };
+
     return { params, update };
 }
 
@@ -143,13 +71,13 @@ export function RelatedDocumentsPanel({
     const size = lAll ? 100 : parseInt(params.get(sizeParam) || '30', 10); // Match API default page size
     const source = params.get(sourceParam);
 
-    const { data, loading, error } = useLibraryFiles(
+    const { data, loading, error } = useLibraryFilesWrapper(
         companyUuid || '',
         page,
         size,
         source || undefined,
     );
-    const sources = useSources();
+    const sources = useSourcesWrapper();
 
     const showingRange = useMemo(() => {
         if (!data.results || typeof data.count !== 'number') return null;
@@ -212,10 +140,10 @@ export function RelatedDocumentsPanel({
                                                 rel="noreferrer"
                                                 className="break-all text-blue-600 hover:text-blue-700"
                                             >
-                                                {fileDisplayName(f)}
+                                                {getLibraryFileDisplayName(f)}
                                             </a>
                                         ) : (
-                                            <span>{fileDisplayName(f)}</span>
+                                            <span>{getLibraryFileDisplayName(f)}</span>
                                         )}
                                         {f.source?.name ? (
                                             <span className="ml-2 text-xs text-gray-500">
