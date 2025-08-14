@@ -63,7 +63,7 @@ interface DealFile {
     src_url?: string;
     mime_type?: string;
     file_size?: number;
-    processing_status: 'pending' | 'processing' | 'completed' | 'error';
+    processing_status: 'PENDING' | 'STARTED' | 'SUCCESS' | 'FAILURE' | 'RETRY' | 'REVOKED' | string;
     created_at: string;
     updated_at: string;
     categories?: string[];
@@ -119,15 +119,43 @@ const getFileIcon = (mimeType?: string, fileName?: string) => {
 };
 
 // Status badge component
-const StatusBadge = ({ status }: { status: DealFile['processing_status'] }) => {
-    const statusConfig = {
+const StatusBadge = ({ status }: { status: DealFile['processing_status'] | 'uploading' }) => {
+    const statusConfig: Record<string, { icon: any; color: string; label: string }> = {
+        // Legacy frontend status values (lowercase)
         pending: { icon: Clock, color: 'bg-yellow-100 text-yellow-800', label: 'Pending' },
         processing: { icon: RefreshCcw, color: 'bg-blue-100 text-blue-800', label: 'Processing' },
         completed: { icon: CheckCircle, color: 'bg-green-100 text-green-800', label: 'Completed' },
         error: { icon: AlertCircle, color: 'bg-red-100 text-red-800', label: 'Error' },
+        uploading: { icon: Upload, color: 'bg-blue-100 text-blue-800', label: 'Uploading' },
+        
+        // Backend status values (uppercase)
+        PENDING: { icon: Clock, color: 'bg-yellow-100 text-yellow-800', label: 'Pending' },
+        STARTED: { icon: RefreshCcw, color: 'bg-blue-100 text-blue-800', label: 'Processing' },
+        SUCCESS: { icon: CheckCircle, color: 'bg-green-100 text-green-800', label: 'Completed' },
+        FAILURE: { icon: AlertCircle, color: 'bg-red-100 text-red-800', label: 'Failed' },
+        RETRY: { icon: RefreshCcw, color: 'bg-orange-100 text-orange-800', label: 'Retrying' },
+        REVOKED: { icon: AlertCircle, color: 'bg-gray-100 text-gray-800', label: 'Revoked' },
     };
 
     const config = statusConfig[status];
+    
+    // Fallback for any unexpected status values
+    if (!config) {
+        console.warn(`Unknown processing status: ${status}`);
+        const defaultConfig = { 
+            icon: AlertCircle, 
+            color: 'bg-gray-100 text-gray-600', 
+            label: status || 'Unknown' 
+        };
+        const Icon = defaultConfig.icon;
+        return (
+            <Badge variant="secondary" className={`${defaultConfig.color} gap-1`}>
+                <Icon className="h-3 w-3" />
+                {defaultConfig.label}
+            </Badge>
+        );
+    }
+    
     const Icon = config.icon;
 
     return (
@@ -383,7 +411,7 @@ const FileUploader = ({
                         <div key={upload.fileId} className="space-y-1">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">{upload.fileName}</span>
-                                <StatusBadge status={upload.status as any} />
+                                <StatusBadge status={upload.status} />
                             </div>
                             {upload.status === 'uploading' && (
                                 <Progress value={upload.progress} className="h-2" />

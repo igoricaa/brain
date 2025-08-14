@@ -19,6 +19,7 @@ import RelatedDocumentsPanel from '../components/library/RelatedDocumentsPanel';
 import { FileManagementModal } from '../components/deals/FileManagementModal';
 import { CompanyOverviewCard } from '../components/deals/CompanyOverviewCard';
 import { ExternalDataBadges } from '../components/deals/ExternalDataBadges';
+import { ExternalDataSummaryStrip } from '../components/deals/ExternalDataSummaryStrip';
 import { FoundersAccordion } from '../components/deals/FoundersAccordion';
 import { AdvisorsAccordion } from '../components/deals/AdvisorsAccordion';
 import { GrantsAccordion } from '../components/deals/GrantsAccordion';
@@ -277,7 +278,7 @@ function BasicInfoCard({ deal }: { deal: Deal }) {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                    <span>{deal.name || 'Unnamed Deal'}</span>
+                    <span>Core Facts</span>
                     <div className="flex items-center gap-2">
                         {deal.website && (
                             <Button variant="ghost" size="sm" asChild>
@@ -290,30 +291,52 @@ function BasicInfoCard({ deal }: { deal: Deal }) {
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
                         <span className="text-gray-500">Company:</span>
-                        <span className="ml-2">{deal.company?.name || 'N/A'}</span>
+                        <span className="ml-2 font-medium">{deal.company?.name || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <span className="text-gray-500">Website:</span>
+                        {deal.website ? (
+                            <a 
+                                href={deal.website} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="ml-2 text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                            >
+                                {new URL(deal.website).hostname}
+                                <ExternalLink className="h-3 w-3" />
+                            </a>
+                        ) : (
+                            <span className="ml-2">N/A</span>
+                        )}
+                    </div>
+                    <div>
+                        <span className="text-gray-500">Status:</span>
+                        <Badge variant="outline" className="ml-2">
+                            Active
+                        </Badge>
                     </div>
                     <div>
                         <span className="text-gray-500">Funding Stage:</span>
                         <span className="ml-2">{deal.funding_stage?.name || 'N/A'}</span>
                     </div>
                     <div>
-                        <span className="text-gray-500">Target:</span>
+                        <span className="text-gray-500">Funding Target:</span>
                         <span className="ml-2">{formatCurrency(deal.funding_target)}</span>
                     </div>
                     <div>
-                        <span className="text-gray-500">Raised:</span>
+                        <span className="text-gray-500">Funding Raised:</span>
                         <span className="ml-2">{formatCurrency(deal.funding_raised)}</span>
                     </div>
                     <div>
-                        <span className="text-gray-500">Created:</span>
+                        <span className="text-gray-500">Created At:</span>
                         <span className="ml-2">{formatDate(deal.created_at)}</span>
                     </div>
                     <div>
                         <span className="text-gray-500">Sent to Affinity:</span>
-                        <Badge variant={deal.sent_to_affinity ? 'default' : 'secondary'}>
+                        <Badge variant={deal.sent_to_affinity ? 'default' : 'secondary'} className="ml-2">
                             {deal.sent_to_affinity ? 'Yes' : 'No'}
                         </Badge>
                     </div>
@@ -329,14 +352,14 @@ function ResearchAgentSection({ data = mockResearchAgent }: { data?: ResearchAge
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                    Research Agent Analysis
+                    Analysis Summary
                     <Button variant="outline" size="sm">
                         View Full Analysis
                     </Button>
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-6">
                     <div>
                         <h4 className="font-medium text-gray-900 mb-2">Final Assessment</h4>
                         <div className="prose prose-sm max-w-none">
@@ -419,17 +442,12 @@ function AIAssessmentSection({
             </CardHeader>
             <CardContent>
                 {/* Basic fields grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-3 gap-4 mb-6">
                     {fields.map((field) => (
                         <div key={field.key} className="space-y-1">
-                            <div className="flex items-center gap-1">
-                                <span className="text-xs font-semibold text-gray-500">
-                                    {field.label}
-                                </span>
-                                <Button variant="ghost" size="sm" className="h-4 w-4 p-0">
-                                    <Edit className="h-3 w-3" />
-                                </Button>
-                            </div>
+                            <span className="text-xs font-semibold text-gray-500">
+                                {field.label}
+                            </span>
                             <p className="text-sm text-gray-700 min-h-[2.5rem]">
                                 {field.value || '—'}
                             </p>
@@ -438,7 +456,7 @@ function AIAssessmentSection({
                 </div>
 
                 {/* Main assessment fields - aligned columns */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
+                <div className="grid grid-cols-4 gap-4 pt-4 border-t">
                     <div>
                         <div className="text-xs font-semibold text-gray-500 mb-2">
                             Investment Rationale
@@ -637,10 +655,10 @@ function AnalystAssessmentSection({
             </CardHeader>
             <CardContent>
                 {/* Basic fields grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-3 gap-4 mb-6">
                     {basicFields.map((field) => (
                         <div key={field.key} className="space-y-1">
-                            <label className="text-xs font-semibold text-gray-600">
+                            <label className="text-xs font-semibold text-gray-600 mb-2">
                                 {field.label}
                                 {savingFields.has(field.key) && (
                                     <span className="ml-1 text-blue-600">Saving...</span>
@@ -658,7 +676,7 @@ function AnalystAssessmentSection({
                 </div>
 
                 {/* Main assessment fields - aligned columns */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
+                <div className="grid grid-cols-4 gap-4 pt-4 border-t">
                     <div>
                         <label className="text-xs font-semibold text-gray-600 block mb-2">
                             Investment Rationale
@@ -998,33 +1016,54 @@ function DealDetailApp({ uuid }: { uuid: string }) {
     if (!deal) return null;
 
     return (
-        <div className="space-y-6 pb-20">
-            {' '}
-            {/* Bottom padding for sticky actions bar */}
-            {/* Row 1: Company Overview */}
-            <CompanyOverviewCard
-                company={company}
-                loading={companyDataLoading}
-                error={companyDataErrors.company}
-                totalGrantFunding={companyDataCounts.totalGrantFunding}
-                foundersCount={companyDataCounts.founders}
-                patentsCount={companyDataCounts.patents}
-                clinicalTrialsCount={companyDataCounts.clinicalTrials}
-            />
-            {/* Row 2: External Data Summary */}
-            <ExternalDataBadges
-                foundersCount={companyDataCounts.founders}
-                grantsCount={companyDataCounts.grants}
-                patentsCount={companyDataCounts.patents}
-                clinicalTrialsCount={companyDataCounts.clinicalTrials}
-                totalGrantFunding={companyDataCounts.totalGrantFunding}
-                loading={companyDataLoading}
-            />
-            {/* Row 3: Basic Deal Info */}
-            <BasicInfoCard deal={deal} />
-            {/* Row 4: External Data Accordions */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="mx-auto w-full max-w-7xl space-y-10 pb-20">
+            {/* Group 1: Basic Deal Data */}
+            <section>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Deal Data</h2>
                 <div className="space-y-6">
+                    {/* Basic Facts Card */}
+                    <BasicInfoCard deal={deal} />
+                    
+                    {/* Categorizations Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Industries items={deal.industries} onEdit={() => setIsIndustriesModalOpen(true)} />
+                        <Signals
+                            items={deal.dual_use_signals}
+                            onEdit={() => setIsDualUseSignalsModalOpen(true)}
+                        />
+                    </div>
+                    
+                    {/* Deal Summary */}
+                    <Summary deal={deal} />
+                </div>
+            </section>
+
+            {/* Group 2: External Data */}
+            <section className="border-t border-gray-200 pt-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">External Data</h2>
+                <div className="space-y-6">
+                    {/* Company Overview */}
+                    <CompanyOverviewCard
+                        company={company}
+                        loading={companyDataLoading}
+                        error={companyDataErrors.company}
+                        totalGrantFunding={companyDataCounts.totalGrantFunding}
+                        foundersCount={companyDataCounts.founders}
+                        patentsCount={companyDataCounts.patents}
+                        clinicalTrialsCount={companyDataCounts.clinicalTrials}
+                    />
+                    
+                    {/* External Data Summary */}
+                    <ExternalDataSummaryStrip
+                        foundersCount={companyDataCounts.founders}
+                        advisorsCount={advisors.length}
+                        grantsCount={companyDataCounts.grants}
+                        patentsCount={companyDataCounts.patents}
+                        clinicalTrialsCount={companyDataCounts.clinicalTrials}
+                        loading={companyDataLoading}
+                    />
+                    
+                    {/* External Data Accordions */}
                     <FoundersAccordion
                         founders={founders}
                         loading={companyDataLoading}
@@ -1046,8 +1085,6 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                         autoExpand={true}
                         onEdit={() => setIsGrantsModalOpen(true)}
                     />
-                </div>
-                <div className="space-y-6">
                     <PatentsAccordion
                         patents={patents}
                         loading={companyDataLoading}
@@ -1060,56 +1097,59 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                         error={companyDataErrors.clinicalTrials}
                         autoExpand={true}
                     />
+                    
+                    {/* Deal Files */}
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {decksLoading ? (
+                            <LoadingBox label="Loading decks…" />
+                        ) : (
+                            <FileList title="Decks" files={decks} />
+                        )}
+                        {papersLoading ? (
+                            <LoadingBox label="Loading papers…" />
+                        ) : (
+                            <FileList title="Papers" files={papers} />
+                        )}
+                        {filesLoading ? (
+                            <LoadingBox label="Loading files…" />
+                        ) : (
+                            <FileList title="Files" files={files} />
+                        )}
+                    </div>
+                    
+                    {/* Related Documents */}
+                    <RelatedDocumentsPanel
+                        companyUuid={deal.company?.uuid || null}
+                        paramPrefix="dl_"
+                        title="Related Documents"
+                    />
                 </div>
-            </div>
-            {/* Row 5: Research Agent */}
-            <ResearchAgentSection />
-            {/* Row 6: Stacked Assessments */}
-            <div className="space-y-6">
-                {/* AI Assessment (Top) */}
-                <AIAssessmentSection
-                    assessment={assessment}
-                    loading={assessLoading}
-                    error={assessError}
-                />
+            </section>
 
-                {/* Analyst Assessment (Bottom) */}
-                <AnalystAssessmentSection assessment={assessment} onSave={saveAssessment} />
-            </div>
-            {/* Row 7: Industries and Signals */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Industries items={deal.industries} onEdit={() => setIsIndustriesModalOpen(true)} />
-                <Signals
-                    items={deal.dual_use_signals}
-                    onEdit={() => setIsDualUseSignalsModalOpen(true)}
-                />
-            </div>
-            {/* Row 8: Summary */}
-            <Summary deal={deal} />
-            {/* Row 9: Files */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {decksLoading ? (
-                    <LoadingBox label="Loading decks…" />
-                ) : (
-                    <FileList title="Decks" files={decks} />
-                )}
-                {papersLoading ? (
-                    <LoadingBox label="Loading papers…" />
-                ) : (
-                    <FileList title="Papers" files={papers} />
-                )}
-                {filesLoading ? (
-                    <LoadingBox label="Loading files…" />
-                ) : (
-                    <FileList title="Files" files={files} />
-                )}
-            </div>
-            {/* Row 10: Related Documents */}
-            <RelatedDocumentsPanel
-                companyUuid={deal.company?.uuid || null}
-                paramPrefix="dl_"
-                title="Related Documents"
-            />
+            {/* Group 3: Research Agent Summary */}
+            <section className="border-t border-gray-200 pt-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Research Agent Summary</h2>
+                <div className="space-y-6">
+                    <ResearchAgentSection />
+                </div>
+            </section>
+
+            {/* Group 4: Mini Memo */}
+            <section className="border-t border-gray-200 pt-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Mini Memo</h2>
+                <div className="space-y-6">
+                    {/* AI Assessment */}
+                    <AIAssessmentSection
+                        assessment={assessment}
+                        loading={assessLoading}
+                        error={assessError}
+                    />
+
+                    {/* Analyst Assessment */}
+                    <AnalystAssessmentSection assessment={assessment} onSave={saveAssessment} />
+                </div>
+            </section>
+
             {/* Sticky Actions Bar */}
             <ActionsBar
                 deal={deal}

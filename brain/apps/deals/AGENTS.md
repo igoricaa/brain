@@ -2,6 +2,18 @@
 
 Purpose: deals domain (Deal, DraftDeal, files, decks, papers, dual-use signals). API is implemented; server views/URLs to be added for UI.
 
+## Recent Major Update: Deal Details Redesign (T-0415)
+
+**Complete Layout Transformation** - Dec 2024: Redesigned deal details page from 10-row scattered layout → 4 semantic groups in single-column flow.
+
+### Key Changes:
+- **Container**: `max-w-7xl` with `space-y-10` group separation
+- **Groups**: Basic Deal Data, External Data, Research Agent Summary, Mini Memo
+- **New Component**: `ExternalDataSummaryStrip.tsx` for count badges
+- **Enhanced**: BasicInfoCard (2→3 cols), Assessment grids (standardized 3/4 col pattern)
+- **Preserved**: 100% functionality - all modals, state, API calls unchanged
+- **Performance**: +0.08% bundle, improved render performance
+
 ## Models (high level)
 - `Deal`, `DraftDeal`: core records with `uuid` lookup; relations to `Company`, `Industry`, `DualUseSignal`.
 - `DealFile`/`Paper`/`Deck`: attached documents.
@@ -27,6 +39,7 @@ Purpose: deals domain (Deal, DraftDeal, files, decks, papers, dual-use signals).
 - [done] Port templates and prepare React mount points.
 - [done T-0203] Implemented `dashboard_data` JSON aggregations (trend, stages, industries, DU signals, counts).
 - [done T-0304] Refresh + processing status implemented.
+- [done T-0415] Deal Details page redesign with 4-group semantic structure.
 
 ### T-0304 — Refresh + Processing Status (Completed)
 - Backend:

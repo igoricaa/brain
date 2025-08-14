@@ -488,7 +488,7 @@
     ]
   },
   "src/main.tsx": {
-    "file": "assets/main-BTCi9VS7.js",
+    "file": "assets/main-BgMlPLNq.js",
     "name": "main",
     "src": "src/main.tsx",
     "isEntry": true,
@@ -509,7 +509,7 @@
       "src/pages/library.tsx"
     ],
     "css": [
-      "assets/main-XWb1zR1c.css"
+      "assets/main-DtMtstB8.css"
     ]
   },
   "src/pages/advisors.tsx": {
@@ -583,7 +583,7 @@
     ]
   },
   "src/pages/deal_detail.tsx": {
-    "file": "assets/deal_detail-DdgpmDvN.js",
+    "file": "assets/deal_detail-JuYy099v.js",
     "name": "deal_detail",
     "src": "src/pages/deal_detail.tsx",
     "isEntry": true,
@@ -606,8 +606,8 @@
       "_alert-dialog-AayB7Vry.js",
       "_upload-eFeo91Uk.js",
       "_circle-alert-ZmZN2jQW.js",
-      "_circle-check-big-DtRwkSwx.js",
       "_createLucideIcon-DpLiT-Jh.js",
+      "_circle-check-big-DtRwkSwx.js",
       "_rotate-ccw-C1Zfmdip.js",
       "_index-CQdUICOM.js",
       "_multi-select-D8P1S0gN.js",
@@ -725,7 +725,7 @@
     ]
   },
   "src/pages/deals_list.tsx": {
-    "file": "assets/deals_list-CG75YNak.js",
+    "file": "assets/deals_list-BuuQyhid.js",
     "name": "deals_list",
     "src": "src/pages/deals_list.tsx",
     "isDynamicEntry": true,
