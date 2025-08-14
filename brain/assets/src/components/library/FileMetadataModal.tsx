@@ -282,7 +282,9 @@ export default function FileMetadataModal({
                                     <Input
                                         id="file_name"
                                         {...register('file_name')}
-                                        className={errors.file_name ? 'border-red-500' : ''}
+                                        className={
+                                            errors.file_name ? 'border-1 border-red-500' : ''
+                                        }
                                     />
                                     {errors.file_name && (
                                         <p className="text-sm text-red-500 mt-1">
@@ -479,7 +481,7 @@ export default function FileMetadataModal({
                                         id="src_url"
                                         {...register('src_url')}
                                         placeholder="https://example.com/document"
-                                        className={errors.src_url ? 'border-red-500' : ''}
+                                        className={errors.src_url ? 'border-1 border-red-500' : ''}
                                     />
                                     {errors.src_url && (
                                         <p className="text-sm text-red-500 mt-1">
@@ -494,7 +496,9 @@ export default function FileMetadataModal({
                                         id="src_download_url"
                                         {...register('src_download_url')}
                                         placeholder="https://example.com/download"
-                                        className={errors.src_download_url ? 'border-red-500' : ''}
+                                        className={
+                                            errors.src_download_url ? 'border-1 border-red-500' : ''
+                                        }
                                     />
                                     {errors.src_download_url && (
                                         <p className="text-sm text-red-500 mt-1">

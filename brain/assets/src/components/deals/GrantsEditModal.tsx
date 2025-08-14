@@ -25,21 +25,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { 
-    FileText, 
-    Plus, 
-    Trash2, 
-    Calendar, 
-    DollarSign, 
-    Building, 
-    ExternalLink 
-} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileText, Plus, Trash2, Calendar, DollarSign, Building, ExternalLink } from 'lucide-react';
 import { formatCompactCurrency, formatStandardDate } from '@/lib/utils/deals';
 import type { Grant } from '@/hooks/useCompanyData';
 
@@ -66,16 +53,10 @@ interface GrantsEditModalProps {
     grants: Grant[];
 }
 
-function GrantCard({ 
-    grant, 
-    onDelete 
-}: { 
-    grant: Grant; 
-    onDelete: (grantId: string) => void;
-}) {
+function GrantCard({ grant, onDelete }: { grant: Grant; onDelete: (grantId: string) => void }) {
     const amount = grant.amount_awarded || grant.potential_amount;
     const isAwarded = !!grant.amount_awarded;
-    
+
     return (
         <Card className="relative">
             <CardHeader className="pb-3">
@@ -84,8 +65,16 @@ function GrantCard({
                         <FileText className="h-4 w-4 text-gray-500" />
                         <span>{grant.name || 'Unnamed Grant'}</span>
                         {amount && (
-                            <Badge variant="outline" className={isAwarded ? 'text-green-600 border-green-200' : 'text-blue-600 border-blue-200'}>
-                                {formatCompactCurrency(amount)} {isAwarded ? 'Awarded' : 'Potential'}
+                            <Badge
+                                variant="outline"
+                                className={
+                                    isAwarded
+                                        ? 'text-green-600 border-green-200'
+                                        : 'text-blue-600 border-blue-200'
+                                }
+                            >
+                                {formatCompactCurrency(amount)}{' '}
+                                {isAwarded ? 'Awarded' : 'Potential'}
                             </Badge>
                         )}
                     </div>
@@ -112,21 +101,21 @@ function GrantCard({
                             </Badge>
                         </div>
                     )}
-                    
+
                     {grant.award_date && (
                         <div className="flex items-center gap-2">
                             <Calendar className="h-3 w-3 text-gray-400" />
                             <span>Awarded: {formatStandardDate(grant.award_date)}</span>
                         </div>
                     )}
-                    
+
                     {grant.solicitation_year && (
                         <div className="flex items-center gap-2">
                             <Calendar className="h-3 w-3 text-gray-400" />
                             <span>Year: {grant.solicitation_year}</span>
                         </div>
                     )}
-                    
+
                     {grant.branch && (
                         <div className="flex items-center gap-2">
                             <Building className="h-3 w-3 text-gray-400" />
@@ -134,21 +123,19 @@ function GrantCard({
                         </div>
                     )}
                 </div>
-                
+
                 {grant.description && (
                     <div className="mt-3">
                         <div className="font-medium mb-1">Description:</div>
-                        <p className="text-gray-700 text-xs">
-                            {grant.description}
-                        </p>
+                        <p className="text-gray-700 text-xs">{grant.description}</p>
                     </div>
                 )}
-                
+
                 {grant.url && (
                     <div className="mt-2">
-                        <a 
-                            href={grant.url} 
-                            target="_blank" 
+                        <a
+                            href={grant.url}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline text-xs flex items-center gap-1"
                         >
@@ -183,7 +170,7 @@ function GrantForm({
         branch: '',
         solicitation_year: '',
     });
-    
+
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -196,7 +183,7 @@ function GrantForm({
         } catch (error) {
             if (error instanceof z.ZodError) {
                 const fieldErrors: Record<string, string> = {};
-                error.errors.forEach((err: z.ZodIssue) => {
+                error.issues.forEach((err) => {
                     if (err.path.length > 0) {
                         fieldErrors[err.path[0] as string] = err.message;
                     }
@@ -207,10 +194,10 @@ function GrantForm({
     };
 
     const handleInputChange = (field: keyof GrantFormData, value: string | number) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData((prev) => ({ ...prev, [field]: value }));
         // Clear error when user starts typing
         if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: '' }));
+            setErrors((prev) => ({ ...prev, [field]: '' }));
         }
     };
 
@@ -223,11 +210,11 @@ function GrantForm({
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="Enter grant name or title"
-                    className={errors.name ? 'border-red-500' : ''}
+                    className={errors.name ? 'border-1 border-red-500' : ''}
                 />
                 {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
             </div>
-            
+
             <div>
                 <Label htmlFor="program_name">Program Name</Label>
                 <Input
@@ -235,11 +222,13 @@ function GrantForm({
                     value={formData.program_name}
                     onChange={(e) => handleInputChange('program_name', e.target.value)}
                     placeholder="e.g., SBIR, STTR, NIH, NSF"
-                    className={errors.program_name ? 'border-red-500' : ''}
+                    className={errors.program_name ? 'border-1 border-red-500' : ''}
                 />
-                {errors.program_name && <p className="text-sm text-red-600 mt-1">{errors.program_name}</p>}
+                {errors.program_name && (
+                    <p className="text-sm text-red-600 mt-1">{errors.program_name}</p>
+                )}
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <Label htmlFor="amount_awarded">Amount Awarded ($)</Label>
@@ -251,11 +240,13 @@ function GrantForm({
                         value={formData.amount_awarded}
                         onChange={(e) => handleInputChange('amount_awarded', e.target.value)}
                         placeholder="0.00"
-                        className={errors.amount_awarded ? 'border-red-500' : ''}
+                        className={errors.amount_awarded ? 'border-1 border-red-500' : ''}
                     />
-                    {errors.amount_awarded && <p className="text-sm text-red-600 mt-1">{errors.amount_awarded}</p>}
+                    {errors.amount_awarded && (
+                        <p className="text-sm text-red-600 mt-1">{errors.amount_awarded}</p>
+                    )}
                 </div>
-                
+
                 <div>
                     <Label htmlFor="potential_amount">Potential Amount ($)</Label>
                     <Input
@@ -266,12 +257,14 @@ function GrantForm({
                         value={formData.potential_amount}
                         onChange={(e) => handleInputChange('potential_amount', e.target.value)}
                         placeholder="0.00"
-                        className={errors.potential_amount ? 'border-red-500' : ''}
+                        className={errors.potential_amount ? 'border-1 border-red-500' : ''}
                     />
-                    {errors.potential_amount && <p className="text-sm text-red-600 mt-1">{errors.potential_amount}</p>}
+                    {errors.potential_amount && (
+                        <p className="text-sm text-red-600 mt-1">{errors.potential_amount}</p>
+                    )}
                 </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <Label htmlFor="phase">Phase</Label>
@@ -280,11 +273,11 @@ function GrantForm({
                         value={formData.phase}
                         onChange={(e) => handleInputChange('phase', e.target.value)}
                         placeholder="I, II, III"
-                        className={errors.phase ? 'border-red-500' : ''}
+                        className={errors.phase ? 'border-1 border-red-500' : ''}
                     />
                     {errors.phase && <p className="text-sm text-red-600 mt-1">{errors.phase}</p>}
                 </div>
-                
+
                 <div>
                     <Label htmlFor="award_date">Award Date</Label>
                     <Input
@@ -292,11 +285,13 @@ function GrantForm({
                         type="date"
                         value={formData.award_date}
                         onChange={(e) => handleInputChange('award_date', e.target.value)}
-                        className={errors.award_date ? 'border-red-500' : ''}
+                        className={errors.award_date ? 'border-1 border-red-500' : ''}
                     />
-                    {errors.award_date && <p className="text-sm text-red-600 mt-1">{errors.award_date}</p>}
+                    {errors.award_date && (
+                        <p className="text-sm text-red-600 mt-1">{errors.award_date}</p>
+                    )}
                 </div>
-                
+
                 <div>
                     <Label htmlFor="solicitation_year">Solicitation Year</Label>
                     <Input
@@ -307,12 +302,14 @@ function GrantForm({
                         value={formData.solicitation_year}
                         onChange={(e) => handleInputChange('solicitation_year', e.target.value)}
                         placeholder="2024"
-                        className={errors.solicitation_year ? 'border-red-500' : ''}
+                        className={errors.solicitation_year ? 'border-1 border-red-500' : ''}
                     />
-                    {errors.solicitation_year && <p className="text-sm text-red-600 mt-1">{errors.solicitation_year}</p>}
+                    {errors.solicitation_year && (
+                        <p className="text-sm text-red-600 mt-1">{errors.solicitation_year}</p>
+                    )}
                 </div>
             </div>
-            
+
             <div>
                 <Label htmlFor="branch">Branch/Department</Label>
                 <Input
@@ -320,11 +317,11 @@ function GrantForm({
                     value={formData.branch}
                     onChange={(e) => handleInputChange('branch', e.target.value)}
                     placeholder="e.g., Army, Navy, Air Force, NIH"
-                    className={errors.branch ? 'border-red-500' : ''}
+                    className={errors.branch ? 'border-1 border-red-500' : ''}
                 />
                 {errors.branch && <p className="text-sm text-red-600 mt-1">{errors.branch}</p>}
             </div>
-            
+
             <div>
                 <Label htmlFor="url">Grant URL</Label>
                 <Input
@@ -333,11 +330,11 @@ function GrantForm({
                     value={formData.url}
                     onChange={(e) => handleInputChange('url', e.target.value)}
                     placeholder="https://..."
-                    className={errors.url ? 'border-red-500' : ''}
+                    className={errors.url ? 'border-1 border-red-500' : ''}
                 />
                 {errors.url && <p className="text-sm text-red-600 mt-1">{errors.url}</p>}
             </div>
-            
+
             <div>
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -346,25 +343,18 @@ function GrantForm({
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="Enter grant description, objectives, or summary..."
                     rows={4}
-                    className={errors.description ? 'border-red-500' : ''}
+                    className={errors.description ? 'border-1 border-red-500' : ''}
                 />
-                {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
+                {errors.description && (
+                    <p className="text-sm text-red-600 mt-1">{errors.description}</p>
+                )}
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-                <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={onCancel}
-                    disabled={isSubmitting}
-                >
+                <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <Button 
-                    type="submit" 
-                    disabled={isSubmitting}
-                    className="min-w-[100px]"
-                >
+                <Button type="submit" disabled={isSubmitting} className="min-w-[100px]">
                     {isSubmitting ? 'Saving...' : 'Add Grant'}
                 </Button>
             </div>
@@ -372,12 +362,7 @@ function GrantForm({
     );
 }
 
-export function GrantsEditModal({ 
-    isOpen, 
-    onClose, 
-    companyUuid,
-    grants 
-}: GrantsEditModalProps) {
+export function GrantsEditModal({ isOpen, onClose, companyUuid, grants }: GrantsEditModalProps) {
     const [showAddForm, setShowAddForm] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const queryClient = useQueryClient();
@@ -410,7 +395,9 @@ export function GrantsEditModal({
                 description: data.description || undefined,
                 url: data.url || undefined,
                 branch: data.branch || undefined,
-                solicitation_year: data.solicitation_year ? Number(data.solicitation_year) : undefined,
+                solicitation_year: data.solicitation_year
+                    ? Number(data.solicitation_year)
+                    : undefined,
             };
 
             const response = await http.post('/companies/grants/', apiData);
@@ -466,7 +453,10 @@ export function GrantsEditModal({
                             <FileText className="h-5 w-5" />
                             Edit Grants ({grants.length})
                             {totalFunding > 0 && (
-                                <Badge variant="outline" className="ml-2 text-green-600 border-green-200">
+                                <Badge
+                                    variant="outline"
+                                    className="ml-2 text-green-600 border-green-200"
+                                >
                                     {formatCompactCurrency(totalFunding)} total
                                 </Badge>
                             )}
@@ -490,11 +480,13 @@ export function GrantsEditModal({
                                         />
                                     ))}
                                 </div>
-                                
+
                                 {totalFunding > 0 && (
                                     <div className="mt-4 p-4 bg-green-50 rounded-lg">
                                         <div className="flex items-center justify-between">
-                                            <span className="font-medium text-gray-900">Total Grant Funding:</span>
+                                            <span className="font-medium text-gray-900">
+                                                Total Grant Funding:
+                                            </span>
                                             <span className="font-bold text-green-600 text-xl">
                                                 {formatCompactCurrency(totalFunding)}
                                             </span>
@@ -557,7 +549,8 @@ export function GrantsEditModal({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Remove Grant</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to remove this grant? This action cannot be undone.
+                            Are you sure you want to remove this grant? This action cannot be
+                            undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -3,21 +3,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import {
-    ChevronDown,
-    ChevronRight,
-    Edit2,
-    ExternalLink,
-    User,
-    Calendar,
-    Briefcase,
-    Plus,
-} from 'lucide-react';
-import { formatStandardDate } from '@/lib/utils/deals';
-import type { Founder } from '@/hooks/useCompanyData';
+import { ChevronDown, ChevronRight, Edit2, ExternalLink, Plus, UserCheck } from 'lucide-react';
 
-interface FoundersAccordionProps {
-    founders: Founder[];
+// For now, using a simplified Advisor type based on the CompanyAdvisor relationship
+interface Advisor {
+    uuid: string;
+    advisor?: {
+        uuid: string;
+        name: string;
+        bio?: string | null;
+        linkedin_url?: string | null;
+        website?: string | null;
+        country?: string | null;
+        location?: string | null;
+    };
+    created_at?: string;
+    updated_at?: string;
+}
+
+interface AdvisorsAccordionProps {
+    advisors: Advisor[];
     loading?: boolean;
     error?: string;
     autoExpand?: boolean;
@@ -42,91 +47,51 @@ function ErrorState({ error }: { error: string }) {
         <Card className="border-red-200 bg-red-50">
             <CardContent className="p-6">
                 <div className="flex items-center text-red-700">
-                    <User className="h-5 w-5 mr-2" />
-                    <span className="text-sm">Failed to load founders: {error}</span>
+                    <UserCheck className="h-5 w-5 mr-2" />
+                    <span className="text-sm">Failed to load advisors: {error}</span>
                 </div>
             </CardContent>
         </Card>
     );
 }
 
-function FounderCard({ founder }: { founder: Founder }) {
-    // Handle case where founder.founder might be null or undefined
-    const founderData = founder?.founder || {};
+function AdvisorCard({ advisor }: { advisor: Advisor }) {
+    // Handle case where advisor.advisor might be null or undefined
+    const advisorData = advisor?.advisor || {};
 
     return (
         <div className="border rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                        <User className="h-4 w-4 text-gray-400" />
+                        <UserCheck className="h-4 w-4 text-gray-400" />
                         <h4 className="font-medium text-gray-900">
-                            {founderData.name || 'Unnamed Founder'}
+                            {advisorData.name || 'Unnamed Advisor'}
                         </h4>
-                        {founder.title && (
-                            <Badge variant="secondary" className="text-xs">
-                                {founder.title}
-                            </Badge>
-                        )}
                     </div>
 
                     <div className="space-y-2 text-sm text-gray-600">
-                        {founderData.email && (
+                        {advisorData.location && (
                             <div className="flex items-center gap-2">
-                                <span className="font-medium">Email:</span>
-                                <a
-                                    href={`mailto:${founderData.email}`}
-                                    className="text-blue-600 hover:underline"
-                                >
-                                    {founderData.email}
-                                </a>
+                                <span className="font-medium">Location:</span>
+                                <span>{advisorData.location}</span>
                             </div>
                         )}
 
-                        {founder.age_at_founding && (
-                            <div className="flex items-center gap-2">
-                                <Calendar className="h-3 w-3" />
-                                <span>Age at founding: {founder.age_at_founding}</span>
-                            </div>
-                        )}
-
-                        {(founder.start_date || founder.end_date) && (
-                            <div className="flex items-center gap-2">
-                                <Briefcase className="h-3 w-3" />
-                                <span>
-                                    {formatStandardDate(founder.start_date)}
-                                    {founder.end_date
-                                        ? ` - ${formatStandardDate(founder.end_date)}`
-                                        : ' - Present'}
-                                </span>
-                            </div>
-                        )}
-
-                        {founder.past_significant_employments && (
-                            <div className="mt-3">
-                                <div className="font-medium text-gray-900 mb-1">
-                                    Past Experience:
-                                </div>
-                                <p className="text-gray-700 whitespace-pre-line">
-                                    {founder.past_significant_employments}
-                                </p>
-                            </div>
-                        )}
-
-                        {founderData.bio && (
+                        {advisorData.bio && (
                             <div className="mt-3">
                                 <div className="font-medium text-gray-900 mb-1">Bio:</div>
-                                <p className="text-gray-700">{founderData.bio}</p>
+                                <p className="text-gray-700">{advisorData.bio}</p>
                             </div>
                         )}
                     </div>
                 </div>
 
                 <div className="ml-4 flex flex-col gap-2">
-                    {founderData.linkedin_url && (
+                    {advisorData.linkedin_url && (
                         <Button variant="ghost" size="sm" asChild>
                             <a
-                                href={founderData.linkedin_url}
+                                href={advisorData.linkedin_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1"
@@ -136,27 +101,40 @@ function FounderCard({ founder }: { founder: Founder }) {
                             </a>
                         </Button>
                     )}
+                    {advisorData.website && (
+                        <Button variant="ghost" size="sm" asChild>
+                            <a
+                                href={advisorData.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1"
+                            >
+                                <ExternalLink className="h-3 w-3" />
+                                Website
+                            </a>
+                        </Button>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
 
-export function FoundersAccordion({
-    founders,
+export function AdvisorsAccordion({
+    advisors,
     loading = false,
     error,
     autoExpand = true,
     onEdit,
-}: FoundersAccordionProps) {
+}: AdvisorsAccordionProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     // Auto-expand when data exists and autoExpand is true
     useEffect(() => {
-        if (autoExpand && founders.length > 0) {
+        if (autoExpand && advisors.length > 0) {
             setIsOpen(true);
         }
-    }, [autoExpand, founders.length]);
+    }, [autoExpand, advisors.length]);
 
     if (loading) {
         return <LoadingSkeleton />;
@@ -168,7 +146,7 @@ export function FoundersAccordion({
 
     return (
         <Card>
-            <Collapsible defaultOpen={autoExpand && founders.length > 0}>
+            <Collapsible defaultOpen={autoExpand && advisors.length > 0}>
                 <CollapsibleTrigger asChild>
                     <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setIsOpen(!isOpen)}>
                         <CardTitle className="flex items-center justify-between">
@@ -178,10 +156,10 @@ export function FoundersAccordion({
                                 ) : (
                                     <ChevronRight className="h-4 w-4 text-gray-500" />
                                 )}
-                                <User className="h-5 w-5 text-gray-600" />
-                                <span>Founders ({founders.length})</span>
-                                {founders.length > 0 && (
-                                    <Badge variant="secondary">{founders.length}</Badge>
+                                <UserCheck className="h-5 w-5 text-gray-600" />
+                                <span>Advisors ({advisors.length})</span>
+                                {advisors.length > 0 && (
+                                    <Badge variant="secondary">{advisors.length}</Badge>
                                 )}
                             </div>
                             <div className="flex items-center gap-1">
@@ -192,7 +170,7 @@ export function FoundersAccordion({
                                         e.stopPropagation();
                                         onEdit?.();
                                     }}
-                                    title="Edit founders"
+                                    title="Edit advisors"
                                 >
                                     <Edit2 className="h-4 w-4" />
                                 </Button>
@@ -202,21 +180,21 @@ export function FoundersAccordion({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <CardContent>
-                        {founders.length > 0 ? (
+                        {advisors.length > 0 ? (
                             <div className="space-y-4">
-                                {founders.map((founder) => (
-                                    <FounderCard key={founder.uuid} founder={founder} />
+                                {advisors.map((advisor) => (
+                                    <AdvisorCard key={advisor.uuid} advisor={advisor} />
                                 ))}
                             </div>
                         ) : (
                             <div className="text-center py-8">
-                                <User className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                                <UserCheck className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                                 <div className="text-gray-500 text-sm mb-2">
-                                    No founders data available
+                                    No advisors data available
                                 </div>
                                 <Button variant="outline" size="sm" onClick={onEdit}>
                                     <Plus className="h-4 w-4 mr-2" />
-                                    Add Founder
+                                    Add Advisor
                                 </Button>
                             </div>
                         )}

@@ -23,6 +23,13 @@ This is the v2 Django project and API. Frontend moves here using a hybrid Django
 ### HTTP Client Rule
 - Use axios via `assets/src/lib/http.ts` for all network calls instead of `fetch` to ensure consistent CSRF handling and unified error normalization (`normalizeDrfErrors`).
 
+### Data Fetching Policy ⚠️ CRITICAL
+**ALL data fetching MUST use TanStack Query with the http client (axios wrapper). NEVER use native fetch().**
+- Benefits: Proper caching, automatic retries, query invalidation, loading/error states, background refetching
+- Pattern: `useQuery({ queryKey: ['resource', id], queryFn: async () => { const response = await http.get('/api/...'); return response.data; } })`
+- Mutations: Use `useMutation` with proper `onSuccess` query invalidation to keep UI synchronized
+- This ensures query invalidation works correctly across modals and components
+
 ### React Forms Standard (2025)
 - We are standardizing on React forms across v2 to avoid server-side widget styling and to enable a smooth migration to a full SPA later.
 - Form engine: `react-hook-form` + `@hookform/resolvers` + `zod` (v4) for schema validation.

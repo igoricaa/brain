@@ -18,6 +18,21 @@ export type Founder = {
     end_date?: string | null;
 };
 
+export type Advisor = {
+    uuid: string;
+    advisor?: {
+        uuid: string;
+        name: string;
+        bio?: string | null;
+        linkedin_url?: string | null;
+        website?: string | null;
+        country?: string | null;
+        location?: string | null;
+    };
+    created_at?: string;
+    updated_at?: string;
+};
+
 export type Grant = {
     uuid: string;
     name?: string | null;
@@ -73,6 +88,7 @@ export type Company = {
 export type CompanyDataResult = {
     company: Company | null;
     founders: Founder[];
+    advisors: Advisor[];
     grants: Grant[];
     patents: PatentApplication[];
     clinicalTrials: ClinicalStudy[];
@@ -80,12 +96,14 @@ export type CompanyDataResult = {
     errors: {
         company?: string;
         founders?: string;
+        advisors?: string;
         grants?: string;
         patents?: string;
         clinicalTrials?: string;
     };
     counts: {
         founders: number;
+        advisors: number;
         grants: number;
         patents: number;
         clinicalTrials: number;
@@ -125,9 +143,31 @@ export function useCompanyData(companyUuid: string | null, enabled = true): Comp
                 queryKey: ['company-founders', companyUuid],
                 queryFn: async () => {
                     if (!companyUuid) return [];
-                    const response = await http.get(`/companies/founders/?company=${companyUuid}&page_size=50`);
+                    console.log('Fetching founders for company:', companyUuid);
+                    const response = await http.get(
+                        `/companies/founders/?company=${companyUuid}&page_size=50`,
+                    );
                     const data = response.data as ApiListResponse<Founder> | Founder[];
-                    return Array.isArray(data) ? data : data.results || [];
+                    const result = Array.isArray(data) ? data : data.results || [];
+                    console.log('Founders data received:', result);
+                    return result;
+                },
+                enabled: enabled && !!companyUuid,
+                staleTime: 5 * 60 * 1000,
+            },
+            // Advisors
+            {
+                queryKey: ['company-advisors', companyUuid],
+                queryFn: async () => {
+                    if (!companyUuid) return [];
+                    console.log('Fetching advisors for company:', companyUuid);
+                    const response = await http.get(
+                        `/companies/advisors/?company=${companyUuid}&page_size=50`,
+                    );
+                    const data = response.data as ApiListResponse<Advisor> | Advisor[];
+                    const result = Array.isArray(data) ? data : data.results || [];
+                    console.log('Advisors data received:', result);
+                    return result;
                 },
                 enabled: enabled && !!companyUuid,
                 staleTime: 5 * 60 * 1000,
@@ -137,7 +177,9 @@ export function useCompanyData(companyUuid: string | null, enabled = true): Comp
                 queryKey: ['company-grants', companyUuid],
                 queryFn: async () => {
                     if (!companyUuid) return [];
-                    const response = await http.get(`/companies/grants/?company=${companyUuid}&page_size=100`);
+                    const response = await http.get(
+                        `/companies/grants/?company=${companyUuid}&page_size=100`,
+                    );
                     const data = response.data as ApiListResponse<Grant> | Grant[];
                     return Array.isArray(data) ? data : data.results || [];
                 },
@@ -149,8 +191,12 @@ export function useCompanyData(companyUuid: string | null, enabled = true): Comp
                 queryKey: ['company-patents', companyUuid],
                 queryFn: async () => {
                     if (!companyUuid) return [];
-                    const response = await http.get(`/companies/patent-applications/?company=${companyUuid}&page_size=100`);
-                    const data = response.data as ApiListResponse<PatentApplication> | PatentApplication[];
+                    const response = await http.get(
+                        `/companies/patent-applications/?company=${companyUuid}&page_size=100`,
+                    );
+                    const data = response.data as
+                        | ApiListResponse<PatentApplication>
+                        | PatentApplication[];
                     return Array.isArray(data) ? data : data.results || [];
                 },
                 enabled: enabled && !!companyUuid,
@@ -161,7 +207,9 @@ export function useCompanyData(companyUuid: string | null, enabled = true): Comp
                 queryKey: ['company-clinical-trials', companyUuid],
                 queryFn: async () => {
                     if (!companyUuid) return [];
-                    const response = await http.get(`/companies/clinical-studies/?company=${companyUuid}&page_size=100`);
+                    const response = await http.get(
+                        `/companies/clinical-studies/?company=${companyUuid}&page_size=100`,
+                    );
                     const data = response.data as ApiListResponse<ClinicalStudy> | ClinicalStudy[];
                     return Array.isArray(data) ? data : data.results || [];
                 },
@@ -171,22 +219,31 @@ export function useCompanyData(companyUuid: string | null, enabled = true): Comp
         ],
     });
 
-    const [companyResult, foundersResult, grantsResult, patentsResult, clinicalTrialsResult] = results;
+    const [
+        companyResult,
+        foundersResult,
+        advisorsResult,
+        grantsResult,
+        patentsResult,
+        clinicalTrialsResult,
+    ] = results;
 
     // Extract data and handle null cases
     const company = companyResult.data || null;
     const founders = foundersResult.data || [];
+    const advisors = advisorsResult.data || [];
     const grants = grantsResult.data || [];
     const patents = patentsResult.data || [];
     const clinicalTrials = clinicalTrialsResult.data || [];
 
     // Calculate loading state - true if any query is loading
-    const loading = results.some(result => result.isLoading);
+    const loading = results.some((result) => result.isLoading);
 
     // Collect errors
     const errors: CompanyDataResult['errors'] = {};
     if (companyResult.error) errors.company = String(companyResult.error);
     if (foundersResult.error) errors.founders = String(foundersResult.error);
+    if (advisorsResult.error) errors.advisors = String(advisorsResult.error);
     if (grantsResult.error) errors.grants = String(grantsResult.error);
     if (patentsResult.error) errors.patents = String(patentsResult.error);
     if (clinicalTrialsResult.error) errors.clinicalTrials = String(clinicalTrialsResult.error);
@@ -199,6 +256,7 @@ export function useCompanyData(companyUuid: string | null, enabled = true): Comp
 
     const counts = {
         founders: founders.length,
+        advisors: advisors.length,
         grants: grants.length,
         patents: patents.length,
         clinicalTrials: clinicalTrials.length,
@@ -208,6 +266,7 @@ export function useCompanyData(companyUuid: string | null, enabled = true): Comp
     return {
         company,
         founders,
+        advisors,
         grants,
         patents,
         clinicalTrials,

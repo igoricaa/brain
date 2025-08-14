@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { http } from '@/lib/http';
 import type { Advisor, Founder, Paginated, PeopleSearchParams } from '@/lib/types/people';
 
@@ -22,7 +22,7 @@ export function useFounders(params: PeopleSearchParams) {
             const res = await http.get(url);
             return res.data as Paginated<Founder>;
         },
-        keepPreviousData: true,
+        placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
     });
 }
@@ -36,7 +36,7 @@ export function useAdvisors(params: PeopleSearchParams) {
             const res = await http.get(url);
             return res.data as Paginated<Advisor>;
         },
-        keepPreviousData: true,
+        placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
     });
 }

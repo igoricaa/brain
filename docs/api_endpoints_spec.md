@@ -1,15 +1,226 @@
 # API Endpoints Specification
 
-## Deal Management API Endpoints
+This document outlines both **current** and **planned** API endpoints for the Bhive deal management system.
 
-### Base URL
-```
-/api/deals/
-```
+## Base URLs
+
+- **Development**: `http://localhost:8000/api/`
+- **Production**: TBD
+- **OpenAPI Docs**: `http://localhost:8000/api/docs/` (ReDoc)
+- **Swagger UI**: `http://localhost:8000/api/swagger-ui/`
+
+## Authentication
+
+All endpoints require authentication:
+- **Bearer Token**: `Authorization: Bearer <token>`
+- **Session**: Django session cookies (for web interface)
 
 ---
 
-## 1. Search and Filter Enhancement
+# CURRENT API ENDPOINTS
+
+## Core Deals API
+
+### GET /api/deals/deals/
+List and search deals
+
+**Query Parameters:**
+- `page`: int (pagination)
+- `page_size`: int (default 20, max 100)
+- `search`: string (name/description search)
+- `status`: string (`draft|active|archive`)
+- `ordering`: string (e.g., `-created_at`)
+
+**Response:**
+```json
+{
+  "count": 42,
+  "next": "http://localhost:8000/api/deals/deals/?page=2",
+  "previous": null,
+  "results": [
+    {
+      "uuid": "123e4567-e89b-12d3-a456-426614174000",
+      "name": "AI Startup Deal",
+      "description": "Promising AI company focused on...",
+      "status": "active",
+      "company": {
+        "uuid": "comp-uuid-here",
+        "name": "TechCorp Inc",
+        "website": "https://techcorp.com"
+      },
+      "industries": [
+        {"uuid": "ind-uuid", "name": "Artificial Intelligence"}
+      ],
+      "dual_use_signals": [
+        {"uuid": "sig-uuid", "name": "Advanced Analytics", "code": "AA"}
+      ],
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-20T14:00:00Z"
+    }
+  ]
+}
+```
+
+### GET /api/deals/deals/{uuid}/
+Get deal details
+
+**Response:** Full Deal object with all nested relationships
+
+### PATCH /api/deals/deals/{uuid}/
+Update deal
+
+**Body Examples:**
+```json
+// Update basic info
+{
+  "name": "New Deal Name",
+  "description": "Updated description"
+}
+
+// Update industries (UUIDs array)
+{
+  "industries": ["industry-uuid-1", "industry-uuid-2"]
+}
+
+// Update dual-use signals (UUIDs array)
+{
+  "dual_use_signals": ["signal-uuid-1", "signal-uuid-2"]
+}
+```
+
+### POST /api/deals/deals/
+Create new deal
+
+**Required:** `name`
+**Optional:** `company` (UUID), `description`, `status`
+
+### DELETE /api/deals/deals/{uuid}/
+Soft delete deal
+
+---
+
+## File Management
+
+### GET /api/deals/deal-files/
+List deal files with filtering
+
+**Query Parameters:**
+- `deal`: UUID (required for filtering)
+- `file_type`: string (`deck|paper|other`)
+- `page_size`: int (default 20)
+
+### POST /api/deals/deal-files/
+Upload file (multipart/form-data)
+
+**Fields:**
+- `file`: File object
+- `deal`: UUID
+- `file_type`: string
+- `name`: string (optional)
+
+### PATCH /api/deals/deal-files/{uuid}/
+Update file metadata
+
+### DELETE /api/deals/deal-files/{uuid}/
+Delete file
+
+---
+
+## Companies API
+
+### GET /api/companies/companies/{uuid}/
+Get company details
+
+### GET /api/companies/companies/
+List companies with search/pagination
+
+---
+
+## People Management
+
+### GET /api/companies/founders/
+List founders with company filter
+
+**Query:** `?company={uuid}&page_size=50`
+
+### POST /api/companies/founders/
+Create founder relationship
+
+**Body:**
+```json
+{
+  "company": "company-uuid",
+  "founder": {
+    "name": "John Doe",
+    "country": "US",
+    "bio": "Former Google engineer...",
+    "linkedin_url": "https://linkedin.com/in/johndoe",
+    "website": "https://johndoe.com",
+    "location": "San Francisco, CA"
+  },
+  "title": "CEO",
+  "age_at_founding": 32
+}
+```
+
+### DELETE /api/companies/founders/{uuid}/
+Remove founder relationship
+
+### GET /api/companies/advisors/
+List advisors with company filter
+
+### POST /api/companies/advisors/
+Create advisor relationship
+
+**Body:**
+```json
+{
+  "company": "company-uuid",
+  "advisor": {
+    "name": "Jane Smith",
+    "country": "US",
+    "bio": "20 years experience in...",
+    "linkedin_url": "https://linkedin.com/in/janesmith",
+    "website": "https://janesmith.com",
+    "location": "Boston, MA"
+  }
+}
+```
+
+### DELETE /api/companies/advisors/{uuid}/
+Remove advisor relationship
+
+---
+
+## External Data (Read-Only)
+
+### GET /api/companies/grants/
+List government grants
+**Query:** `?company={uuid}&page_size=100`
+
+### GET /api/companies/patent-applications/
+List patents
+**Query:** `?company={uuid}&page_size=100`
+
+### GET /api/companies/clinical-studies/
+List clinical trials
+**Query:** `?company={uuid}&page_size=100`
+
+---
+
+## Reference Data (Read-Only)
+
+### GET /api/companies/industries/
+List all industries (static reference data)
+
+### GET /api/dual_use/signals/
+List all dual-use signals (static reference data)
+
+---
+
+# PLANNED API ENHANCEMENTS
+
+## 1. Enhanced Search and Filtering
 
 ### GET /api/deals/deals/
 **Enhancement**: Add text search capability

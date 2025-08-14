@@ -1,26 +1,29 @@
 import { createRoot } from 'react-dom/client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
+import { http } from '@/lib/http';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronRight, Edit, ExternalLink, Plus } from 'lucide-react';
+import { Edit, Edit2, ExternalLink, Plus } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import RelatedDocumentsPanel from '../components/library/RelatedDocumentsPanel';
 import { FileManagementModal } from '../components/deals/FileManagementModal';
 import { CompanyOverviewCard } from '../components/deals/CompanyOverviewCard';
 import { ExternalDataBadges } from '../components/deals/ExternalDataBadges';
 import { FoundersAccordion } from '../components/deals/FoundersAccordion';
+import { AdvisorsAccordion } from '../components/deals/AdvisorsAccordion';
 import { GrantsAccordion } from '../components/deals/GrantsAccordion';
 import { PatentsAccordion } from '../components/deals/PatentsAccordion';
 import { ClinicalTrialsAccordion } from '../components/deals/ClinicalTrialsAccordion';
 import { ActionsBar } from '../components/deals/ActionsBar';
 import { FoundersEditModal } from '../components/deals/FoundersEditModal';
+import { AdvisorsEditModal } from '../components/deals/AdvisorsEditModal';
 import { GrantsEditModal } from '../components/deals/GrantsEditModal';
 import { IndustriesEditModal } from '../components/deals/IndustriesEditModal';
+import { DualUseSignalsEditModal } from '../components/deals/DualUseSignalsEditModal';
 import { useCompanyData } from '../hooks/useCompanyData';
 import { isNewSinceLastAssessment } from '../lib/utils/deals';
 import { Toaster } from '@/components/ui/sonner';
@@ -96,7 +99,6 @@ type ApiList<T> = {
     results?: T[];
 };
 
-
 type ResearchAgent = {
     final_assessment: string;
     team_assessment: string;
@@ -145,7 +147,6 @@ Strong technical leadership with proven track record at major tech companies.
         'machine learning team assessment',
     ],
 };
-
 
 function formatCurrency(amount: number | null | undefined): string {
     if (!amount) return 'N/A';
@@ -218,47 +219,20 @@ const DealAssessmentSchema = DealAssessmentPatchSchema.extend({
     updated_at: z.string().optional(),
 });
 
-function useDeal(uuid: string | null, reloadKey = 0) {
-    const [data, setData] = useState<Deal | null>(null);
-    const [loading, setLoading] = useState<boolean>(!!uuid);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        let cancelled = false;
-        async function run() {
-            if (!uuid) return;
-            setLoading(true);
-            setError(null);
-            try {
-                const resp = await fetch(`/api/deals/deals/${uuid}/`, {
-                    credentials: 'same-origin',
-                    headers: { Accept: 'application/json' },
-                });
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const json = (await resp.json()) as Deal;
-                if (!cancelled) setData(json);
-            } catch (e: unknown) {
-                const message = e instanceof Error ? e.message : 'Failed to load deal';
-                if (!cancelled) setError(message);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        }
-        run();
-        return () => {
-            cancelled = true;
-        };
-    }, [uuid, reloadKey]);
-
-    return { data, loading, error };
+function useDeal(uuid: string | null) {
+    return useQuery({
+        queryKey: ['deal', uuid],
+        queryFn: async () => {
+            if (!uuid) throw new Error('Deal UUID is required');
+            const response = await http.get(`/deals/deals/${uuid}/`);
+            return response.data as Deal;
+        },
+        enabled: !!uuid,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
 }
 
-function useDealFiles(
-    kind: 'decks' | 'papers' | 'files',
-    dealUuid: string | null,
-    pageSize = 10,
-    reloadKey = 0,
-) {
+function useDealFiles(kind: 'decks' | 'papers' | 'files', dealUuid: string | null, pageSize = 10) {
     const [data, setData] = useState<DealFile[]>([]);
     const [loading, setLoading] = useState<boolean>(!!dealUuid);
     const [error, setError] = useState<string | null>(null);
@@ -290,7 +264,7 @@ function useDealFiles(
         return () => {
             cancelled = true;
         };
-    }, [kind, dealUuid, pageSize, reloadKey]);
+    }, [kind, dealUuid, pageSize]);
 
     return { data, loading, error };
 }
@@ -378,7 +352,6 @@ function BasicInfoCard({ deal }: { deal: Deal }) {
         </Card>
     );
 }
-
 
 // Research Agent Section Component
 function ResearchAgentSection({ data = mockResearchAgent }: { data?: ResearchAgent }) {
@@ -560,68 +533,90 @@ function AnalystAssessmentSection({
     const [savingFields, setSavingFields] = useState<Set<string>>(new Set());
 
     // Original values for dirty state comparison
-    const originalValues = useMemo(() => ({
-        problem_solved: assessment?.problem_solved || '',
-        solution: assessment?.solution || '',
-        customer_traction: assessment?.customer_traction || '',
-        intellectual_property: assessment?.intellectual_property || '',
-        business_model: assessment?.business_model || '',
-        tam: assessment?.tam || '',
-        competition: assessment?.competition || '',
-        investment_rationale: assessment?.investment_rationale || '',
-        pros: assessment?.pros || '',
-        cons: assessment?.cons || '',
-        recommendation: assessment?.recommendation || '',
-        quality_percentile: assessment?.quality_percentile || '',
-    }), [assessment]);
+    const originalValues = useMemo(
+        () => ({
+            problem_solved: assessment?.problem_solved || '',
+            solution: assessment?.solution || '',
+            customer_traction: assessment?.customer_traction || '',
+            intellectual_property: assessment?.intellectual_property || '',
+            business_model: assessment?.business_model || '',
+            tam: assessment?.tam || '',
+            competition: assessment?.competition || '',
+            investment_rationale: assessment?.investment_rationale || '',
+            pros: assessment?.pros || '',
+            cons: assessment?.cons || '',
+            recommendation: assessment?.recommendation || '',
+            quality_percentile: assessment?.quality_percentile || '',
+        }),
+        [assessment],
+    );
 
     // Current values for dirty state comparison
-    const currentValues = useMemo(() => ({
-        problem_solved: problemSolved,
-        solution: solution,
-        customer_traction: customerTraction,
-        intellectual_property: intellectualProperty,
-        business_model: businessModel,
-        tam: tam,
-        competition: competition,
-        investment_rationale: rationale,
-        pros: pros,
-        cons: cons,
-        recommendation: recommendation,
-        quality_percentile: quality,
-    }), [problemSolved, solution, customerTraction, intellectualProperty, businessModel, tam, competition, rationale, pros, cons, recommendation, quality]);
+    const currentValues = useMemo(
+        () => ({
+            problem_solved: problemSolved,
+            solution: solution,
+            customer_traction: customerTraction,
+            intellectual_property: intellectualProperty,
+            business_model: businessModel,
+            tam: tam,
+            competition: competition,
+            investment_rationale: rationale,
+            pros: pros,
+            cons: cons,
+            recommendation: recommendation,
+            quality_percentile: quality,
+        }),
+        [
+            problemSolved,
+            solution,
+            customerTraction,
+            intellectualProperty,
+            businessModel,
+            tam,
+            competition,
+            rationale,
+            pros,
+            cons,
+            recommendation,
+            quality,
+        ],
+    );
 
     // Save on blur handler
-    const handleBlur = useCallback(async (field: string) => {
-        // Check if field value has changed
-        const currentValue = currentValues[field as keyof typeof currentValues];
-        const originalValue = originalValues[field as keyof typeof originalValues];
-        
-        if (currentValue === originalValue) {
-            return; // No change, don't save
-        }
+    const handleBlur = useCallback(
+        async (field: string) => {
+            // Check if field value has changed
+            const currentValue = currentValues[field as keyof typeof currentValues];
+            const originalValue = originalValues[field as keyof typeof originalValues];
 
-        // Check if already saving this field
-        if (savingFields.has(field)) {
-            return;
-        }
+            if (currentValue === originalValue) {
+                return; // No change, don't save
+            }
 
-        setSavingFields(prev => new Set([...prev, field]));
+            // Check if already saving this field
+            if (savingFields.has(field)) {
+                return;
+            }
 
-        try {
-            await onSave({ [field]: currentValue });
-            toast.success('Changes saved successfully');
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Failed to save';
-            toast.error(`Failed to save: ${errorMessage}`);
-        } finally {
-            setSavingFields(prev => {
-                const next = new Set(prev);
-                next.delete(field);
-                return next;
-            });
-        }
-    }, [currentValues, originalValues, savingFields, onSave]);
+            setSavingFields((prev) => new Set([...prev, field]));
+
+            try {
+                await onSave({ [field]: currentValue });
+                toast.success('Changes saved successfully');
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to save';
+                toast.error(`Failed to save: ${errorMessage}`);
+            } finally {
+                setSavingFields((prev) => {
+                    const next = new Set(prev);
+                    next.delete(field);
+                    return next;
+                });
+            }
+        },
+        [currentValues, originalValues, savingFields, onSave],
+    );
 
     // Sync state when data changes
     useEffect(() => {
@@ -764,7 +759,8 @@ function AnalystAssessmentSection({
                     <div>
                         <label className="text-xs font-semibold text-gray-600 block mb-2">
                             Recommendation
-                            {(savingFields.has('quality_percentile') || savingFields.has('recommendation')) && (
+                            {(savingFields.has('quality_percentile') ||
+                                savingFields.has('recommendation')) && (
                                 <span className="ml-1 text-blue-600">Saving...</span>
                             )}
                         </label>
@@ -801,7 +797,6 @@ function AnalystAssessmentSection({
         </Card>
     );
 }
-
 
 function Summary({ deal }: { deal: Deal }) {
     const hasInvestors = (deal.investors_names || []).length > 0;
@@ -858,32 +853,21 @@ function Summary({ deal }: { deal: Deal }) {
     );
 }
 
-function Industries({ 
-    items, 
-    onEdit 
-}: { 
-    items: Related[] | undefined;
-    onEdit?: () => void;
-}) {
+function Industries({ items, onEdit }: { items: Related[] | undefined; onEdit?: () => void }) {
     return (
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-gray-900">Industries</h3>
                 {onEdit && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onEdit}
-                        title="Edit industries"
-                    >
-                        <Edit className="h-4 w-4" />
+                    <Button variant="ghost" size="sm" onClick={onEdit} title="Edit industries">
+                        <Edit2 className="h-4 w-4" />
                     </Button>
                 )}
             </div>
             {items && items.length ? (
                 <div className="flex flex-wrap gap-1">
-                    {items.map((it) => (
-                        <Tag key={it.uuid} color="violet">
+                    {items.map((it, index) => (
+                        <Tag key={it.uuid} color={['violet', 'blue', 'green', 'amber', 'slate'][index % 5] as any}>
                             {it.name || '—'}
                         </Tag>
                     ))}
@@ -892,11 +876,7 @@ function Industries({
                 <div className="text-center py-4">
                     <div className="text-sm text-gray-500 mb-2">No industries.</div>
                     {onEdit && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={onEdit}
-                        >
+                        <Button variant="outline" size="sm" onClick={onEdit}>
                             <Plus className="h-4 w-4 mr-2" />
                             Add Industries
                         </Button>
@@ -907,21 +887,33 @@ function Industries({
     );
 }
 
-function Signals({ items }: { items: RelatedSignal[] | undefined }) {
+function Signals({ items, onEdit }: { items: RelatedSignal[] | undefined; onEdit: () => void }) {
     return (
-        <SectionCard title="Dual-use Signals">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold text-gray-900">Dual-use Signals</h3>
+                <Button variant="ghost" size="sm" onClick={onEdit} title="Edit dual-use signals">
+                    <Edit2 className="h-4 w-4" />
+                </Button>
+            </div>
             {items && items.length ? (
                 <div className="flex flex-wrap gap-1">
-                    {items.map((it) => (
-                        <Tag key={it.uuid} color="amber">
+                    {items.map((it, index) => (
+                        <Tag key={it.uuid} color={['amber', 'green', 'blue', 'violet', 'slate'][index % 5] as any}>
                             {it.name}
                         </Tag>
                     ))}
                 </div>
             ) : (
-                <div className="text-sm text-gray-500">No signals.</div>
+                <div className="text-center py-4">
+                    <div className="text-sm text-gray-500 mb-2">No signals assigned</div>
+                    <Button variant="outline" size="sm" onClick={onEdit}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Signals
+                    </Button>
+                </div>
             )}
-        </SectionCard>
+        </div>
     );
 }
 
@@ -975,16 +967,16 @@ function ErrorBox({ message }: { message: string }) {
 }
 
 function DealDetailApp({ uuid }: { uuid: string }) {
-    const [reloadKey] = useState(0);
-    const { data: deal, loading, error } = useDeal(uuid, reloadKey);
-    const { data: decks, loading: decksLoading } = useDealFiles('decks', uuid, 10, reloadKey);
-    const { data: papers, loading: papersLoading } = useDealFiles('papers', uuid, 10, reloadKey);
-    const { data: files, loading: filesLoading } = useDealFiles('files', uuid, 50, reloadKey);
+    const { data: deal, isLoading: loading, error } = useDeal(uuid);
+    const { data: decks, loading: decksLoading } = useDealFiles('decks', uuid, 10);
+    const { data: papers, loading: papersLoading } = useDealFiles('papers', uuid, 10);
+    const { data: files, loading: filesLoading } = useDealFiles('files', uuid, 50);
 
     // Load company data using the new hook
     const {
         company,
         founders,
+        advisors,
         grants,
         patents,
         clinicalTrials,
@@ -998,16 +990,18 @@ function DealDetailApp({ uuid }: { uuid: string }) {
     const [assessError, setAssessError] = useState<string | null>(null);
     const [isFileModalOpen, setIsFileModalOpen] = useState(false);
     const [isFoundersModalOpen, setIsFoundersModalOpen] = useState(false);
+    const [isAdvisorsModalOpen, setIsAdvisorsModalOpen] = useState(false);
     const [isGrantsModalOpen, setIsGrantsModalOpen] = useState(false);
     const [isIndustriesModalOpen, setIsIndustriesModalOpen] = useState(false);
+    const [isDualUseSignalsModalOpen, setIsDualUseSignalsModalOpen] = useState(false);
 
     // Calculate new files count for actions bar
     const newFilesCount = useMemo(() => {
         if (!deal?.last_assessment_created_at) return 0;
-        
+
         const allFiles = [...decks, ...papers, ...files];
-        return allFiles.filter(file => 
-            isNewSinceLastAssessment(file.created_at, deal.last_assessment_created_at)
+        return allFiles.filter((file) =>
+            isNewSinceLastAssessment(file.created_at, deal.last_assessment_created_at),
         ).length;
     }, [decks, papers, files, deal?.last_assessment_created_at]);
 
@@ -1054,7 +1048,6 @@ function DealDetailApp({ uuid }: { uuid: string }) {
         };
     }, [uuid]);
 
-
     async function saveAssessment(patch: Partial<DealAssessment>) {
         // Validate input data
         const validatedPatch = DealAssessmentPatchSchema.parse(patch);
@@ -1094,7 +1087,10 @@ function DealDetailApp({ uuid }: { uuid: string }) {
 
     const initialLoading = loading && !deal;
     if (initialLoading) return <LoadingBox />;
-    if (error) return <ErrorBox message={error} />;
+    if (error)
+        return (
+            <ErrorBox message={error instanceof Error ? error.message : 'Failed to load deal'} />
+        );
     if (!deal) return null;
 
     return (
@@ -1111,7 +1107,6 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                 patentsCount={companyDataCounts.patents}
                 clinicalTrialsCount={companyDataCounts.clinicalTrials}
             />
-            
             {/* Row 2: External Data Summary */}
             <ExternalDataBadges
                 foundersCount={companyDataCounts.founders}
@@ -1121,10 +1116,8 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                 totalGrantFunding={companyDataCounts.totalGrantFunding}
                 loading={companyDataLoading}
             />
-            
             {/* Row 3: Basic Deal Info */}
             <BasicInfoCard deal={deal} />
-            
             {/* Row 4: External Data Accordions */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-6">
@@ -1134,6 +1127,13 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                         error={companyDataErrors.founders}
                         autoExpand={true}
                         onEdit={() => setIsFoundersModalOpen(true)}
+                    />
+                    <AdvisorsAccordion
+                        advisors={advisors}
+                        loading={companyDataLoading}
+                        error={companyDataErrors.advisors}
+                        autoExpand={true}
+                        onEdit={() => setIsAdvisorsModalOpen(true)}
                     />
                     <GrantsAccordion
                         grants={grants}
@@ -1158,7 +1158,6 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                     />
                 </div>
             </div>
-            
             {/* Row 5: Research Agent */}
             <ResearchAgentSection />
             {/* Row 6: Stacked Assessments */}
@@ -1175,11 +1174,11 @@ function DealDetailApp({ uuid }: { uuid: string }) {
             </div>
             {/* Row 7: Industries and Signals */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Industries 
-                    items={deal.industries} 
-                    onEdit={() => setIsIndustriesModalOpen(true)}
+                <Industries items={deal.industries} onEdit={() => setIsIndustriesModalOpen(true)} />
+                <Signals
+                    items={deal.dual_use_signals}
+                    onEdit={() => setIsDualUseSignalsModalOpen(true)}
                 />
-                <Signals items={deal.dual_use_signals} />
             </div>
             {/* Row 8: Summary */}
             <Summary deal={deal} />
@@ -1208,8 +1207,8 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                 title="Related Documents"
             />
             {/* Sticky Actions Bar */}
-            <ActionsBar 
-                deal={deal} 
+            <ActionsBar
+                deal={deal}
                 onEditFiles={() => setIsFileModalOpen(true)}
                 newFilesCount={newFilesCount}
             />
@@ -1221,7 +1220,6 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                 dealName={deal.name || 'Unnamed Deal'}
                 lastAssessmentDate={deal.last_assessment_created_at}
             />
-
             {/* Edit Modals */}
             {deal.company?.uuid && (
                 <>
@@ -1231,7 +1229,7 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                         companyUuid={deal.company.uuid}
                         founders={founders}
                     />
-                    
+
                     <GrantsEditModal
                         isOpen={isGrantsModalOpen}
                         onClose={() => setIsGrantsModalOpen(false)}
@@ -1240,11 +1238,22 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                     />
                 </>
             )}
-            
             <IndustriesEditModal
                 isOpen={isIndustriesModalOpen}
                 onClose={() => setIsIndustriesModalOpen(false)}
                 deal={deal}
+            />
+            <DualUseSignalsEditModal
+                isOpen={isDualUseSignalsModalOpen}
+                onClose={() => setIsDualUseSignalsModalOpen(false)}
+                dealUuid={uuid}
+                currentSignals={deal.dual_use_signals || []}
+            />
+            <AdvisorsEditModal
+                isOpen={isAdvisorsModalOpen}
+                onClose={() => setIsAdvisorsModalOpen(false)}
+                companyUuid={deal.company?.uuid}
+                advisors={advisors}
             />
         </div>
     );

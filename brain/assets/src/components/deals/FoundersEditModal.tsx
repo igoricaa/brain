@@ -16,6 +16,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -25,24 +32,25 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Plus, Trash2, Calendar, Mail, ExternalLink, Briefcase } from 'lucide-react';
+import { getNames, getCode } from 'country-list';
 import type { Founder } from '@/hooks/useCompanyData';
 
 // Validation schemas
 const FounderFormSchema = z.object({
     name: z.string().min(1, 'Name is required').max(255, 'Name too long'),
+    country: z.string().length(2, 'Country is required'), // ISO 2-letter code
     email: z.string().email('Invalid email').optional().or(z.literal('')),
     title: z.string().max(255, 'Title too long').optional().or(z.literal('')),
     linkedin_url: z.string().url('Invalid LinkedIn URL').optional().or(z.literal('')),
     bio: z.string().max(2000, 'Bio too long').optional().or(z.literal('')),
     age_at_founding: z.coerce.number().min(0).max(150).optional().or(z.literal('')),
-    past_significant_employments: z.string().max(2000, 'Past employment too long').optional().or(z.literal('')),
+    past_significant_employments: z
+        .string()
+        .max(2000, 'Past employment too long')
+        .optional()
+        .or(z.literal('')),
 });
 
 type FounderFormData = z.infer<typeof FounderFormSchema>;
@@ -63,15 +71,15 @@ const formatDate = (dateStr: string | null | undefined): string => {
     }
 };
 
-function FounderCard({ 
-    founder, 
-    onDelete 
-}: { 
-    founder: Founder; 
+function FounderCard({
+    founder,
+    onDelete,
+}: {
+    founder: Founder;
     onDelete: (founderId: string) => void;
 }) {
     const founderData = founder?.founder || {};
-    
+
     return (
         <Card className="relative">
             <CardHeader className="pb-3">
@@ -99,7 +107,7 @@ function FounderCard({
                 {founderData.email && (
                     <div className="flex items-center gap-2">
                         <Mail className="h-3 w-3 text-gray-400" />
-                        <a 
+                        <a
                             href={`mailto:${founderData.email}`}
                             className="text-blue-600 hover:underline"
                         >
@@ -107,20 +115,20 @@ function FounderCard({
                         </a>
                     </div>
                 )}
-                
+
                 {founder.age_at_founding && (
                     <div className="flex items-center gap-2">
                         <Calendar className="h-3 w-3 text-gray-400" />
                         <span>Age at founding: {founder.age_at_founding}</span>
                     </div>
                 )}
-                
+
                 {founderData.linkedin_url && (
                     <div className="flex items-center gap-2">
                         <ExternalLink className="h-3 w-3 text-gray-400" />
-                        <a 
-                            href={founderData.linkedin_url} 
-                            target="_blank" 
+                        <a
+                            href={founderData.linkedin_url}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline"
                         >
@@ -128,7 +136,7 @@ function FounderCard({
                         </a>
                     </div>
                 )}
-                
+
                 {founder.past_significant_employments && (
                     <div className="mt-2">
                         <div className="flex items-center gap-2 mb-1">
@@ -140,13 +148,11 @@ function FounderCard({
                         </p>
                     </div>
                 )}
-                
+
                 {founderData.bio && (
                     <div className="mt-2">
                         <div className="font-medium mb-1">Bio:</div>
-                        <p className="text-gray-700 text-xs">
-                            {founderData.bio}
-                        </p>
+                        <p className="text-gray-700 text-xs">{founderData.bio}</p>
                     </div>
                 )}
             </CardContent>
@@ -165,6 +171,7 @@ function FounderForm({
 }) {
     const [formData, setFormData] = useState<FounderFormData>({
         name: '',
+        country: '',
         email: '',
         title: '',
         linkedin_url: '',
@@ -172,7 +179,7 @@ function FounderForm({
         age_at_founding: '',
         past_significant_employments: '',
     });
-    
+
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -185,21 +192,24 @@ function FounderForm({
         } catch (error) {
             if (error instanceof z.ZodError) {
                 const fieldErrors: Record<string, string> = {};
-                error.errors.forEach((err: z.ZodIssue) => {
+                error.issues.forEach((err) => {
                     if (err.path.length > 0) {
                         fieldErrors[err.path[0] as string] = err.message;
                     }
                 });
                 setErrors(fieldErrors);
+            } else {
+                console.error('Validation error:', error);
+                toast.error('Validation failed');
             }
         }
     };
 
     const handleInputChange = (field: keyof FounderFormData, value: string | number) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData((prev) => ({ ...prev, [field]: value }));
         // Clear error when user starts typing
         if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: '' }));
+            setErrors((prev) => ({ ...prev, [field]: '' }));
         }
     };
 
@@ -213,11 +223,38 @@ function FounderForm({
                         value={formData.name}
                         onChange={(e) => handleInputChange('name', e.target.value)}
                         placeholder="Enter founder name"
-                        className={errors.name ? 'border-red-500' : ''}
+                        className={errors.name ? 'border-1 border-red-500' : ''}
                     />
                     {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
                 </div>
-                
+
+                <div>
+                    <Label htmlFor="country">Country *</Label>
+                    <Select
+                        value={formData.country}
+                        onValueChange={(value) => handleInputChange('country', value)}
+                    >
+                        <SelectTrigger className={errors.country ? 'border-1 border-red-500' : ''}>
+                            <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                            {getNames()
+                                .sort()
+                                .map((countryName) => {
+                                    const code = getCode(countryName);
+                                    return code ? (
+                                        <SelectItem key={code} value={code}>
+                                            {countryName}
+                                        </SelectItem>
+                                    ) : null;
+                                })}
+                        </SelectContent>
+                    </Select>
+                    {errors.country && (
+                        <p className="text-sm text-red-600 mt-1">{errors.country}</p>
+                    )}
+                </div>
+
                 <div>
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -226,11 +263,11 @@ function FounderForm({
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
                         placeholder="Enter email address"
-                        className={errors.email ? 'border-red-500' : ''}
+                        className={errors.email ? 'border-1 border-red-500' : ''}
                     />
                     {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
                 </div>
-                
+
                 <div>
                     <Label htmlFor="title">Title/Role</Label>
                     <Input
@@ -238,11 +275,11 @@ function FounderForm({
                         value={formData.title}
                         onChange={(e) => handleInputChange('title', e.target.value)}
                         placeholder="e.g., CEO, CTO, Co-founder"
-                        className={errors.title ? 'border-red-500' : ''}
+                        className={errors.title ? 'border-1 border-red-500' : ''}
                     />
                     {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
                 </div>
-                
+
                 <div>
                     <Label htmlFor="age_at_founding">Age at Founding</Label>
                     <Input
@@ -253,12 +290,14 @@ function FounderForm({
                         value={formData.age_at_founding}
                         onChange={(e) => handleInputChange('age_at_founding', e.target.value)}
                         placeholder="Enter age"
-                        className={errors.age_at_founding ? 'border-red-500' : ''}
+                        className={errors.age_at_founding ? 'border-1 border-red-500' : ''}
                     />
-                    {errors.age_at_founding && <p className="text-sm text-red-600 mt-1">{errors.age_at_founding}</p>}
+                    {errors.age_at_founding && (
+                        <p className="text-sm text-red-600 mt-1">{errors.age_at_founding}</p>
+                    )}
                 </div>
             </div>
-            
+
             <div>
                 <Label htmlFor="linkedin_url">LinkedIn URL</Label>
                 <Input
@@ -267,24 +306,32 @@ function FounderForm({
                     value={formData.linkedin_url}
                     onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
                     placeholder="https://linkedin.com/in/..."
-                    className={errors.linkedin_url ? 'border-red-500' : ''}
+                    className={errors.linkedin_url ? 'border-1 border-red-500' : ''}
                 />
-                {errors.linkedin_url && <p className="text-sm text-red-600 mt-1">{errors.linkedin_url}</p>}
+                {errors.linkedin_url && (
+                    <p className="text-sm text-red-600 mt-1">{errors.linkedin_url}</p>
+                )}
             </div>
-            
+
             <div>
                 <Label htmlFor="past_significant_employments">Past Employment</Label>
                 <Textarea
                     id="past_significant_employments"
                     value={formData.past_significant_employments}
-                    onChange={(e) => handleInputChange('past_significant_employments', e.target.value)}
+                    onChange={(e) =>
+                        handleInputChange('past_significant_employments', e.target.value)
+                    }
                     placeholder="List previous significant roles and companies..."
                     rows={3}
-                    className={errors.past_significant_employments ? 'border-red-500' : ''}
+                    className={errors.past_significant_employments ? 'border-1 border-red-500' : ''}
                 />
-                {errors.past_significant_employments && <p className="text-sm text-red-600 mt-1">{errors.past_significant_employments}</p>}
+                {errors.past_significant_employments && (
+                    <p className="text-sm text-red-600 mt-1">
+                        {errors.past_significant_employments}
+                    </p>
+                )}
             </div>
-            
+
             <div>
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea
@@ -293,25 +340,16 @@ function FounderForm({
                     onChange={(e) => handleInputChange('bio', e.target.value)}
                     placeholder="Enter founder bio..."
                     rows={4}
-                    className={errors.bio ? 'border-red-500' : ''}
+                    className={errors.bio ? 'border-1 border-red-500' : ''}
                 />
                 {errors.bio && <p className="text-sm text-red-600 mt-1">{errors.bio}</p>}
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-                <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={onCancel}
-                    disabled={isSubmitting}
-                >
+                <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <Button 
-                    type="submit" 
-                    disabled={isSubmitting}
-                    className="min-w-[100px]"
-                >
+                <Button type="submit" disabled={isSubmitting} className="min-w-[100px]">
                     {isSubmitting ? 'Saving...' : 'Add Founder'}
                 </Button>
             </div>
@@ -319,11 +357,11 @@ function FounderForm({
     );
 }
 
-export function FoundersEditModal({ 
-    isOpen, 
-    onClose, 
+export function FoundersEditModal({
+    isOpen,
+    onClose,
     companyUuid,
-    founders 
+    founders,
 }: FoundersEditModalProps) {
     const [showAddForm, setShowAddForm] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -339,15 +377,14 @@ export function FoundersEditModal({
     // Add founder mutation
     const addFounderMutation = useMutation({
         mutationFn: async (data: FounderFormData) => {
-            // Transform data for API
+            // Transform data for API - fields at root level per API schema
             const apiData = {
                 company: companyUuid,
-                founder: {
-                    name: data.name,
-                    email: data.email || undefined,
-                    bio: data.bio || undefined,
-                    linkedin_url: data.linkedin_url || undefined,
-                },
+                name: data.name,
+                country: data.country, // Required field
+                email: data.email || undefined,
+                bio: data.bio || undefined,
+                linkedin_url: data.linkedin_url || undefined,
                 title: data.title || undefined,
                 age_at_founding: data.age_at_founding ? Number(data.age_at_founding) : undefined,
                 past_significant_employments: data.past_significant_employments || undefined,
@@ -357,7 +394,10 @@ export function FoundersEditModal({
             return response.data;
         },
         onSuccess: () => {
+            // Force complete cache clear and refetch
+            queryClient.removeQueries({ queryKey: ['company-founders', companyUuid] });
             queryClient.invalidateQueries({ queryKey: ['company-founders', companyUuid] });
+            queryClient.refetchQueries({ queryKey: ['company-founders', companyUuid] });
             toast.success('Founder added successfully');
             setShowAddForm(false);
         },
@@ -481,7 +521,8 @@ export function FoundersEditModal({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Remove Founder</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to remove this founder? This action cannot be undone.
+                            Are you sure you want to remove this founder? This action cannot be
+                            undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
