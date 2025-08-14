@@ -109,7 +109,7 @@ class CompanyViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         description=_('Retrieve details of a specific founder.'),
     ),
 )
-class FounderViewSet(viewsets.ReadOnlyModelViewSet):
+class FounderViewSet(viewsets.ModelViewSet):
 
     serializer_class = FounderSerializer
     filterset_class = FounderFilter
@@ -159,7 +159,7 @@ class AdvisorViewSet(viewsets.ReadOnlyModelViewSet):
         description=_('Retrieve details of a specific grant.'),
     ),
 )
-class GrantViewSet(viewsets.ReadOnlyModelViewSet):
+class GrantViewSet(viewsets.ModelViewSet):
 
     serializer_class = GrantSerializer
     lookup_field = 'uuid'

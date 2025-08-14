@@ -140,7 +140,7 @@ export function RelatedDocumentsPanel({
 
     const lAll = params.get(allParam);
     const page = parseInt(params.get(pageParam) || '1', 10);
-    const size = lAll ? 100 : parseInt(params.get(sizeParam) || '10', 10);
+    const size = lAll ? 100 : parseInt(params.get(sizeParam) || '30', 10); // Match API default page size
     const source = params.get(sourceParam);
 
     const { data, loading, error } = useLibraryFiles(
@@ -154,7 +154,7 @@ export function RelatedDocumentsPanel({
     const showingRange = useMemo(() => {
         if (!data.results || typeof data.count !== 'number') return null;
         const start = (page - 1) * size + 1;
-        const end = (page - 1) * size + (data.results?.length || 0);
+        const end = Math.min(page * size, data.count);
         return { start, end, total: data.count };
     }, [data.results, data.count, page, size]);
 

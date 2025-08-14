@@ -78,7 +78,7 @@ class DealSerializer(serializers.ModelSerializer):
         required=False,
     )
     funding_type = serializers.SlugRelatedField(
-        slug_field='uuid', queryset=FundingType.objects.all(), required=False, many=True
+        slug_field='uuid', queryset=FundingType.objects.all(), required=False
     )
 
     class Meta:

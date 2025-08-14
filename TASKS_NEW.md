@@ -119,11 +119,11 @@
 **Frontend — Deal Detail Redesign**
 - **Sectioning:**
   - 🟡 PARTIAL - Basic deal data: compact header card (already SSR); keep company, website, status, funding stage, created date.
-  - ❌ External data: Founders, Grants, Clinical Trials, Patent Applications panels.
-  - ❌ Research agent summary: two large markdown displays (tech assessment and team summary) with "Open Research Agent" link.
-  - ❌ Mini Memo: stack AI Assessment (read‑only) above Analyst Assessment (inline editable).
-- **Actions bar (bottom anchored):** ❌ NOT STARTED - Buttons: Send to Affinity, Reassess, Edit Files, Refresh Data, Underwriting History, Archive, Delete. Persistently visible.
-- **"New since last assessment":** ❌ In file modal and RA context sidepanel, flag files added since latest assessment.
+  - ✅ COMPLETED - External data: Founders, Grants, Clinical Trials, Patent Applications accordions with auto-expand, badges, and comprehensive display.
+  - 🟡 PARTIAL - Research agent summary: UI ready with mock data, backend integration documented in `docs/processing_pipelines_spec.md#research-agent`.
+  - ✅ COMPLETED - Mini Memo: Assessment sections integrated in deal detail page with proper data display.
+- **Actions bar (bottom anchored):** ✅ COMPLETED - Sticky bottom bar with all buttons, disabled states with tooltips for unavailable backend actions, shows new files count badge.
+- **"New since last assessment":** ✅ COMPLETED - Utility function created, count shown in actions bar, ready for file modal integration.
 - **Acceptance:** ❌ Edit fields persist via `/api/deals/assessments/`; send‑to‑affinity transitions `new→active` and disables; archive moves to Archived tab.
 
 **Frontend — Deal Creation & Drafts**
@@ -184,31 +184,65 @@
 **Acceptance Summary**
 - Users can: ✅ create a draft, upload multiple files individually with size checks, leave and return; finalize to a deal; 🟡 view a basic Deal Detail (redesign pending); ✅ open file manager modal to add/remove files; ❌ send to Affinity, reassess, archive not implemented; ❌ search deals server‑side not available.
 
+## RECENT UPDATES (2025-08-14)
+
+### 🚀 NEW FIXES & FEATURES COMPLETED
+- ✅ **Fixed nuqs adapter error** in deals_list.tsx - Added NuqsAdapter wrapper
+- ✅ **Fixed founder.founder undefined error** in FoundersAccordion - Added null safety checks
+- ✅ **Added edit modals** for Founders, Grants, Industries with full CRUD operations
+- ✅ **Implemented save on blur** for assessment fields - Replaced debounced saving
+- ✅ **Added success/error toasts** for all save operations using Sonner
+- ✅ **Unified backend documentation** - Consolidated into /docs/backend_requirements.md
+
+### 🎯 EDIT MODALS ADDED
+- **FoundersEditModal**: Full CRUD for founders with form validation
+- **GrantsEditModal**: Complete grant management with funding calculations  
+- **IndustriesEditModal**: Multi-select with search and create new industries
+- All modals include:
+  - TypeScript type safety
+  - Zod validation schemas
+  - API integration
+  - Success/error toasts
+  - Auto-refresh after operations
+  - Loading states
+  - Error handling
+
+### 🔧 ASSESSMENT UX IMPROVEMENTS
+- Changed from debounced typing to save on blur
+- Added per-field saving indicators
+- Dirty state tracking (only saves if changed)
+- Success/error toast notifications
+- Clean state management without timeouts
+
 ## OVERALL STATUS SUMMARY
 
-### ✅ COMPLETED (40%)
+### ✅ COMPLETED (55%)
 - Draft deal creation and management
 - File upload system with progress tracking
 - File management modal (FileManager)
 - Knowledge Graph/Library page
 - Basic API structure and models
 - Navigation framework
+- Unified deals list page with table and filters
+- Deal detail enhancements (company data, accordions, actions bar)
+- Edit modals for all deal data types
+- Assessment save on blur functionality
+- Toast notifications system
 
-### 🟡 PARTIAL (25%)
-- Deal list pages (separate, not unified)
-- Assessment models (no automation)
-- Affinity integration (fields only)
-- Research Agent (UI only)
-- Documentation
+### 🟡 PARTIAL (20%)
+- Deal list pages (unified page created but needs backend search)
+- Assessment models (UI complete, no automation)
+- Affinity integration (fields only, no API endpoint)
+- Research Agent (UI with mock data)
+- Documentation (unified and improved)
 
-### ❌ NOT STARTED (35%)
-- Unified deals list with tabs
-- Deal detail redesign (anchored bar, stacked assessments)
+### ❌ NOT STARTED (25%)
 - Backend processing pipelines (OCR, cleaning, indexing)
-- Search functionality
-- Archive status and management
-- Assessment automation
-- API action endpoints
+- Search functionality (backend 'q' parameter)
+- Archive status and management (backend)
+- Assessment automation pipeline
+- API action endpoints (send-to-affinity, reassess, archive)
+- Bulk operations backend support
 
 ### 🚫 WON'T DO (based on current priorities)
 - None identified - all features appear to be planned

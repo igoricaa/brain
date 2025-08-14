@@ -11,7 +11,20 @@ import { ChevronDown, ChevronRight, Edit, ExternalLink, Plus } from 'lucide-reac
 import ReactMarkdown from 'react-markdown';
 import RelatedDocumentsPanel from '../components/library/RelatedDocumentsPanel';
 import { FileManagementModal } from '../components/deals/FileManagementModal';
+import { CompanyOverviewCard } from '../components/deals/CompanyOverviewCard';
+import { ExternalDataBadges } from '../components/deals/ExternalDataBadges';
+import { FoundersAccordion } from '../components/deals/FoundersAccordion';
+import { GrantsAccordion } from '../components/deals/GrantsAccordion';
+import { PatentsAccordion } from '../components/deals/PatentsAccordion';
+import { ClinicalTrialsAccordion } from '../components/deals/ClinicalTrialsAccordion';
+import { ActionsBar } from '../components/deals/ActionsBar';
+import { FoundersEditModal } from '../components/deals/FoundersEditModal';
+import { GrantsEditModal } from '../components/deals/GrantsEditModal';
+import { IndustriesEditModal } from '../components/deals/IndustriesEditModal';
+import { useCompanyData } from '../hooks/useCompanyData';
+import { isNewSinceLastAssessment } from '../lib/utils/deals';
 import { Toaster } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 type Related = { uuid: string; name?: string | null };
 type RelatedSignal = { uuid: string; name: string; code?: string | null };
@@ -32,6 +45,7 @@ type Deal = {
     customers_names?: string[];
     sent_to_affinity?: boolean | null;
     created_at?: string;
+    last_assessment_created_at?: string;
     // External data counts (will be populated from API calls)
     founders_count?: number;
     grants_count?: number;
@@ -82,50 +96,6 @@ type ApiList<T> = {
     results?: T[];
 };
 
-type Founder = {
-    uuid: string;
-    founder: {
-        uuid: string;
-        name?: string | null;
-        email?: string | null;
-    };
-    title?: string | null;
-    age_at_founding?: number | null;
-    past_significant_employments?: string | null;
-};
-
-type CompanyAdvisor = {
-    uuid: string;
-    name?: string | null;
-    title?: string | null;
-    email?: string | null;
-};
-
-type Grant = {
-    uuid: string;
-    name?: string | null;
-    potential_amount?: number | null;
-    program_name?: string | null;
-    phase?: string | null;
-    branch?: string | null;
-    award_date?: string | null;
-};
-
-type PatentApplication = {
-    uuid: string;
-    invention_title?: string | null;
-    first_inventor_name?: string | null;
-    status_description?: string | null;
-    filing_date?: string | null;
-};
-
-type ClinicalStudy = {
-    uuid: string;
-    title?: string | null;
-    lead_sponsor_name?: string | null;
-    status?: string | null;
-    start_date_str?: string | null;
-};
 
 type ResearchAgent = {
     final_assessment: string;
@@ -176,21 +146,6 @@ Strong technical leadership with proven track record at major tech companies.
     ],
 };
 
-function useDebounce<T>(value: T, delay: number): T {
-    const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
-
-    return debouncedValue;
-}
 
 function formatCurrency(amount: number | null | undefined): string {
     if (!amount) return 'N/A';
@@ -424,251 +379,6 @@ function BasicInfoCard({ deal }: { deal: Deal }) {
     );
 }
 
-// External Data Accordion Component
-function ExternalDataAccordion({
-    deal,
-    founders = [],
-    grants = [],
-    patents = [],
-    clinicalTrials = [],
-}: {
-    deal: Deal;
-    founders?: Founder[];
-    grants?: Grant[];
-    patents?: PatentApplication[];
-    clinicalTrials?: ClinicalStudy[];
-}) {
-    const [openSections, setOpenSections] = useState<Set<string>>(new Set());
-
-    const toggleSection = (section: string) => {
-        const newOpenSections = new Set(openSections);
-        if (newOpenSections.has(section)) {
-            newOpenSections.delete(section);
-        } else {
-            newOpenSections.add(section);
-        }
-        setOpenSections(newOpenSections);
-    };
-
-    // Auto-expand sections with data
-    useEffect(() => {
-        const sectionsWithData = new Set<string>();
-        if (founders.length > 0) sectionsWithData.add('founders');
-        if (grants.length > 0) sectionsWithData.add('grants');
-        if (patents.length > 0) sectionsWithData.add('patents');
-        if (clinicalTrials.length > 0) sectionsWithData.add('clinical');
-        setOpenSections(sectionsWithData);
-    }, [founders.length, grants.length, patents.length, clinicalTrials.length]);
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>External Data</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-                {/* Founders */}
-                <Collapsible
-                    open={openSections.has('founders')}
-                    onOpenChange={() => toggleSection('founders')}
-                >
-                    <CollapsibleTrigger className="flex w-full items-center justify-between p-2 text-left hover:bg-gray-50 rounded">
-                        <span className="flex items-center gap-2">
-                            {openSections.has('founders') ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            )}
-                            Founders ({founders.length})
-                        </span>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                            }}
-                        >
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="px-6 pb-2">
-                        {founders.length > 0 ? (
-                            <div className="space-y-2">
-                                {founders.map((founder) => (
-                                    <div key={founder.uuid} className="border rounded p-3 text-sm">
-                                        <div className="font-medium">
-                                            {founder.founder.name || 'Unnamed'}
-                                        </div>
-                                        <div className="text-gray-600">
-                                            {founder.title || 'No title'}
-                                        </div>
-                                        {founder.age_at_founding && (
-                                            <div className="text-gray-500">
-                                                Age at founding: {founder.age_at_founding}
-                                            </div>
-                                        )}
-                                        {founder.past_significant_employments && (
-                                            <div className="text-gray-500 mt-1">
-                                                {founder.past_significant_employments}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-gray-500 text-sm">No founders data available</div>
-                        )}
-                    </CollapsibleContent>
-                </Collapsible>
-
-                {/* Grants */}
-                <Collapsible
-                    open={openSections.has('grants')}
-                    onOpenChange={() => toggleSection('grants')}
-                >
-                    <CollapsibleTrigger className="flex w-full items-center justify-between p-2 text-left hover:bg-gray-50 rounded">
-                        <span className="flex items-center gap-2">
-                            {openSections.has('grants') ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            )}
-                            Grants ({grants.length})
-                        </span>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                            }}
-                        >
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="px-6 pb-2">
-                        {grants.length > 0 ? (
-                            <div className="space-y-2">
-                                {grants.map((grant) => (
-                                    <div key={grant.uuid} className="border rounded p-3 text-sm">
-                                        <div className="font-medium">
-                                            {grant.name || 'Unnamed Grant'}
-                                        </div>
-                                        <div className="text-gray-600">{grant.program_name}</div>
-                                        <div className="flex justify-between text-gray-500">
-                                            <span>{formatCurrency(grant.potential_amount)}</span>
-                                            <span>{formatDate(grant.award_date)}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-gray-500 text-sm">No grants data available</div>
-                        )}
-                    </CollapsibleContent>
-                </Collapsible>
-
-                {/* Clinical Trials */}
-                <Collapsible
-                    open={openSections.has('clinical')}
-                    onOpenChange={() => toggleSection('clinical')}
-                >
-                    <CollapsibleTrigger className="flex w-full items-center justify-between p-2 text-left hover:bg-gray-50 rounded">
-                        <span className="flex items-center gap-2">
-                            {openSections.has('clinical') ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            )}
-                            Clinical Trials ({clinicalTrials.length})
-                        </span>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                            }}
-                        >
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="px-6 pb-2">
-                        {clinicalTrials.length > 0 ? (
-                            <div className="space-y-2">
-                                {clinicalTrials.map((trial) => (
-                                    <div key={trial.uuid} className="border rounded p-3 text-sm">
-                                        <div className="font-medium">
-                                            {trial.title || 'Unnamed Trial'}
-                                        </div>
-                                        <div className="text-gray-600">
-                                            {trial.lead_sponsor_name}
-                                        </div>
-                                        <div className="flex justify-between text-gray-500">
-                                            <span>{trial.status}</span>
-                                            <span>{formatDate(trial.start_date_str)}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-gray-500 text-sm">
-                                No clinical trials data available
-                            </div>
-                        )}
-                    </CollapsibleContent>
-                </Collapsible>
-
-                {/* Patent Applications */}
-                <Collapsible
-                    open={openSections.has('patents')}
-                    onOpenChange={() => toggleSection('patents')}
-                >
-                    <CollapsibleTrigger className="flex w-full items-center justify-between p-2 text-left hover:bg-gray-50 rounded">
-                        <span className="flex items-center gap-2">
-                            {openSections.has('patents') ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            )}
-                            Patent Applications ({patents.length})
-                        </span>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                            }}
-                        >
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="px-6 pb-2">
-                        {patents.length > 0 ? (
-                            <div className="space-y-2">
-                                {patents.map((patent) => (
-                                    <div key={patent.uuid} className="border rounded p-3 text-sm">
-                                        <div className="font-medium">
-                                            {patent.invention_title || 'Unnamed Patent'}
-                                        </div>
-                                        <div className="text-gray-600">
-                                            {patent.first_inventor_name}
-                                        </div>
-                                        <div className="flex justify-between text-gray-500">
-                                            <span>{patent.status_description}</span>
-                                            <span>{formatDate(patent.filing_date)}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-gray-500 text-sm">
-                                No patent applications data available
-                            </div>
-                        )}
-                    </CollapsibleContent>
-                </Collapsible>
-            </CardContent>
-        </Card>
-    );
-}
 
 // Research Agent Section Component
 function ResearchAgentSection({ data = mockResearchAgent }: { data?: ResearchAgent }) {
@@ -846,57 +556,72 @@ function AnalystAssessmentSection({
     const [recommendation, setRecommendation] = useState(assessment?.recommendation || '');
     const [quality, setQuality] = useState(assessment?.quality_percentile || '');
 
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    // Saving state tracking
+    const [savingFields, setSavingFields] = useState<Set<string>>(new Set());
 
-    // Debounced save for auto-save functionality
-    const debouncedSave = useCallback(
-        async (field: string, value: string) => {
-            if (saving) return;
-            setSaving(true);
-            setError(null);
-            try {
-                await onSave({ [field]: value });
-            } catch (e: unknown) {
-                setError(e instanceof Error ? e.message : 'Failed to save');
-            } finally {
-                setSaving(false);
-            }
-        },
-        [onSave, saving],
-    );
+    // Original values for dirty state comparison
+    const originalValues = useMemo(() => ({
+        problem_solved: assessment?.problem_solved || '',
+        solution: assessment?.solution || '',
+        customer_traction: assessment?.customer_traction || '',
+        intellectual_property: assessment?.intellectual_property || '',
+        business_model: assessment?.business_model || '',
+        tam: assessment?.tam || '',
+        competition: assessment?.competition || '',
+        investment_rationale: assessment?.investment_rationale || '',
+        pros: assessment?.pros || '',
+        cons: assessment?.cons || '',
+        recommendation: assessment?.recommendation || '',
+        quality_percentile: assessment?.quality_percentile || '',
+    }), [assessment]);
 
-    // Auto-save handlers with debounce
-    const [saveTimeouts, setSaveTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
+    // Current values for dirty state comparison
+    const currentValues = useMemo(() => ({
+        problem_solved: problemSolved,
+        solution: solution,
+        customer_traction: customerTraction,
+        intellectual_property: intellectualProperty,
+        business_model: businessModel,
+        tam: tam,
+        competition: competition,
+        investment_rationale: rationale,
+        pros: pros,
+        cons: cons,
+        recommendation: recommendation,
+        quality_percentile: quality,
+    }), [problemSolved, solution, customerTraction, intellectualProperty, businessModel, tam, competition, rationale, pros, cons, recommendation, quality]);
 
-    const handleFieldChange = useCallback(
-        (field: string, value: string, setter: (value: string) => void) => {
-            setter(value);
+    // Save on blur handler
+    const handleBlur = useCallback(async (field: string) => {
+        // Check if field value has changed
+        const currentValue = currentValues[field as keyof typeof currentValues];
+        const originalValue = originalValues[field as keyof typeof originalValues];
+        
+        if (currentValue === originalValue) {
+            return; // No change, don't save
+        }
 
-            // Clear existing timeout for this field
-            const existingTimeout = saveTimeouts.get(field);
-            if (existingTimeout) {
-                clearTimeout(existingTimeout);
-            }
+        // Check if already saving this field
+        if (savingFields.has(field)) {
+            return;
+        }
 
-            // Set new timeout
-            const timeoutId = setTimeout(() => {
-                debouncedSave(field, value);
-                setSaveTimeouts((prev) => {
-                    const next = new Map(prev);
-                    next.delete(field);
-                    return next;
-                });
-            }, 1000);
+        setSavingFields(prev => new Set([...prev, field]));
 
-            setSaveTimeouts((prev) => {
-                const next = new Map(prev);
-                next.set(field, timeoutId);
+        try {
+            await onSave({ [field]: currentValue });
+            toast.success('Changes saved successfully');
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to save';
+            toast.error(`Failed to save: ${errorMessage}`);
+        } finally {
+            setSavingFields(prev => {
+                const next = new Set(prev);
+                next.delete(field);
                 return next;
             });
-        },
-        [debouncedSave, saveTimeouts],
-    );
+        }
+    }, [currentValues, originalValues, savingFields, onSave]);
 
     // Sync state when data changes
     useEffect(() => {
@@ -915,13 +640,6 @@ function AnalystAssessmentSection({
             setQuality(assessment.quality_percentile || '');
         }
     }, [assessment?.uuid]);
-
-    // Cleanup timeouts on unmount
-    useEffect(() => {
-        return () => {
-            saveTimeouts.forEach((timeout) => clearTimeout(timeout));
-        };
-    }, [saveTimeouts]);
 
     const basicFields = [
         {
@@ -962,7 +680,12 @@ function AnalystAssessmentSection({
                         <Badge variant="outline">Editable</Badge>
                     </span>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
-                        {saving && <span>Auto-saving...</span>}
+                        {savingFields.size > 0 && (
+                            <span className="flex items-center gap-1">
+                                <div className="inline-block h-3 w-3 animate-spin rounded-full border border-gray-400 border-t-transparent"></div>
+                                Saving...
+                            </span>
+                        )}
                         {assessment?.updated_at && (
                             <span>Updated {new Date(assessment.updated_at).toLocaleString()}</span>
                         )}
@@ -970,24 +693,20 @@ function AnalystAssessmentSection({
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                {error && (
-                    <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                        {error}
-                    </div>
-                )}
-
                 {/* Basic fields grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                     {basicFields.map((field) => (
                         <div key={field.key} className="space-y-1">
                             <label className="text-xs font-semibold text-gray-600">
                                 {field.label}
+                                {savingFields.has(field.key) && (
+                                    <span className="ml-1 text-blue-600">Saving...</span>
+                                )}
                             </label>
                             <Textarea
                                 value={field.value}
-                                onChange={(e) =>
-                                    handleFieldChange(field.key, e.target.value, field.setter)
-                                }
+                                onChange={(e) => field.setter(e.target.value)}
+                                onBlur={() => handleBlur(field.key)}
                                 className="min-h-[4rem] resize-none text-sm"
                                 placeholder={`Enter ${field.label.toLowerCase()}...`}
                             />
@@ -1000,16 +719,14 @@ function AnalystAssessmentSection({
                     <div>
                         <label className="text-xs font-semibold text-gray-600 block mb-2">
                             Investment Rationale
+                            {savingFields.has('investment_rationale') && (
+                                <span className="ml-1 text-blue-600">Saving...</span>
+                            )}
                         </label>
                         <Textarea
                             value={rationale}
-                            onChange={(e) =>
-                                handleFieldChange(
-                                    'investment_rationale',
-                                    e.target.value,
-                                    setRationale,
-                                )
-                            }
+                            onChange={(e) => setRationale(e.target.value)}
+                            onBlur={() => handleBlur('investment_rationale')}
                             className="min-h-[8rem] resize-none text-sm"
                             placeholder="Enter investment rationale..."
                         />
@@ -1017,10 +734,14 @@ function AnalystAssessmentSection({
                     <div>
                         <label className="text-xs font-semibold text-gray-600 block mb-2">
                             Pros
+                            {savingFields.has('pros') && (
+                                <span className="ml-1 text-blue-600">Saving...</span>
+                            )}
                         </label>
                         <Textarea
                             value={pros}
-                            onChange={(e) => handleFieldChange('pros', e.target.value, setPros)}
+                            onChange={(e) => setPros(e.target.value)}
+                            onBlur={() => handleBlur('pros')}
                             className="min-h-[8rem] resize-none text-sm"
                             placeholder="Enter pros..."
                         />
@@ -1028,10 +749,14 @@ function AnalystAssessmentSection({
                     <div>
                         <label className="text-xs font-semibold text-gray-600 block mb-2">
                             Cons
+                            {savingFields.has('cons') && (
+                                <span className="ml-1 text-blue-600">Saving...</span>
+                            )}
                         </label>
                         <Textarea
                             value={cons}
-                            onChange={(e) => handleFieldChange('cons', e.target.value, setCons)}
+                            onChange={(e) => setCons(e.target.value)}
+                            onBlur={() => handleBlur('cons')}
                             className="min-h-[8rem] resize-none text-sm"
                             placeholder="Enter cons..."
                         />
@@ -1039,12 +764,14 @@ function AnalystAssessmentSection({
                     <div>
                         <label className="text-xs font-semibold text-gray-600 block mb-2">
                             Recommendation
+                            {(savingFields.has('quality_percentile') || savingFields.has('recommendation')) && (
+                                <span className="ml-1 text-blue-600">Saving...</span>
+                            )}
                         </label>
                         <select
                             value={quality}
-                            onChange={(e) =>
-                                handleFieldChange('quality_percentile', e.target.value, setQuality)
-                            }
+                            onChange={(e) => setQuality(e.target.value)}
+                            onBlur={() => handleBlur('quality_percentile')}
                             className="w-full rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">Select...</option>
@@ -1057,13 +784,8 @@ function AnalystAssessmentSection({
 
                         <select
                             value={recommendation}
-                            onChange={(e) =>
-                                handleFieldChange(
-                                    'recommendation',
-                                    e.target.value,
-                                    setRecommendation,
-                                )
-                            }
+                            onChange={(e) => setRecommendation(e.target.value)}
+                            onBlur={() => handleBlur('recommendation')}
                             className="w-full mt-2 rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">Select action...</option>
@@ -1080,27 +802,6 @@ function AnalystAssessmentSection({
     );
 }
 
-// Sticky Actions Bar Component
-function ActionsBar({ deal, onEditFiles }: { deal: Deal; onEditFiles: () => void }) {
-    return (
-        <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-10">
-            <div className="flex items-center justify-between max-w-6xl mx-auto">
-                <div className="flex items-center gap-2">
-                    <Button variant="default">Send to Affinity</Button>
-                    <Button variant="outline">Reassess</Button>
-                    <Button variant="outline" onClick={onEditFiles}>
-                        Edit Files
-                    </Button>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost">View History</Button>
-                    <Button variant="ghost">Archive</Button>
-                    <Button variant="destructive">Delete</Button>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 function Summary({ deal }: { deal: Deal }) {
     const hasInvestors = (deal.investors_names || []).length > 0;
@@ -1157,9 +858,28 @@ function Summary({ deal }: { deal: Deal }) {
     );
 }
 
-function Industries({ items }: { items: Related[] | undefined }) {
+function Industries({ 
+    items, 
+    onEdit 
+}: { 
+    items: Related[] | undefined;
+    onEdit?: () => void;
+}) {
     return (
-        <SectionCard title="Industries">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold text-gray-900">Industries</h3>
+                {onEdit && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onEdit}
+                        title="Edit industries"
+                    >
+                        <Edit className="h-4 w-4" />
+                    </Button>
+                )}
+            </div>
             {items && items.length ? (
                 <div className="flex flex-wrap gap-1">
                     {items.map((it) => (
@@ -1169,9 +889,21 @@ function Industries({ items }: { items: Related[] | undefined }) {
                     ))}
                 </div>
             ) : (
-                <div className="text-sm text-gray-500">No industries.</div>
+                <div className="text-center py-4">
+                    <div className="text-sm text-gray-500 mb-2">No industries.</div>
+                    {onEdit && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onEdit}
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Industries
+                        </Button>
+                    )}
+                </div>
             )}
-        </SectionCard>
+        </div>
     );
 }
 
@@ -1249,17 +981,35 @@ function DealDetailApp({ uuid }: { uuid: string }) {
     const { data: papers, loading: papersLoading } = useDealFiles('papers', uuid, 10, reloadKey);
     const { data: files, loading: filesLoading } = useDealFiles('files', uuid, 50, reloadKey);
 
+    // Load company data using the new hook
+    const {
+        company,
+        founders,
+        grants,
+        patents,
+        clinicalTrials,
+        loading: companyDataLoading,
+        errors: companyDataErrors,
+        counts: companyDataCounts,
+    } = useCompanyData(deal?.company?.uuid || null, !!deal?.company?.uuid);
+
     const [assessment, setAssessment] = useState<DealAssessment | null>(null);
     const [assessLoading, setAssessLoading] = useState<boolean>(true);
     const [assessError, setAssessError] = useState<string | null>(null);
     const [isFileModalOpen, setIsFileModalOpen] = useState(false);
+    const [isFoundersModalOpen, setIsFoundersModalOpen] = useState(false);
+    const [isGrantsModalOpen, setIsGrantsModalOpen] = useState(false);
+    const [isIndustriesModalOpen, setIsIndustriesModalOpen] = useState(false);
 
-    // External data state
-    const [founders, setFounders] = useState<Founder[]>([]);
-    const [grants, setGrants] = useState<Grant[]>([]);
-    const [patents, setPatents] = useState<PatentApplication[]>([]);
-    const [clinicalTrials, setClinicalTrials] = useState<ClinicalStudy[]>([]);
-    const [externalDataLoading, setExternalDataLoading] = useState(false);
+    // Calculate new files count for actions bar
+    const newFilesCount = useMemo(() => {
+        if (!deal?.last_assessment_created_at) return 0;
+        
+        const allFiles = [...decks, ...papers, ...files];
+        return allFiles.filter(file => 
+            isNewSinceLastAssessment(file.created_at, deal.last_assessment_created_at)
+        ).length;
+    }, [decks, papers, files, deal?.last_assessment_created_at]);
 
     function getCookie(name: string) {
         const match = document.cookie.match(
@@ -1304,82 +1054,6 @@ function DealDetailApp({ uuid }: { uuid: string }) {
         };
     }, [uuid]);
 
-    // Load external data when company UUID is available
-    useEffect(() => {
-        if (!deal?.company?.uuid) return;
-
-        let cancel = false;
-        async function loadExternalData() {
-            setExternalDataLoading(true);
-            try {
-                const companyUuid = deal.company!.uuid;
-
-                // Load all external data in parallel
-                const [foundersResp, grantsResp, patentsResp, clinicalResp] =
-                    await Promise.allSettled([
-                        fetch(`/api/companies/founders/?company=${companyUuid}`, {
-                            credentials: 'same-origin',
-                            headers: { Accept: 'application/json' },
-                        }),
-                        fetch(`/api/companies/grants/?company=${companyUuid}`, {
-                            credentials: 'same-origin',
-                            headers: { Accept: 'application/json' },
-                        }),
-                        fetch(`/api/companies/patent-applications/?company=${companyUuid}`, {
-                            credentials: 'same-origin',
-                            headers: { Accept: 'application/json' },
-                        }),
-                        fetch(`/api/companies/clinical-studies/?company=${companyUuid}`, {
-                            credentials: 'same-origin',
-                            headers: { Accept: 'application/json' },
-                        }),
-                    ]);
-
-                if (!cancel) {
-                    // Process founders
-                    if (foundersResp.status === 'fulfilled' && foundersResp.value.ok) {
-                        const foundersData = await foundersResp.value.json();
-                        setFounders(
-                            Array.isArray(foundersData) ? foundersData : foundersData.results || [],
-                        );
-                    }
-
-                    // Process grants
-                    if (grantsResp.status === 'fulfilled' && grantsResp.value.ok) {
-                        const grantsData = await grantsResp.value.json();
-                        setGrants(
-                            Array.isArray(grantsData) ? grantsData : grantsData.results || [],
-                        );
-                    }
-
-                    // Process patents
-                    if (patentsResp.status === 'fulfilled' && patentsResp.value.ok) {
-                        const patentsData = await patentsResp.value.json();
-                        setPatents(
-                            Array.isArray(patentsData) ? patentsData : patentsData.results || [],
-                        );
-                    }
-
-                    // Process clinical trials
-                    if (clinicalResp.status === 'fulfilled' && clinicalResp.value.ok) {
-                        const clinicalData = await clinicalResp.value.json();
-                        setClinicalTrials(
-                            Array.isArray(clinicalData) ? clinicalData : clinicalData.results || [],
-                        );
-                    }
-                }
-            } catch (e) {
-                console.error('Failed to load external data:', e);
-            } finally {
-                if (!cancel) setExternalDataLoading(false);
-            }
-        }
-
-        loadExternalData();
-        return () => {
-            cancel = true;
-        };
-    }, [deal?.company?.uuid]);
 
     async function saveAssessment(patch: Partial<DealAssessment>) {
         // Validate input data
@@ -1427,20 +1101,67 @@ function DealDetailApp({ uuid }: { uuid: string }) {
         <div className="space-y-6 pb-20">
             {' '}
             {/* Bottom padding for sticky actions bar */}
-            {/* Row 1: Basic Info */}
+            {/* Row 1: Company Overview */}
+            <CompanyOverviewCard
+                company={company}
+                loading={companyDataLoading}
+                error={companyDataErrors.company}
+                totalGrantFunding={companyDataCounts.totalGrantFunding}
+                foundersCount={companyDataCounts.founders}
+                patentsCount={companyDataCounts.patents}
+                clinicalTrialsCount={companyDataCounts.clinicalTrials}
+            />
+            
+            {/* Row 2: External Data Summary */}
+            <ExternalDataBadges
+                foundersCount={companyDataCounts.founders}
+                grantsCount={companyDataCounts.grants}
+                patentsCount={companyDataCounts.patents}
+                clinicalTrialsCount={companyDataCounts.clinicalTrials}
+                totalGrantFunding={companyDataCounts.totalGrantFunding}
+                loading={companyDataLoading}
+            />
+            
+            {/* Row 3: Basic Deal Info */}
             <BasicInfoCard deal={deal} />
-            {/* Row 2: External Data and Research Agent */}
+            
+            {/* Row 4: External Data Accordions */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ExternalDataAccordion
-                    deal={deal}
-                    founders={founders}
-                    grants={grants}
-                    patents={patents}
-                    clinicalTrials={clinicalTrials}
-                />
-                <ResearchAgentSection />
+                <div className="space-y-6">
+                    <FoundersAccordion
+                        founders={founders}
+                        loading={companyDataLoading}
+                        error={companyDataErrors.founders}
+                        autoExpand={true}
+                        onEdit={() => setIsFoundersModalOpen(true)}
+                    />
+                    <GrantsAccordion
+                        grants={grants}
+                        loading={companyDataLoading}
+                        error={companyDataErrors.grants}
+                        autoExpand={true}
+                        onEdit={() => setIsGrantsModalOpen(true)}
+                    />
+                </div>
+                <div className="space-y-6">
+                    <PatentsAccordion
+                        patents={patents}
+                        loading={companyDataLoading}
+                        error={companyDataErrors.patents}
+                        autoExpand={true}
+                    />
+                    <ClinicalTrialsAccordion
+                        clinicalTrials={clinicalTrials}
+                        loading={companyDataLoading}
+                        error={companyDataErrors.clinicalTrials}
+                        autoExpand={true}
+                    />
+                </div>
             </div>
-            {/* Row 3: Stacked Assessments */}
+            
+            {/* Row 5: Research Agent */}
+            <ResearchAgentSection />
+            {/* Row 6: Stacked Assessments */}
             <div className="space-y-6">
                 {/* AI Assessment (Top) */}
                 <AIAssessmentSection
@@ -1452,14 +1173,17 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                 {/* Analyst Assessment (Bottom) */}
                 <AnalystAssessmentSection assessment={assessment} onSave={saveAssessment} />
             </div>
-            {/* Row 4: Industries and Signals */}
+            {/* Row 7: Industries and Signals */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Industries items={deal.industries} />
+                <Industries 
+                    items={deal.industries} 
+                    onEdit={() => setIsIndustriesModalOpen(true)}
+                />
                 <Signals items={deal.dual_use_signals} />
             </div>
-            {/* Row 5: Summary */}
+            {/* Row 8: Summary */}
             <Summary deal={deal} />
-            {/* Row 6: Files */}
+            {/* Row 9: Files */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {decksLoading ? (
                     <LoadingBox label="Loading decks…" />
@@ -1477,14 +1201,18 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                     <FileList title="Files" files={files} />
                 )}
             </div>
-            {/* Row 7: Related Documents */}
+            {/* Row 10: Related Documents */}
             <RelatedDocumentsPanel
                 companyUuid={deal.company?.uuid || null}
                 paramPrefix="dl_"
                 title="Related Documents"
             />
             {/* Sticky Actions Bar */}
-            <ActionsBar deal={deal} onEditFiles={() => setIsFileModalOpen(true)} />
+            <ActionsBar 
+                deal={deal} 
+                onEditFiles={() => setIsFileModalOpen(true)}
+                newFilesCount={newFilesCount}
+            />
             {/* File Management Modal */}
             <FileManagementModal
                 isOpen={isFileModalOpen}
@@ -1492,6 +1220,31 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                 dealUuid={deal.uuid}
                 dealName={deal.name || 'Unnamed Deal'}
                 lastAssessmentDate={deal.last_assessment_created_at}
+            />
+
+            {/* Edit Modals */}
+            {deal.company?.uuid && (
+                <>
+                    <FoundersEditModal
+                        isOpen={isFoundersModalOpen}
+                        onClose={() => setIsFoundersModalOpen(false)}
+                        companyUuid={deal.company.uuid}
+                        founders={founders}
+                    />
+                    
+                    <GrantsEditModal
+                        isOpen={isGrantsModalOpen}
+                        onClose={() => setIsGrantsModalOpen(false)}
+                        companyUuid={deal.company.uuid}
+                        grants={grants}
+                    />
+                </>
+            )}
+            
+            <IndustriesEditModal
+                isOpen={isIndustriesModalOpen}
+                onClose={() => setIsIndustriesModalOpen(false)}
+                deal={deal}
             />
         </div>
     );
