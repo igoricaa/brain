@@ -1,5 +1,4 @@
-{% extends 'main.html' %}
-{% load django_vite %}
+{% extends 'library/base.html' %}
 
 {% block title %}Knowledge Graph - brAINbrAIN{% endblock %}
 
@@ -10,7 +9,7 @@
 
 {% block body_id %}_library{% endblock %}
 
-{% block main_content %}
+{% block library_content %}
     <!-- React mount point -->
     <div id="library-root" class="min-h-screen">
         <div class="flex items-center justify-center min-h-screen">
@@ -20,8 +19,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
-
-{% block extra_js %}
-    {% vite_asset 'src/main.tsx' %}
 {% endblock %}

@@ -18,6 +18,7 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 from django.views.generic import TemplateView
 
@@ -33,6 +34,8 @@ urlpatterns = [
     path('deals/', include(('deals.urls', 'deals'), namespace='deals')),
     path('dual-use/', include(('dual_use.urls', 'dual-use'), namespace='dual-use')),
     path('library/', include(('library.urls', 'library'), namespace='library')),
+    # Enhanced library page with FileManager
+    path('library-new/', login_required(TemplateView.as_view(template_name='library/library-new.html')), name='library-new'),
     # Research Agent (frontend-only shell)
     path('research-agent/', TemplateView.as_view(template_name='research/agent.html'), name='research-agent'),
     path("api/", include((api_router.urls, 'api'))),

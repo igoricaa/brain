@@ -1,0 +1,29 @@
+{% extends 'main.html' %}
+{% load django_vite %}
+
+{% block title %}Enhanced Library - brAINbrAIN{% endblock %}
+
+{% block extra_head %}
+    <meta name="description" content="Enhanced file management system with advanced features for document analysis and organization">
+    <meta name="keywords" content="library, file management, documents, enhanced features, TLDR, domain categorization">
+{% endblock %}
+
+{% block body_id %}_library-new{% endblock %}
+
+{% block page_title %}Enhanced Library{% endblock %}
+
+{% block content %}
+    <!-- React mount point -->
+    <div id="library-new-root" class="min-h-screen">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p class="text-gray-600">Loading Enhanced Library...</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    {% vite_asset 'src/main.tsx' %}
+{% endblock %}

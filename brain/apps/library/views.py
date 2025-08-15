@@ -27,6 +27,22 @@ class LibraryView(TemplateView):
         return context
 
 
+@method_decorator(login_required, name='dispatch')
+class LibraryNewView(TemplateView):
+    """
+    Enhanced library page view using the FileManager component with advanced features.
+    """
+    template_name = 'library/library-new.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'page_title': 'Enhanced Library',
+            'page_description': 'Advanced file management system with AI features and enhanced functionality',
+        })
+        return context
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def library_stats(request):

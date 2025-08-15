@@ -7,6 +7,9 @@ urlpatterns = [
     # Main library page
     path('', views.LibraryView.as_view(), name='library'),
     
+    # Enhanced library page with FileManager
+    path('new/', views.LibraryNewView.as_view(), name='library-new'),
+    
     # API endpoints
     path('stats/', views.library_stats, name='stats'),
 ]

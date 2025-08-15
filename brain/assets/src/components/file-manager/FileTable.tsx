@@ -106,12 +106,14 @@ const formatFileSize = (bytes: number): string => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-const getFileIcon = (type: string) => {
-    if (type.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
-    if (type.includes('image')) return <Image className="h-4 w-4 text-blue-500" />;
-    if (type.includes('spreadsheet') || type.includes('excel'))
+const getFileIcon = (type: string | undefined | null) => {
+    if (!type) return <File className="h-4 w-4 text-gray-500" />;
+    const fileType = type.toLowerCase();
+    if (fileType.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
+    if (fileType.includes('image')) return <Image className="h-4 w-4 text-blue-500" />;
+    if (fileType.includes('spreadsheet') || fileType.includes('excel'))
         return <FileSpreadsheet className="h-4 w-4 text-green-500" />;
-    if (type.includes('document') || type.includes('word'))
+    if (fileType.includes('document') || fileType.includes('word'))
         return <FileType className="h-4 w-4 text-blue-600" />;
     return <File className="h-4 w-4 text-gray-500" />;
 };
@@ -194,6 +196,7 @@ export default function FileTable({
     const [globalFilter, setGlobalFilter] = useState('');
     const [bulkMetadataDialogOpen, setBulkMetadataDialogOpen] = useState(false);
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+    const [bulkReprocessDialogOpen, setBulkReprocessDialogOpen] = useState(false);
 
     const selectedFileIds = Object.keys(rowSelection).filter((key) => rowSelection[key]);
 
@@ -347,7 +350,7 @@ export default function FileTable({
                 header: 'Type',
                 cell: ({ row }) => (
                     <span className="text-sm text-muted-foreground">
-                        {row.original.file_type.split('/')[1]?.toUpperCase() || 'Unknown'}
+                        {row.original.file_type?.split('/')[1]?.toUpperCase() || 'Unknown'}
                     </span>
                 ),
             },

@@ -7,6 +7,7 @@ import {
     parseAsArrayOf,
     parseAsStringEnum,
 } from 'nuqs';
+import { NuqsAdapter } from 'nuqs/adapters/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -397,9 +398,9 @@ function LibraryPage() {
     const loadMetadata = async () => {
         try {
             const [categoriesResp, sourcesResp, docTypesResp] = await Promise.all([
-                http.get<{ results: LibraryCategory[] }>('/api/library/categories/'),
-                http.get<{ results: LibrarySource[] }>('/api/library/sources/'),
-                http.get<{ results: DocumentType[] }>('/api/library/document-types/'),
+                http.get<{ results: LibraryCategory[] }>('/library/categories/'),
+                http.get<{ results: LibrarySource[] }>('/library/sources/'),
+                http.get<{ results: DocumentType[] }>('/library/document-types/'),
             ]);
 
             setCategories(categoriesResp.data.results || []);
@@ -414,7 +415,7 @@ function LibraryPage() {
     // Load library stats
     const loadStats = async () => {
         try {
-            const response = await http.get<LibraryStats>('/api/library/stats/');
+            const response = await http.get<LibraryStats>('/library/stats/');
             setStats(response.data);
         } catch (error) {
             console.error('Failed to load stats:', error);
@@ -611,7 +612,7 @@ function LibraryPage() {
                                     onClick={clearError}
                                     className="h-6 w-6 p-0"
                                 >
-                                    ×
+                                    x
                                 </Button>
                             </div>
                         </AlertDescription>
@@ -827,7 +828,11 @@ function mount() {
     const el = document.getElementById('library-root');
     if (!el) return;
     const root = createRoot(el);
-    root.render(<LibraryPage />);
+    root.render(
+        <NuqsAdapter>
+            <LibraryPage />
+        </NuqsAdapter>
+    );
 }
 
 // Initialize function

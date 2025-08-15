@@ -1,0 +1,19 @@
+{% extends 'main.html' %}
+{% load i18n %}
+
+{% block body_id %}_library-base{% endblock %}
+{% block content_class %}mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8{% endblock %}
+
+{# Page title area matches main.html styling #}
+{% block page_title %}
+  <h1 class="py-3 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
+    {% block library_title %}{% trans 'Knowledge Graph' %}{% endblock %}
+  </h1>
+{% endblock %}
+
+{% block content %}
+  <div class="my-4">
+
+    {% block library_content %}{% endblock %}
+  </div>
+{% endblock %}

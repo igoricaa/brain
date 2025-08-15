@@ -42,7 +42,7 @@
     (function() {
         // Monitor for React app mounting
         const checkReactMounted = () => {
-            const roots = ['deals-dashboard-root', 'deals-fresh-root', 'deals-reviewed-root', 'deal-detail-root', 'deals-list-root', 'deal-upload-root', 'du-dashboard-root', 'research-agent-root', 'library-root', '_library'];
+            const roots = ['deals-dashboard-root', 'deals-fresh-root', 'deals-reviewed-root', 'deal-detail-root', 'deals-list-root', 'deal-upload-root', 'du-dashboard-root', 'research-agent-root', 'library-root', 'library-new-root', '_library'];
             const mountedRoot = roots.find(id => {
                 const el = document.getElementById(id);
                 return el && el.children.length > 0;
