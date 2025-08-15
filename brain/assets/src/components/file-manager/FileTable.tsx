@@ -131,7 +131,7 @@ const getStatusBadge = (status: FileTableData['processing_status']) => {
         cancelled: { variant: 'outline' as const, label: 'Cancelled' },
     };
 
-    const config = variants[status];
+    const config = variants[status] || { variant: 'secondary' as const, label: 'Unknown' };
     return (
         <Badge 
             variant={config.variant} 

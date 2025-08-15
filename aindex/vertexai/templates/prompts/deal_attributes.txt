@@ -58,11 +58,11 @@ Answer the following questions:
 4. What investors does the company have?
 5. **Deeptech**: Is the company developing advanced technology could be adapted for military, intelligence, or homeland security purposes?
    Candidates for deeptech are -
-   {% for signal in deeptech_signals %}{% if loop.last %}and {% endif %}{{ signal }}{% if not loop.last %}, {% endif %}{% endfor %}.
+   {% for signal in deeptech_signals %}{% if loop.last %}and {% endif %}{{ signal.name }}{% if not loop.last %}, {% endif %}{% endfor %}.
    Only include deeptech that has a reasonable chance of being deployed in both civilian and military use cases.
 6. **Strategic domain**: Does the company produce products or services that are deployed in strategically
    important domains that might be of interest to government agencies for national security and defense?
    Candidates for strategic domains are -
-   {% for signal in strategic_domain_signals %}{% if loop.last %}and {% endif %}{{ signal }}{% if not loop.last %}, {% endif %}{% endfor %}.
+   {% for signal in strategic_domain_signals %}{% if loop.last %}and {% endif %}{{ signal.name }}{% if not loop.last %}, {% endif %}{% endfor %}.
 7. **Government relationships**: Are specific agencies, departments, or branches of the military mentioned as customers or partners?
 8. **Civilian use cases**: Does the technology also have likely civilian use cases? This is probably not true, for instance, for weapons.

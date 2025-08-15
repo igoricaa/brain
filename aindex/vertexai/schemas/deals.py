@@ -1,4 +1,5 @@
-from .base import default_deeptech_signals, default_industries_names, default_strategic_domain_signals
+from .base import (default_deeptech_signals, default_funding_stage, default_funding_type,
+                   default_industries_names, default_strategic_domain_signals)
 
 document_classification_response = {
     'type': 'object',
@@ -7,6 +8,10 @@ document_classification_response = {
             'type': 'string',
             'enum': ['deck', 'paper', 'contract', '']
         },
+        'title': {
+            'type': 'string',
+            'description': 'The title of the document.'
+        }
     },
     'required': ['document_type'],
 }
@@ -114,18 +119,15 @@ deal_attributes_response = {
                 "Industry description(s) that apply to the company. You can include up to three."
             ),
         },
-        "stage": {
+        "funding_stage": {
             "type": "string",
             "description": "The stage of the current fundraise",
-            "enum": [
-                "pre-seed",
-                "seed",
-                "seed+",
-                "series-a",
-                "series-b",
-                "series-c",
-                "beyond-series-c",
-            ],
+            "enum": default_funding_stage,
+        },
+        "funding_type": {
+            "type": "string",
+            "description": "What type of funding does the company want",
+            "enum": default_funding_type,
         },
         "fundraise_target_m": {
             "type": "integer",
@@ -170,7 +172,7 @@ deal_attributes_response = {
             "description": "Does the technology have likely civilian use cases?",
         },
     },
-    "required": ["stage", "has_civilian_use_cases"],
+    "required": ["funding_stage", "has_civilian_use"],
 }
 
 

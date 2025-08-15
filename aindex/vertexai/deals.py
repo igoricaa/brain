@@ -125,17 +125,23 @@ class DealAssistant(VertexAIAssistant):
         response_schema = copy.deepcopy(deals_schema.deal_attributes_response)
 
         if industries:
-            response_schema['properties']['industries']['items']['enum'] = industries
+            response_schema['properties']['industries']['items']['enum'] = [
+                industry['name'] for industry in industries
+            ]
 
         if deeptech_signals:
-            response_schema['properties']['deeptech_signals']['items']['enum'] = deeptech_signals
+            response_schema['properties']['deeptech_signals']['items']['enum'] = [
+                signal['name'] for signal in deeptech_signals
+            ]
         else:
-            deeptech_signals = default_deeptech_signals
+            deeptech_signals = [{'name': signal} for signal in default_deeptech_signals]
 
         if strategic_domain_signals:
-            response_schema['properties']['strategic_domain_signals']['items']['enum'] = strategic_domain_signals  # noqa: E501
+            response_schema['properties']['strategic_domain_signals']['items']['enum'] = [
+                signal['name'] for signal in strategic_domain_signals
+            ]
         else:
-            strategic_domain_signals = default_strategic_domain_signals
+            strategic_domain_signals = [{'name': signal} for signal in default_strategic_domain_signals]
 
         message = self.render_template(
             'prompts/deal_attributes.txt',

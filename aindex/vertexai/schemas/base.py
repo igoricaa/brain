@@ -95,3 +95,43 @@ default_strategic_domain_signals = [
     'Training & Workforce Development',
     'Trauma-Oriented Healthcare',
 ]
+
+default_funding_stage = [
+    'seed',
+    'early_stage_venture',
+    'late_stage_venture',
+    'private_equity',
+    'm_and_a',
+    'ipo',
+]
+
+default_funding_type = [
+    'pre_seed',
+    'seed',
+    'angel',
+    'equity_crowdfunding',
+    'product_crowdfunding',
+    'private_equity',
+    'convertible_note',
+    'debt_financing',
+    'secondary_market',
+    'grant',
+    'non_equity_assistance',
+    'undisclosed',
+    'corporate_round',
+    'initial_coin_offering',
+    'post_ipo_equity',
+    'post_ipo_debt',
+    'post_ipo_secondary',
+    'series_a',
+    'series_b',
+    'series_c',
+    'series_d',
+    'series_e',
+    'series_f',
+    'series_g',
+    'series_h',
+    'series_i',
+    'series_j',
+    'series_unknown',
+]
