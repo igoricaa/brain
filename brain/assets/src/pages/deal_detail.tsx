@@ -13,13 +13,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Edit2, ExternalLink, Plus } from 'lucide-react';
+import {  Edit2, ExternalLink, Plus } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import RelatedDocumentsPanel from '../components/library/RelatedDocumentsPanel';
 import { FileManagementModal } from '../components/deals/FileManagementModal';
 import { CompanyOverviewCard } from '../components/deals/CompanyOverviewCard';
-import { ExternalDataBadges } from '../components/deals/ExternalDataBadges';
-import { ExternalDataSummaryStrip } from '../components/deals/ExternalDataSummaryStrip';
 import { FoundersAccordion } from '../components/deals/FoundersAccordion';
 import { AdvisorsAccordion } from '../components/deals/AdvisorsAccordion';
 import { GrantsAccordion } from '../components/deals/GrantsAccordion';
@@ -293,26 +291,6 @@ function BasicInfoCard({ deal }: { deal: Deal }) {
             <CardContent>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                        <span className="text-gray-500">Company:</span>
-                        <span className="ml-2 font-medium">{deal.company?.name || 'N/A'}</span>
-                    </div>
-                    <div>
-                        <span className="text-gray-500">Website:</span>
-                        {deal.website ? (
-                            <a 
-                                href={deal.website} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="ml-2 text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
-                            >
-                                {new URL(deal.website).hostname}
-                                <ExternalLink className="h-3 w-3" />
-                            </a>
-                        ) : (
-                            <span className="ml-2">N/A</span>
-                        )}
-                    </div>
-                    <div>
                         <span className="text-gray-500">Status:</span>
                         <Badge variant="outline" className="ml-2">
                             Active
@@ -336,7 +314,10 @@ function BasicInfoCard({ deal }: { deal: Deal }) {
                     </div>
                     <div>
                         <span className="text-gray-500">Sent to Affinity:</span>
-                        <Badge variant={deal.sent_to_affinity ? 'default' : 'secondary'} className="ml-2">
+                        <Badge
+                            variant={deal.sent_to_affinity ? 'default' : 'secondary'}
+                            className="ml-2"
+                        >
                             {deal.sent_to_affinity ? 'Yes' : 'No'}
                         </Badge>
                     </div>
@@ -967,7 +948,8 @@ function DealDetailApp({ uuid }: { uuid: string }) {
     const createAssessmentMutation = useCreateAssessment();
 
     // Get the latest assessment (first in the array since it's ordered by -created_at)
-    const assessment = assessments && assessments.length > 0 ? assessments[0] : null;
+    const assessment =
+        assessments?.results && assessments.results.length > 0 ? assessments.results[0] : null;
     const assessError = queryAssessError ? String(queryAssessError) : null;
     const [isFileModalOpen, setIsFileModalOpen] = useState(false);
     const [isFoundersModalOpen, setIsFoundersModalOpen] = useState(false);
@@ -993,8 +975,9 @@ function DealDetailApp({ uuid }: { uuid: string }) {
         if (assessment?.uuid) {
             // Update existing assessment
             const result = await updateAssessmentMutation.mutateAsync({
-                uuid: assessment.uuid,
-                patch: validatedPatch,
+                assessmentUuid: assessment.uuid,
+                dealUuid: uuid,
+                data: validatedPatch,
             });
             return result;
         } else {
@@ -1018,21 +1001,44 @@ function DealDetailApp({ uuid }: { uuid: string }) {
     return (
         <div className="mx-auto w-full max-w-7xl space-y-10 pb-20">
             {/* Group 1: Basic Deal Data */}
+
+            <div className="space-y-2">
+                <h2 className="text-2xl font-semibold text-gray-900">
+                    {deal.company?.name || 'N/A'}
+                </h2>
+                {deal.website ? (
+                    <a
+                        href={deal.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                    >
+                        {new URL(deal.website).hostname}
+                        <ExternalLink className="h-3 w-3" />
+                    </a>
+                ) : (
+                    <span>N/A</span>
+                )}
+            </div>
+
             <section>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Deal Data</h2>
                 <div className="space-y-6">
                     {/* Basic Facts Card */}
                     <BasicInfoCard deal={deal} />
-                    
+
                     {/* Categorizations Row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Industries items={deal.industries} onEdit={() => setIsIndustriesModalOpen(true)} />
+                        <Industries
+                            items={deal.industries}
+                            onEdit={() => setIsIndustriesModalOpen(true)}
+                        />
                         <Signals
                             items={deal.dual_use_signals}
                             onEdit={() => setIsDualUseSignalsModalOpen(true)}
                         />
                     </div>
-                    
+
                     {/* Deal Summary */}
                     <Summary deal={deal} />
                 </div>
@@ -1043,7 +1049,7 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">External Data</h2>
                 <div className="space-y-6">
                     {/* Company Overview */}
-                    <CompanyOverviewCard
+                    {/* <CompanyOverviewCard
                         company={company}
                         loading={companyDataLoading}
                         error={companyDataErrors.company}
@@ -1051,18 +1057,8 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                         foundersCount={companyDataCounts.founders}
                         patentsCount={companyDataCounts.patents}
                         clinicalTrialsCount={companyDataCounts.clinicalTrials}
-                    />
-                    
-                    {/* External Data Summary */}
-                    <ExternalDataSummaryStrip
-                        foundersCount={companyDataCounts.founders}
-                        advisorsCount={advisors.length}
-                        grantsCount={companyDataCounts.grants}
-                        patentsCount={companyDataCounts.patents}
-                        clinicalTrialsCount={companyDataCounts.clinicalTrials}
-                        loading={companyDataLoading}
-                    />
-                    
+                    /> */}
+
                     {/* External Data Accordions */}
                     <FoundersAccordion
                         founders={founders}
@@ -1097,7 +1093,7 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                         error={companyDataErrors.clinicalTrials}
                         autoExpand={true}
                     />
-                    
+
                     {/* Deal Files */}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {decksLoading ? (
@@ -1116,7 +1112,7 @@ function DealDetailApp({ uuid }: { uuid: string }) {
                             <FileList title="Files" files={files} />
                         )}
                     </div>
-                    
+
                     {/* Related Documents */}
                     <RelatedDocumentsPanel
                         companyUuid={deal.company?.uuid || null}

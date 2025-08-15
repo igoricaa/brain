@@ -1,10 +1,16 @@
 type CollapsibleProps = {
     children: React.ReactNode;
     defaultOpen?: boolean;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 };
 
-export function Collapsible({ children }: CollapsibleProps) {
-    return <div data-slot="collapsible">{children}</div>;
+export function Collapsible({ children, open, onOpenChange }: CollapsibleProps) {
+    return (
+        <div data-slot="collapsible" data-state={open ? 'open' : 'closed'}>
+            {children}
+        </div>
+    );
 }
 
 export function CollapsibleTrigger({

@@ -22,7 +22,7 @@
   </nav>
 
   {# Minimal SSR header card #}
-  <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+  {% comment %} <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
       <h2 class="text-xl font-semibold text-gray-900">{{ deal.display_name }}</h2>
       {% if deal.sent_to_affinity is not None %}
@@ -70,7 +70,7 @@
         <div class="text-gray-900">{{ deal.created_at|date:'Y-m-d' }}</div>
       </div>
     </div>
-  </div>
+  </div> {% endcomment %}
 
   {# React mount point #}
   <div id="deal-detail-root" data-uuid="{{ deal.uuid }}" class="mt-6"></div>

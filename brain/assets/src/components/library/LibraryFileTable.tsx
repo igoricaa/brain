@@ -19,6 +19,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
     FileText,
     Download,
     Edit,
@@ -102,6 +107,11 @@ const formatFileSize = (bytes: number) => {
         unitIndex++;
     }
     return `${size.toFixed(1)} ${units[unitIndex]}`;
+};
+
+const truncateText = (text: string, maxLength: number): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + '...';
 };
 
 export default function LibraryFileTable({
@@ -259,6 +269,7 @@ export default function LibraryFileTable({
                         <TableHead>Size</TableHead>
                         <TableHead>Categories</TableHead>
                         <TableHead>Source</TableHead>
+                        <TableHead>TLDR</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="w-12">Actions</TableHead>
                     </TableRow>
@@ -352,6 +363,52 @@ export default function LibraryFileTable({
                                 ) : (
                                     <span className="text-gray-400 text-sm">No source</span>
                                 )}
+                            </TableCell>
+                            <TableCell>
+                                {(() => {
+                                    const tldr = file.tldr;
+                                    if (!tldr) {
+                                        return <span className="text-gray-400 text-sm">—</span>;
+                                    }
+
+                                    const truncated = truncateText(tldr, 50);
+                                    const needsTooltip = tldr.length > 50;
+
+                                    if (!needsTooltip) {
+                                        return (
+                                            <span className="text-sm" title={tldr}>
+                                                {tldr}
+                                            </span>
+                                        );
+                                    }
+
+                                    return (
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <span
+                                                    className="text-sm cursor-pointer hover:text-blue-600 transition-colors"
+                                                    title="Click to see full TLDR"
+                                                    aria-label={`TLDR: ${tldr}`}
+                                                >
+                                                    {truncated}
+                                                </span>
+                                            </PopoverTrigger>
+                                            <PopoverContent 
+                                                className="w-80 p-3" 
+                                                side="top"
+                                                align="start"
+                                                sideOffset={5}
+                                            >
+                                                <div className="space-y-2">
+                                                    <h4 className="font-medium text-sm text-gray-900">TLDR</h4>
+                                                    <p className="text-sm text-gray-600 whitespace-pre-wrap break-words">
+                                                        {tldr}
+                                                    </p>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    );
+                                })()}
                             </TableCell>
                             <TableCell>
                                 {getProcessingStatusBadge(file.processing_status || 'pending')}

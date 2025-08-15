@@ -46,6 +46,8 @@ export interface FileActionsMenuProps {
 
 export type FileAction = 'download' | 'view' | 'edit' | 'copy' | 'reprocess' | 'delete';
 
+export type ReprocessType = 'retry' | 'reprocess';
+
 export default function FileActionsMenu({
     file,
     mode,
@@ -53,11 +55,17 @@ export default function FileActionsMenu({
     disabled = false,
 }: FileActionsMenuProps) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [reprocessDialogOpen, setReprocessDialogOpen] = useState(false);
     const [isPerformingAction, setIsPerformingAction] = useState(false);
 
     const handleAction = async (action: FileAction) => {
         if (action === 'delete') {
             setDeleteDialogOpen(true);
+            return;
+        }
+
+        if (action === 'reprocess' && file.processing_status === 'completed') {
+            setReprocessDialogOpen(true);
             return;
         }
 
@@ -83,10 +91,24 @@ export default function FileActionsMenu({
         }
     };
 
+    const handleReprocessConfirm = async () => {
+        setIsPerformingAction(true);
+        try {
+            await onAction('reprocess', file.uuid);
+            setReprocessDialogOpen(false);
+        } catch (error) {
+            console.error('Error reprocessing file:', error);
+        } finally {
+            setIsPerformingAction(false);
+        }
+    };
+
     const canDownload = file.download_url || file.processing_status === 'completed';
     const canView = file.processing_status === 'completed';
-    const canReprocess = ['failed', 'cancelled'].includes(file.processing_status);
+    const canReprocess = ['failed', 'cancelled', 'completed'].includes(file.processing_status);
     const isProcessing = ['pending', 'processing'].includes(file.processing_status);
+    const reprocessType: ReprocessType = ['failed', 'cancelled'].includes(file.processing_status) ? 'retry' : 'reprocess';
+    const reprocessText = reprocessType === 'retry' ? 'Retry Processing' : 'Reprocess File';
 
     return (
         <>
@@ -159,9 +181,10 @@ export default function FileActionsMenu({
                         <DropdownMenuItem
                             onClick={() => handleAction('reprocess')}
                             disabled={isPerformingAction}
+                            className={reprocessType === 'reprocess' ? 'text-orange-600' : ''}
                         >
                             <RotateCcw className="mr-2 h-4 w-4" />
-                            Reprocess file
+                            {reprocessText}
                         </DropdownMenuItem>
                     )}
 
@@ -210,6 +233,21 @@ export default function FileActionsMenu({
                                         <div className="mt-1">
                                             <Badge variant="outline" className="text-xs capitalize">
                                                 {file.category.replace('_', ' ')}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {file.domain && (
+                                    <div>
+                                        <span className="font-medium">Domain:</span>
+                                        <div className="mt-1">
+                                            <Badge variant="secondary" className="text-xs">
+                                                {file.domain === 'ai_ml' ? 'AI/ML' : 
+                                                 file.domain === 'life_sciences' ? 'Life Sciences' : 
+                                                 file.domain === 'dual_use' ? 'Dual Use' : 
+                                                 file.domain === 'sustainability' ? 'Sustainability' : 
+                                                 file.domain}
                                             </Badge>
                                         </div>
                                     </div>
@@ -288,6 +326,19 @@ export default function FileActionsMenu({
                                         {new Date(file.created_at).toLocaleDateString()}
                                     </div>
                                 </div>
+
+                                {file.published_at && (
+                                    <div>
+                                        <span className="font-medium">Published:</span>
+                                        <div className="text-muted-foreground">
+                                            {new Date(file.published_at).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {file.tldr && (
                                     <div>
@@ -409,6 +460,111 @@ export default function FileActionsMenu({
                                 <>
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete File
+                                </>
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Reprocess Confirmation Dialog */}
+            <AlertDialog open={reprocessDialogOpen} onOpenChange={setReprocessDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-orange-600">
+                            <RotateCcw className="h-5 w-5" />
+                            Reprocess File
+                        </AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                            <div className="space-y-3">
+                                <p>
+                                    Are you sure you want to reprocess <strong>{file.name}</strong>?
+                                </p>
+
+                                <div className="bg-muted rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <FileText className="h-4 w-4" />
+                                        <span className="font-medium text-sm">File Details</span>
+                                    </div>
+                                    <div className="space-y-1 text-sm text-muted-foreground">
+                                        <div>Type: {file.file_type}</div>
+                                        <div>
+                                            Size: {(file.file_size / 1024 / 1024).toFixed(2)} MB
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            Status:
+                                            <Badge
+                                                variant={
+                                                    file.processing_status === 'completed'
+                                                        ? 'default'
+                                                        : file.processing_status === 'processing'
+                                                          ? 'default'
+                                                          : file.processing_status === 'failed'
+                                                            ? 'destructive'
+                                                            : 'secondary'
+                                                }
+                                                className={
+                                                    file.processing_status === 'completed'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : undefined
+                                                }
+                                            >
+                                                {file.processing_status.charAt(0).toUpperCase() +
+                                                    file.processing_status.slice(1)}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {file.processing_status === 'completed' && (
+                                    <div className="bg-orange-50 shadow-sm rounded-lg p-3">
+                                        <div className="flex items-center gap-2 text-orange-800">
+                                            <AlertTriangle className="h-4 w-4" />
+                                            <span className="font-medium">Data Loss Warning</span>
+                                        </div>
+                                        <p className="text-sm text-orange-700 mt-1">
+                                            This file has been successfully processed. Reprocessing will
+                                            permanently delete all existing extracted data, analysis results,
+                                            and AI-generated content. This action cannot be undone.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {(['failed', 'cancelled'].includes(file.processing_status)) && (
+                                    <div className="bg-blue-50 shadow-sm rounded-lg p-3">
+                                        <div className="flex items-center gap-2 text-blue-800">
+                                            <RotateCcw className="h-4 w-4" />
+                                            <span className="font-medium">Retry Processing</span>
+                                        </div>
+                                        <p className="text-sm text-blue-700 mt-1">
+                                            This will retry processing the file. Previous attempts have failed
+                                            or were cancelled.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isPerformingAction}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleReprocessConfirm}
+                            disabled={isPerformingAction}
+                            className={
+                                file.processing_status === 'completed'
+                                    ? 'bg-orange-600 hover:bg-orange-700 focus:ring-orange-600'
+                                    : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-600'
+                            }
+                        >
+                            {isPerformingAction ? (
+                                <>
+                                    <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                                    Processing...
+                                </>
+                            ) : (
+                                <>
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    {reprocessText}
                                 </>
                             )}
                         </AlertDialogAction>

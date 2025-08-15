@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import FileUpload, { UploadFile } from './FileUpload';
 import FileTable, { FileTableData } from './FileTable';
 import UploadProgressOverlay, { UploadState } from './UploadProgressOverlay';
+import SubmitForUnderwritingDialog from './SubmitForUnderwritingDialog';
 import { useDraftDeals } from '@/hooks/useDraftDeals';
 import { useFileManagement } from '@/hooks/useFileManagement';
 import { sanitizeError, getUserFriendlyMessage } from '@/utils/errorSanitization';
@@ -51,6 +52,7 @@ export default function FileManager({
 }: FileManagerProps) {
     const [files, setFiles] = useState<UploadFile[]>([]);
     const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+    const [currentDraftName, setCurrentDraftName] = useState<string | null>(null);
 
     // Existing draft files (already uploaded to backend)
     const [existingDraftFiles, setExistingDraftFiles] = useState<FileTableData[]>([]);
@@ -76,6 +78,9 @@ export default function FileManager({
         errors: [],
         isCompleted: false,
     });
+
+    // Submission dialog state
+    const [showSubmissionDialog, setShowSubmissionDialog] = useState(false);
 
     const {
         createDraftDeal,
@@ -307,6 +312,7 @@ export default function FileManager({
                     name: 'Untitled Deal',
                 });
                 setCurrentDraftId(draftDeal.uuid);
+                setCurrentDraftName(draftDeal.name);
             }
 
             // Upload files one by one to the draft
@@ -370,6 +376,7 @@ export default function FileManager({
                     name: 'Untitled Deal',
                 });
                 setCurrentDraftId(draftDeal.uuid);
+                setCurrentDraftName(draftDeal.name);
             }
 
             // Step 2: Upload files to draft with progress tracking
@@ -645,7 +652,7 @@ export default function FileManager({
 
                                         <Button
                                             type="button"
-                                            onClick={() => handleSimpleSubmit()}
+                                            onClick={() => setShowSubmissionDialog(true)}
                                             disabled={
                                                 (files.length === 0 &&
                                                     existingDraftFiles.length === 0) ||
@@ -837,6 +844,19 @@ export default function FileManager({
 
             {/* Upload progress overlay */}
             <UploadProgressOverlay uploadState={uploadState} onClose={handleCloseUploadOverlay} />
+
+            {/* Submit for Underwriting Dialog */}
+            {mode === 'draft-deal' && (
+                <SubmitForUnderwritingDialog
+                    open={showSubmissionDialog}
+                    onOpenChange={setShowSubmissionDialog}
+                    existingFiles={existingDraftFiles}
+                    pendingFiles={files}
+                    dealName={currentDraftName || 'Untitled Deal'}
+                    onSubmit={handleSimpleSubmit}
+                    isSubmitting={isDraftLoading || isCreatingDraft || uploadState.isUploading}
+                />
+            )}
         </div>
     );
 }

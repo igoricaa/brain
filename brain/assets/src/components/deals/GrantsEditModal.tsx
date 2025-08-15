@@ -498,19 +498,16 @@ export function GrantsEditModal({ isOpen, onClose, companyUuid, grants }: Grants
 
                         {/* Add New Grant */}
                         <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-medium">Add New Grant</h3>
-                                {!showAddForm && (
-                                    <Button
-                                        onClick={() => setShowAddForm(true)}
-                                        size="sm"
-                                        className="gap-2"
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                        Add Grant
-                                    </Button>
-                                )}
-                            </div>
+                            {!showAddForm && (
+                                <Button
+                                    onClick={() => setShowAddForm(true)}
+                                    size="sm"
+                                    className="gap-2"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Add Grant
+                                </Button>
+                            )}
 
                             {showAddForm && (
                                 <Card>

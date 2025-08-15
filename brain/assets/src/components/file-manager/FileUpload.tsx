@@ -18,6 +18,7 @@ import {
     Paperclip,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import DuplicateResolutionDialog, { type ExistingFileInfo } from './DuplicateResolutionDialog';
 
 export interface FileUploadProps {
     onFilesAdd: (files: File[]) => void;
@@ -40,10 +41,12 @@ export interface UploadFile {
     error?: string;
     // Optional metadata for draft persistence
     category?: string;
+    domain?: 'ai_ml' | 'life_sciences' | 'dual_use' | 'sustainability';
     documentType?: string;
     proprietary?: boolean;
     tldr?: string;
     tags?: string[];
+    published_at?: string;
     lastModified?: number;
 }
 
@@ -67,6 +70,25 @@ const getFileIcon = (type: string) => {
     return <File className="h-4 w-4 text-gray-500" />;
 };
 
+/**
+ * Enhanced file upload component with comprehensive duplicate resolution.
+ * 
+ * Features:
+ * - Drag and drop file upload
+ * - File validation (size, type, count limits)
+ * - Intelligent duplicate detection and resolution
+ * - Visual progress indicators
+ * - Batch duplicate handling
+ * - Accessibility compliant
+ * 
+ * @param onFilesAdd - Callback when valid files are added
+ * @param onFileRemove - Callback when a file is removed  
+ * @param files - Current list of uploaded files
+ * @param accept - Accepted file types (default: documents and images)
+ * @param maxFiles - Maximum number of files allowed (default: 10)
+ * @param maxSize - Maximum file size in bytes (default: 50MB)
+ * @param disabled - Whether the upload is disabled
+ */
 export default function FileUpload({
     onFilesAdd,
     onFileRemove,
@@ -79,9 +101,16 @@ export default function FileUpload({
     const [dragOver, setDragOver] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    // Duplicate resolution state
+    const [duplicateQueue, setDuplicateQueue] = useState<{newFile: File, existingFile: UploadFile}[]>([]);
+    const [currentDuplicate, setCurrentDuplicate] = useState<{newFile: File, existingFile: UploadFile} | null>(null);
+    const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+    const [isResolvingDuplicate, setIsResolvingDuplicate] = useState(false);
 
-    const validateFiles = (fileList: FileList): { valid: File[]; errors: string[] } => {
+    const validateFiles = (fileList: FileList): { valid: File[]; duplicates: {newFile: File, existingFile: UploadFile}[]; errors: string[] } => {
         const validFiles: File[] = [];
+        const duplicates: {newFile: File, existingFile: UploadFile}[] = [];
         const errors: string[] = [];
         const currentFileCount = files.length;
 
@@ -97,31 +126,157 @@ export default function FileUpload({
                 errors.push(
                     `File "${file.name}" is too large (max ${formatFileSize(maxSize)})`,
                 );
-                    return;
-                }
+                return;
+            }
 
-                // Check for duplicates
-                const isDuplicate = files.some((f) => f.name === file.name && f.size === file.size);
-                if (isDuplicate) {
-                    errors.push(`File "${file.name}" is already added`);
-                    return;
-                }
+            // Check for duplicates
+            const existingFile = files.find((f) => f.name === file.name && f.size === file.size);
+            if (existingFile) {
+                duplicates.push({ newFile: file, existingFile });
+                return;
+            }
 
-                validFiles.push(file);
-            });
+            validFiles.push(file);
+        });
 
-            return { valid: validFiles, errors: [...new Set(errors)] };
-        };
+        return { valid: validFiles, duplicates, errors: [...new Set(errors)] };
+    };
 
     const handleFileSelect = (fileList: FileList | null) => {
         if (!fileList || disabled) return;
 
-        const { valid, errors } = validateFiles(fileList);
+        const { valid, duplicates, errors } = validateFiles(fileList);
         setErrors(errors);
 
+        // Add valid files immediately
         if (valid.length > 0) {
             onFilesAdd(valid);
         }
+
+        // Handle duplicates
+        if (duplicates.length > 0) {
+            setDuplicateQueue(duplicates);
+            showNextDuplicate(duplicates);
+        }
+    };
+
+    const showNextDuplicate = (queue: {newFile: File, existingFile: UploadFile}[]) => {
+        if (queue.length > 0) {
+            setCurrentDuplicate(queue[0]);
+            setShowDuplicateDialog(true);
+        }
+    };
+
+    const handleDuplicateReplace = async () => {
+        if (!currentDuplicate) return;
+        
+        setIsResolvingDuplicate(true);
+        try {
+            // Remove the existing file
+            onFileRemove(currentDuplicate.existingFile.id);
+            
+            // Add the new file
+            onFilesAdd([currentDuplicate.newFile]);
+            
+            // Process next duplicate
+            const remainingQueue = duplicateQueue.slice(1);
+            setDuplicateQueue(remainingQueue);
+            setCurrentDuplicate(null);
+            setShowDuplicateDialog(false);
+            
+            // Clear any previous errors
+            setErrors([]);
+            
+            if (remainingQueue.length > 0) {
+                setTimeout(() => showNextDuplicate(remainingQueue), 500);
+            }
+        } catch (error) {
+            console.error('Error replacing duplicate file:', error);
+            setErrors(['Failed to replace file. Please try again.']);
+        } finally {
+            setIsResolvingDuplicate(false);
+        }
+    };
+
+    const handleDuplicateKeepBoth = async (newName: string) => {
+        if (!currentDuplicate) return;
+        
+        // Validate the new name
+        if (!newName.trim()) {
+            setErrors(['Please enter a valid file name']);
+            return;
+        }
+        
+        if (newName === currentDuplicate.newFile.name) {
+            setErrors(['Please choose a different name from the original file']);
+            return;
+        }
+        
+        // Check if the new name conflicts with existing files
+        const nameConflict = files.some(f => f.name === newName.trim());
+        if (nameConflict) {
+            setErrors([`A file named "${newName.trim()}" already exists. Please choose a different name.`]);
+            return;
+        }
+        
+        setIsResolvingDuplicate(true);
+        try {
+            // Create a new file with the modified name
+            const renamedFile = new File(
+                [currentDuplicate.newFile], 
+                newName.trim(), 
+                { type: currentDuplicate.newFile.type }
+            );
+            
+            // Add the renamed file
+            onFilesAdd([renamedFile]);
+            
+            // Process next duplicate
+            const remainingQueue = duplicateQueue.slice(1);
+            setDuplicateQueue(remainingQueue);
+            setCurrentDuplicate(null);
+            setShowDuplicateDialog(false);
+            
+            // Clear any previous errors
+            setErrors([]);
+            
+            if (remainingQueue.length > 0) {
+                setTimeout(() => showNextDuplicate(remainingQueue), 500);
+            }
+        } catch (error) {
+            console.error('Error processing duplicate file:', error);
+            setErrors(['Failed to process file. Please try again.']);
+        } finally {
+            setIsResolvingDuplicate(false);
+        }
+    };
+
+    const handleDuplicateCancel = () => {
+        if (!currentDuplicate) return;
+        
+        // Process next duplicate
+        const remainingQueue = duplicateQueue.slice(1);
+        setDuplicateQueue(remainingQueue);
+        setCurrentDuplicate(null);
+        setShowDuplicateDialog(false);
+        
+        if (remainingQueue.length > 0) {
+            setTimeout(() => showNextDuplicate(remainingQueue), 500);
+        }
+    };
+
+    const createExistingFileInfo = (uploadFile: UploadFile): ExistingFileInfo => {
+        return {
+            id: uploadFile.id,
+            name: uploadFile.name,
+            size: uploadFile.size,
+            type: uploadFile.type,
+            uploadDate: new Date().toISOString(), // Current time as placeholder
+            status: uploadFile.status,
+            category: uploadFile.category,
+            domain: uploadFile.domain,
+            processing_status: 'pending', // Default since UploadFile doesn't have this
+        };
     };
 
     const handleDrop = (e: React.DragEvent) => {
@@ -254,16 +409,27 @@ export default function FileUpload({
                 <Card className="border-0 shadow-sm">
                     <CardContent className="p-0">
                         <div className="divide-y divide-gray-200">
-                            {files.map((file) => (
-                                <div key={file.id} className="p-4 flex items-center gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            {getFileIcon(file.type)}
-                                            <span className="font-medium text-sm truncate">
-                                                {file.name}
-                                            </span>
-                                            {getStatusBadge(file.status)}
-                                        </div>
+                            {files.map((file) => {
+                                const isDuplicatePending = duplicateQueue.some(d => d.existingFile.id === file.id);
+                                return (
+                                    <div key={file.id} className={cn(
+                                        "p-4 flex items-center gap-3",
+                                        isDuplicatePending && "bg-amber-50 border-l-4 border-amber-400"
+                                    )}>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                {getFileIcon(file.type)}
+                                                <span className="font-medium text-sm truncate">
+                                                    {file.name}
+                                                </span>
+                                                {isDuplicatePending ? (
+                                                    <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                                                        Duplicate Pending
+                                                    </Badge>
+                                                ) : (
+                                                    getStatusBadge(file.status)
+                                                )}
+                                            </div>
 
                                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                             <span>{formatFileSize(file.size)}</span>
@@ -293,12 +459,13 @@ export default function FileUpload({
                                         size="sm"
                                         onClick={() => onFileRemove(file.id)}
                                         className="flex-shrink-0"
-                                        disabled={file.status === 'uploading'}
+                                        disabled={file.status === 'uploading' || isDuplicatePending}
                                     >
                                         <X className="h-4 w-4" />
                                     </Button>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </CardContent>
                 </Card>
@@ -308,7 +475,32 @@ export default function FileUpload({
             {files.length > 0 && (
                 <div className="text-sm text-muted-foreground">
                     {files.length} of {maxFiles} files selected
+                    {duplicateQueue.length > 0 && (
+                        <span className="ml-2 text-amber-600">({duplicateQueue.length} duplicate{duplicateQueue.length === 1 ? '' : 's'} pending resolution)</span>
+                    )}
                 </div>
+            )}
+
+            {/* Duplicate Resolution Dialog */}
+            {currentDuplicate && (
+                <DuplicateResolutionDialog
+                    isOpen={showDuplicateDialog}
+                    onClose={() => setShowDuplicateDialog(false)}
+                    newFile={{
+                        id: `temp-${Date.now()}`,
+                        file: currentDuplicate.newFile,
+                        name: currentDuplicate.newFile.name,
+                        size: currentDuplicate.newFile.size,
+                        type: currentDuplicate.newFile.type,
+                        status: 'pending',
+                        progress: 0,
+                    }}
+                    existingFile={createExistingFileInfo(currentDuplicate.existingFile)}
+                    onReplace={handleDuplicateReplace}
+                    onKeepBoth={handleDuplicateKeepBoth}
+                    onCancel={handleDuplicateCancel}
+                    isProcessing={isResolvingDuplicate}
+                />
             )}
         </div>
     );

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import {
     flexRender,
     getCoreRowModel,
@@ -31,6 +32,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
     ChevronLeft,
@@ -56,6 +62,8 @@ import {
 import InlineEditCell from './InlineEditCell';
 import BulkMetadataDialog from './BulkMetadataDialog';
 import BulkDeleteConfirmDialog from './BulkDeleteConfirmDialog';
+import BulkReprocessConfirmDialog from './BulkReprocessConfirmDialog';
+import FileActionsMenu, { type FileAction } from './FileActionsMenu';
 
 export interface FileTableData {
     uuid: string;
@@ -63,6 +71,7 @@ export interface FileTableData {
     file_type: string;
     file_size: number;
     category: string;
+    domain?: 'ai_ml' | 'life_sciences' | 'dual_use' | 'sustainability';
     document_type?: string;
     proprietary: boolean;
     tldr?: string;
@@ -70,6 +79,7 @@ export interface FileTableData {
     processing_status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
     created_at: string;
     updated_at: string;
+    published_at?: string;
     download_url?: string;
 }
 
@@ -121,7 +131,10 @@ const getStatusBadge = (status: FileTableData['processing_status']) => {
 
     const config = variants[status];
     return (
-        <Badge variant={config.variant} className={config.className}>
+        <Badge 
+            variant={config.variant} 
+            className={'className' in config ? config.className : undefined}
+        >
             {config.label}
         </Badge>
     );
@@ -139,6 +152,26 @@ const formatRelativeDate = (dateString: string): string => {
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
     return `${Math.floor(diffDays / 365)} years ago`;
+};
+
+const truncateText = (text: string, maxLength: number): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + '...';
+};
+
+const formatPublishedDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return '—';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '—';
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch {
+        return '—';
+    }
 };
 
 export default function FileTable({
@@ -237,6 +270,14 @@ export default function FileTable({
     const handleBulkDeleteConfirm = async () => {
         if (onBulkDelete && selectedFileIds.length > 0) {
             await onBulkDelete(selectedFileIds);
+            setRowSelection({});
+            onFilesChange?.();
+        }
+    };
+
+    const handleBulkReprocessConfirm = async () => {
+        if (onBulkReprocess && selectedFileIds.length > 0) {
+            await onBulkReprocess(selectedFileIds);
             setRowSelection({});
             onFilesChange?.();
         }
@@ -349,6 +390,22 @@ export default function FileTable({
                 },
             },
             {
+                accessorKey: 'domain',
+                header: 'Domain',
+                cell: ({ row }) => (
+                    <InlineEditCell
+                        file={row.original}
+                        field="domain"
+                        value={row.original.domain}
+                        onSave={handleInlineEdit}
+                        disabled={row.original.processing_status === 'processing'}
+                    />
+                ),
+                filterFn: (row, id, value) => {
+                    return value.includes(row.getValue(id));
+                },
+            },
+            {
                 accessorKey: 'document_type',
                 header: 'Document Type',
                 cell: ({ row }) => (
@@ -360,6 +417,95 @@ export default function FileTable({
                         disabled={row.original.processing_status === 'processing'}
                     />
                 ),
+            },
+            {
+                accessorKey: 'tldr',
+                header: ({ column }) => (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                        className="h-8 px-2 lg:px-3"
+                    >
+                        TLDR
+                        {column.getIsSorted() === 'asc' ? (
+                            <ArrowUp className="ml-2 h-4 w-4" />
+                        ) : column.getIsSorted() === 'desc' ? (
+                            <ArrowDown className="ml-2 h-4 w-4" />
+                        ) : (
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
+                    </Button>
+                ),
+                cell: ({ row }) => {
+                    const tldr = row.original.tldr;
+                    if (!tldr) {
+                        return <span className="text-sm text-muted-foreground">—</span>;
+                    }
+
+                    const truncated = truncateText(tldr, 50);
+                    const needsTooltip = tldr.length > 50;
+
+                    if (!needsTooltip) {
+                        return (
+                            <span className="text-sm" title={tldr}>
+                                {tldr}
+                            </span>
+                        );
+                    }
+
+                    return (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <span
+                                    className="text-sm cursor-pointer hover:text-primary transition-colors"
+                                    title="Click to see full TLDR"
+                                    aria-label={`TLDR: ${tldr}`}
+                                >
+                                    {truncated}
+                                </span>
+                            </PopoverTrigger>
+                            <PopoverContent 
+                                className="w-80 p-3" 
+                                side="top"
+                                align="start"
+                                sideOffset={5}
+                            >
+                                <div className="space-y-2">
+                                    <h4 className="font-medium text-sm text-foreground">TLDR</h4>
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                                        {tldr}
+                                    </p>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    );
+                },
+                enableHiding: true,
+            },
+            {
+                accessorKey: 'published_at',
+                header: ({ column }) => (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                        className="h-8 px-2 lg:px-3"
+                    >
+                        Published
+                        {column.getIsSorted() === 'asc' ? (
+                            <ArrowUp className="ml-2 h-4 w-4" />
+                        ) : column.getIsSorted() === 'desc' ? (
+                            <ArrowDown className="ml-2 h-4 w-4" />
+                        ) : (
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
+                    </Button>
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-muted-foreground">
+                        {formatPublishedDate(row.original.published_at)}
+                    </span>
+                ),
+                enableHiding: true,
             },
             {
                 accessorKey: 'processing_status',
@@ -406,48 +552,39 @@ export default function FileTable({
                             disabled={row.original.processing_status === 'processing'}
                             className="mr-2"
                         />
-                        <Button
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleFileAction('download', row.original.uuid)}
-                            disabled={!row.original.download_url}
-                        >
-                            <Download className="h-4 w-4" />
-                        </Button>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                    onClick={() => handleFileAction('update', row.original.uuid)}
-                                >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit metadata
-                                </DropdownMenuItem>
-                                {(row.original.processing_status === 'failed' ||
-                                    row.original.processing_status === 'cancelled') && (
-                                    <DropdownMenuItem
-                                        onClick={() =>
-                                            handleFileAction('reprocess', row.original.uuid)
+                        <FileActionsMenu
+                            file={row.original}
+                            mode={mode}
+                            onAction={async (action: FileAction, fileId: string) => {
+                                switch (action) {
+                                    case 'download':
+                                        await handleFileAction('download', fileId);
+                                        break;
+                                    case 'view':
+                                        // Handle view action if needed
+                                        break;
+                                    case 'edit':
+                                        await handleFileAction('update', fileId);
+                                        break;
+                                    case 'copy':
+                                        // Copy file ID to clipboard
+                                        try {
+                                            await navigator.clipboard.writeText(fileId);
+                                            toast.success('File ID copied to clipboard');
+                                        } catch (error) {
+                                            toast.error('Failed to copy file ID');
                                         }
-                                    >
-                                        <RotateCcw className="mr-2 h-4 w-4" />
-                                        Reprocess
-                                    </DropdownMenuItem>
-                                )}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    onClick={() => handleFileAction('delete', row.original.uuid)}
-                                    className="text-red-600 focus:text-red-600"
-                                >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                        break;
+                                    case 'reprocess':
+                                        await handleFileAction('reprocess', fileId);
+                                        break;
+                                    case 'delete':
+                                        await handleFileAction('delete', fileId);
+                                        break;
+                                }
+                            }}
+                            disabled={row.original.processing_status === 'processing'}
+                        />
                     </div>
                 ),
             },
@@ -556,9 +693,18 @@ export default function FileTable({
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleBulkAction('reprocess')}
+                                    className="relative"
                                 >
                                     <RotateCcw className="h-4 w-4 mr-1" />
                                     Reprocess
+                                    {selectedFileObjects.some(f => f.processing_status === 'completed') && (
+                                        <Badge 
+                                            variant="outline" 
+                                            className="ml-1 h-4 text-xs bg-orange-100 text-orange-700 border-orange-300"
+                                        >
+                                            !
+                                        </Badge>
+                                    )}
                                 </Button>
                                 <Button
                                     size="sm"
@@ -714,6 +860,14 @@ export default function FileTable({
                 mode={mode}
                 onConfirm={handleBulkDeleteConfirm}
                 isDeleting={isLoading}
+            />
+
+            <BulkReprocessConfirmDialog
+                open={bulkReprocessDialogOpen}
+                onOpenChange={setBulkReprocessDialogOpen}
+                selectedFiles={selectedFileObjects}
+                onConfirm={handleBulkReprocessConfirm}
+                isProcessing={isLoading}
             />
         </div>
     );

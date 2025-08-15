@@ -11,7 +11,6 @@ export {
 } from './DealCells';
 export { FileManagementModal } from './FileManagementModal';
 export { CompanyOverviewCard } from './CompanyOverviewCard';
-export { ExternalDataBadges } from './ExternalDataBadges';
 export { FoundersAccordion } from './FoundersAccordion';
 export { AdvisorsAccordion } from './AdvisorsAccordion';
 export { GrantsAccordion } from './GrantsAccordion';

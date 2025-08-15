@@ -17,18 +17,22 @@ export interface LibraryFile extends FileTableData {
 export interface UploadFileRequest {
     file: File;
     category: string;
+    domain?: 'ai_ml' | 'life_sciences' | 'dual_use' | 'sustainability';
     document_type?: string;
     proprietary?: boolean;
     tldr?: string;
     tags?: string[];
+    published_at?: string;
 }
 
 export interface UpdateFileRequest {
     category?: string;
+    domain?: 'ai_ml' | 'life_sciences' | 'dual_use' | 'sustainability';
     document_type?: string;
     proprietary?: boolean;
     tldr?: string;
     tags?: string[];
+    published_at?: string;
 }
 
 export interface FileFilters {
@@ -116,6 +120,9 @@ export const useFileManagement = () => {
         formData.append('deal', dealUuid);
         formData.append('category', fileData.category);
 
+        if (fileData.domain) {
+            formData.append('domain', fileData.domain);
+        }
         if (fileData.document_type) {
             formData.append('document_type', fileData.document_type);
         }
@@ -124,6 +131,9 @@ export const useFileManagement = () => {
         }
         if (fileData.tldr) {
             formData.append('tldr', fileData.tldr);
+        }
+        if (fileData.published_at) {
+            formData.append('published_at', fileData.published_at);
         }
         if (fileData.tags && fileData.tags.length > 0) {
             formData.append('tags', JSON.stringify(fileData.tags));
@@ -273,6 +283,9 @@ export const useFileManagement = () => {
         formData.append('file', fileData.file);
         formData.append('category', fileData.category);
 
+        if (fileData.domain) {
+            formData.append('domain', fileData.domain);
+        }
         if (fileData.document_type) {
             formData.append('document_type', fileData.document_type);
         }
@@ -281,6 +294,9 @@ export const useFileManagement = () => {
         }
         if (fileData.tldr) {
             formData.append('tldr', fileData.tldr);
+        }
+        if (fileData.published_at) {
+            formData.append('published_at', fileData.published_at);
         }
         if (fileData.tags && fileData.tags.length > 0) {
             formData.append('tags', JSON.stringify(fileData.tags));

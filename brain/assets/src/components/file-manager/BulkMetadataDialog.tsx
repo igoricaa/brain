@@ -39,10 +39,16 @@ import type { UpdateFileRequest } from '@/hooks/useFileManagement';
 
 const bulkMetadataSchema = z.object({
     category: z.string().optional(),
+    domain: z.enum(['ai_ml', 'life_sciences', 'dual_use', 'sustainability']).optional(),
     document_type: z.string().optional(),
     proprietary: z.boolean().optional(),
     tldr: z.string().max(500, 'Summary must be less than 500 characters').optional(),
     tags: z.array(z.string()).optional(),
+    published_at: z.string().optional().refine((val) => {
+        if (!val) return true; // Allow empty values
+        const date = new Date(val);
+        return !isNaN(date.getTime()) && date <= new Date(); // Valid date and not in future
+    }, 'Please enter a valid date that is not in the future'),
     // Additional fields for library files
     is_public: z.boolean().optional(),
     source: z.string().optional(),
@@ -67,6 +73,29 @@ const FILE_CATEGORIES = [
     { value: 'market_research', label: 'Market Research' },
     { value: 'other', label: 'Other' },
 ] as const;
+
+const DOMAIN_OPTIONS = [
+    { value: 'ai_ml', label: 'AI/ML' },
+    { value: 'life_sciences', label: 'Life Sciences' },
+    { value: 'dual_use', label: 'Dual Use' },
+    { value: 'sustainability', label: 'Sustainability' },
+] as const;
+
+// Date formatting utility
+const formatDateForDisplay = (dateString: string | null | undefined): string => {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch {
+        return '';
+    }
+};
 
 const DOCUMENT_TYPES = [
     'Pitch Deck',
@@ -101,10 +130,12 @@ export default function BulkMetadataDialog({
         resolver: zodResolver(bulkMetadataSchema),
         defaultValues: {
             category: undefined,
+            domain: undefined,
             document_type: undefined,
             proprietary: undefined,
             tldr: undefined,
             tags: [],
+            published_at: undefined,
             is_public: undefined,
             source: undefined,
         },
@@ -118,9 +149,11 @@ export default function BulkMetadataDialog({
         const updateData: UpdateFileRequest = {};
 
         if (data.category !== undefined) updateData.category = data.category;
+        if (data.domain !== undefined) updateData.domain = data.domain;
         if (data.document_type !== undefined) updateData.document_type = data.document_type;
         if (data.proprietary !== undefined) updateData.proprietary = data.proprietary;
         if (data.tldr !== undefined && data.tldr.trim()) updateData.tldr = data.tldr.trim();
+        if (data.published_at !== undefined) updateData.published_at = data.published_at;
         if (data.tags !== undefined && data.tags.length > 0) updateData.tags = data.tags;
 
         // Library-specific fields
@@ -169,6 +202,11 @@ export default function BulkMetadataDialog({
     const uniqueCategories = (() => {
         const categories = [...new Set(selectedFiles.map((f) => f.category))];
         return categories.filter(Boolean);
+    })();
+
+    const uniqueDomains = (() => {
+        const domains = [...new Set(selectedFiles.map((f) => f.domain).filter(Boolean))];
+        return domains;
     })();
 
     const uniqueDocTypes = (() => {
@@ -222,6 +260,7 @@ export default function BulkMetadataDialog({
 
                         {/* Current Values Reference */}
                         {(uniqueCategories.length > 0 ||
+                            uniqueDomains.length > 0 ||
                             uniqueDocTypes.length > 0 ||
                             uniqueTags.length > 0) && (
                             <div className="space-y-2">
@@ -242,6 +281,24 @@ export default function BulkMetadataDialog({
                                                         className="text-xs capitalize"
                                                     >
                                                         {cat.replace('_', ' ')}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {uniqueDomains.length > 0 && (
+                                        <div>
+                                            <span className="text-xs font-medium text-blue-800">
+                                                Domains:{' '}
+                                            </span>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {uniqueDomains.map((domain) => (
+                                                    <Badge
+                                                        key={domain}
+                                                        variant="secondary"
+                                                        className="text-xs"
+                                                    >
+                                                        {DOMAIN_OPTIONS.find(d => d.value === domain)?.label || domain}
                                                     </Badge>
                                                 ))}
                                             </div>
@@ -338,6 +395,54 @@ export default function BulkMetadataDialog({
                                             </Select>
                                             <FormDescription>
                                                 Leave empty to keep existing categories unchanged
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                {/* Domain */}
+                                <FormField
+                                    control={form.control}
+                                    name="domain"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <div className="flex items-center justify-between">
+                                                <FormLabel>Domain</FormLabel>
+                                                {field.value && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => clearField('domain')}
+                                                        className="h-6 px-2 text-xs"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                value={field.value || ''}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select domain (optional)" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {DOMAIN_OPTIONS.map((domain) => (
+                                                        <SelectItem
+                                                            key={domain.value}
+                                                            value={domain.value}
+                                                        >
+                                                            {domain.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormDescription>
+                                                Leave empty to keep existing domains unchanged
                                             </FormDescription>
                                             <FormMessage />
                                         </FormItem>
@@ -456,6 +561,42 @@ export default function BulkMetadataDialog({
                                             <FormDescription>
                                                 Will replace the summary for all selected files (max
                                                 500 characters)
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                {/* Published Date */}
+                                <FormField
+                                    control={form.control}
+                                    name="published_at"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <div className="flex items-center justify-between">
+                                                <FormLabel>Published Date</FormLabel>
+                                                {field.value && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => clearField('published_at')}
+                                                        className="h-6 px-2 text-xs"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            <FormControl>
+                                                <Input
+                                                    type="date"
+                                                    {...field}
+                                                    max={new Date().toISOString().split('T')[0]}
+                                                    placeholder="YYYY-MM-DD"
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Original publication date of the document
                                             </FormDescription>
                                             <FormMessage />
                                         </FormItem>

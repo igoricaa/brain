@@ -180,6 +180,8 @@ export interface DealFile {
     tags?: string[];
     description?: string;
     deal?: { uuid: string };
+    domain?: 'ai_ml' | 'life_sciences' | 'dual_use' | 'sustainability';
+    published_at?: string;
 }
 
 export interface DealDeck extends DealFile {

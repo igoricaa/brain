@@ -19,7 +19,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Check, X, Edit, Plus, Tag } from 'lucide-react';
 import type { FileTableData } from './FileTable';
 
-export type EditableField = 'category' | 'document_type' | 'proprietary' | 'tldr' | 'tags';
+export type EditableField = 'category' | 'domain' | 'document_type' | 'proprietary' | 'tldr' | 'tags' | 'published_at';
 
 interface InlineEditCellProps {
     file: FileTableData;
@@ -38,6 +38,29 @@ const FILE_CATEGORIES = [
     { value: 'market_research', label: 'Market Research' },
     { value: 'other', label: 'Other' },
 ] as const;
+
+const DOMAIN_OPTIONS = [
+    { value: 'ai_ml', label: 'AI/ML' },
+    { value: 'life_sciences', label: 'Life Sciences' },
+    { value: 'dual_use', label: 'Dual Use' },
+    { value: 'sustainability', label: 'Sustainability' },
+] as const;
+
+// Date formatting utilities
+const formatDateForDisplay = (dateString: string | null | undefined): string => {
+    if (!dateString) return '—';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '—';
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch {
+        return '—';
+    }
+};
 
 const DOCUMENT_TYPES = [
     'Pitch Deck',
@@ -63,10 +86,16 @@ const DOCUMENT_TYPES = [
 // Field-specific schemas
 const schemas = {
     category: z.string().min(1, 'Category is required'),
+    domain: z.enum(['ai_ml', 'life_sciences', 'dual_use', 'sustainability']).optional(),
     document_type: z.string().optional(),
     proprietary: z.boolean(),
     tldr: z.string().max(500, 'Summary must be less than 500 characters').optional(),
     tags: z.array(z.string()),
+    published_at: z.string().optional().refine((val) => {
+        if (!val) return true; // Allow empty values
+        const date = new Date(val);
+        return !isNaN(date.getTime()) && date <= new Date(); // Valid date and not in future
+    }, 'Please enter a valid date that is not in the future'),
 };
 
 export default function InlineEditCell({
@@ -179,6 +208,16 @@ export default function InlineEditCell({
                     </Badge>
                 );
 
+            case 'domain':
+                return (
+                    <Badge
+                        variant="secondary"
+                        className="cursor-pointer hover:bg-muted/50"
+                    >
+                        {value ? DOMAIN_OPTIONS.find(d => d.value === value)?.label || value : '—'}
+                    </Badge>
+                );
+
             case 'document_type':
                 return (
                     <span className="text-sm cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">
@@ -201,6 +240,16 @@ export default function InlineEditCell({
                         title={value || 'Click to add summary'}
                     >
                         {value || 'No summary'}
+                    </span>
+                );
+
+            case 'published_at':
+                return (
+                    <span
+                        className="text-sm cursor-pointer hover:bg-muted/50 px-2 py-1 rounded"
+                        title={value ? formatDateForDisplay(value) : 'Click to set publication date'}
+                    >
+                        {formatDateForDisplay(value)}
                     </span>
                 );
 
@@ -248,6 +297,33 @@ export default function InlineEditCell({
                                         {FILE_CATEGORIES.map((category) => (
                                             <SelectItem key={category.value} value={category.value}>
                                                 {category.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                );
+
+            case 'domain':
+                return (
+                    <FormField
+                        control={form.control}
+                        name={field}
+                        render={({ field: formField }) => (
+                            <FormItem>
+                                <Select onValueChange={formField.onChange} value={formField.value || ''}>
+                                    <FormControl>
+                                        <SelectTrigger className="w-[180px]">
+                                            <SelectValue placeholder="Select domain" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {DOMAIN_OPTIONS.map((domain) => (
+                                            <SelectItem key={domain.value} value={domain.value}>
+                                                {domain.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -323,6 +399,29 @@ export default function InlineEditCell({
                                         placeholder="Brief summary of the file contents"
                                         rows={3}
                                         className="w-[300px] resize-none"
+                                        onKeyDown={handleKeyDown}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                );
+
+            case 'published_at':
+                return (
+                    <FormField
+                        control={form.control}
+                        name={field}
+                        render={({ field: formField }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Input
+                                        type="date"
+                                        {...formField}
+                                        ref={inputRef as React.RefObject<HTMLInputElement>}
+                                        max={new Date().toISOString().split('T')[0]}
+                                        className="w-[200px]"
                                         onKeyDown={handleKeyDown}
                                     />
                                 </FormControl>
