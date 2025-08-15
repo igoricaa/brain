@@ -403,22 +403,23 @@ function LibraryPage() {
                 http.get<{ results: DocumentType[] }>('/library/document-types/'),
             ]);
 
-            setCategories(categoriesResp.data.results || []);
-            setSources(sourcesResp.data.results || []);
-            setDocumentTypes(docTypesResp.data.results || []);
+            // Handle both API response formats: direct array or { results: [...] }
+            const categoriesData = Array.isArray(categoriesResp.data) 
+                ? categoriesResp.data 
+                : categoriesResp.data?.results || [];
+            const sourcesData = Array.isArray(sourcesResp.data) 
+                ? sourcesResp.data 
+                : sourcesResp.data?.results || [];
+            const docTypesData = Array.isArray(docTypesResp.data) 
+                ? docTypesResp.data 
+                : docTypesResp.data?.results || [];
+
+            setCategories(categoriesData);
+            setSources(sourcesData);
+            setDocumentTypes(docTypesData);
         } catch (error) {
             console.error('Failed to load metadata:', error);
             toast.error('Failed to load library metadata');
-        }
-    };
-
-    // Load library stats
-    const loadStats = async () => {
-        try {
-            const response = await http.get<LibraryStats>('/library/stats/');
-            setStats(response.data);
-        } catch (error) {
-            console.error('Failed to load stats:', error);
         }
     };
 
@@ -508,18 +509,16 @@ function LibraryPage() {
 
     const handleUploadComplete = () => {
         loadFiles();
-        loadStats();
     };
 
     // Load data on mount and when URL state changes
     useEffect(() => {
         loadMetadata();
-        loadStats();
-    }, [loadMetadata, loadStats]);
+    }, []);
 
     useEffect(() => {
         loadFiles();
-    }, [loadFiles]);
+    }, []);
 
     // Handle filter changes
     const handleFiltersChange = (newFilters: any) => {
@@ -550,7 +549,6 @@ function LibraryPage() {
     // Refresh all data
     const handleRefresh = () => {
         loadFiles();
-        loadStats();
     };
 
     const currentFilters = {
@@ -831,7 +829,7 @@ function mount() {
     root.render(
         <NuqsAdapter>
             <LibraryPage />
-        </NuqsAdapter>
+        </NuqsAdapter>,
     );
 }
 

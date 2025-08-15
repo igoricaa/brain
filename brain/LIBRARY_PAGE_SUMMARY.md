@@ -109,7 +109,6 @@ Created a comprehensive Knowledge Graph/Library page that serves as a generic fi
 - `GET /api/library/categories/` - Category management
 - `GET /api/library/sources/` - Source management
 - `GET /api/library/document-types/` - Document type management
-- `GET /api/library/stats/` - Statistics dashboard
 
 ### Metadata API Endpoints
 - Categories, sources, and document types are loaded for filtering and metadata assignment

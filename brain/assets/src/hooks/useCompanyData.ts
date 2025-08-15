@@ -4,13 +4,10 @@ import { http } from '@/lib/http';
 // Type definitions for company-related data
 export type Founder = {
     uuid: string;
-    founder: {
-        uuid: string;
-        name?: string | null;
-        email?: string | null;
-        bio?: string | null;
-        linkedin_url?: string | null;
-    };
+    name?: string | null;
+    email?: string | null;
+    bio?: string | null;
+    linkedin_url?: string | null;
     title?: string | null;
     age_at_founding?: number | null;
     past_significant_employments?: string | null;
@@ -20,15 +17,12 @@ export type Founder = {
 
 export type Advisor = {
     uuid: string;
-    advisor?: {
-        uuid: string;
-        name: string;
-        bio?: string | null;
-        linkedin_url?: string | null;
-        website?: string | null;
-        country?: string | null;
-        location?: string | null;
-    };
+    name?: string | null;
+    bio?: string | null;
+    linkedin_url?: string | null;
+    website?: string | null;
+    country?: string | null;
+    location?: string | null;
     created_at?: string;
     updated_at?: string;
 };

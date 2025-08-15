@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
 import {
     useReactTable,
     getCoreRowModel,
@@ -10,8 +11,15 @@ import {
     type RowSelectionState,
     flexRender,
 } from '@tanstack/react-table';
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import {
+    useQuery,
+    useMutation,
+    useQueryClient,
+    keepPreviousData,
+    QueryClientProvider,
+} from '@tanstack/react-query';
 import { parseAsString, parseAsStringLiteral, parseAsInteger, useQueryStates } from 'nuqs';
+import { NuqsAdapter } from 'nuqs/adapters/react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
     Search,
@@ -28,6 +36,7 @@ import {
 
 import { http } from '@/lib/http';
 import type { Deal, DealListResponse } from '@/lib/types/deals';
+import { queryClient } from '../lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -93,6 +102,9 @@ const fetchDeals = async (params: {
     }
 
     const response = await http.get(`/deals/deals/?${searchParams.toString()}`);
+
+    console.log(response.data);
+
     return response.data;
 };
 
@@ -184,6 +196,7 @@ export default function DealsListPage() {
     const queryClient = useQueryClient();
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+    const [tableVersion, setTableVersion] = useState(0); // Track table version to force re-evaluation with cached data
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedDealForDelete, setSelectedDealForDelete] = useState<string | null>(null);
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
@@ -210,6 +223,11 @@ export default function DealsListPage() {
         setLocalSearchValue(searchQuery);
     }, [searchQuery]);
 
+    // Force table to re-evaluate when query parameters change
+    useEffect(() => {
+        setTableVersion((prev) => prev + 1);
+    }, [searchQuery, status, page]);
+
     // Data fetching
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['deals-list', searchQuery, status, page],
@@ -217,6 +235,13 @@ export default function DealsListPage() {
         placeholderData: keepPreviousData,
         staleTime: 30 * 1000, // 30 seconds
     });
+
+    // Force new data reference to ensure table updates with cached data
+    const tableData = data?.results ? [...data.results] : [];
+
+    // Create unique key based on data content to force table re-render when cached data changes
+    // This ensures TanStack Table updates UI when React Query returns cached data with different references
+    const dataSignature = `${searchQuery}-${status}-${page}-${tableData[0]?.uuid || 'empty'}-${tableData.length}`;
 
     // Delete mutations
     const deleteMutation = useMutation({
@@ -496,8 +521,9 @@ export default function DealsListPage() {
 
     // Table instance
     const table = useReactTable({
-        data: data?.results || [],
+        data: tableData,
         columns,
+        getRowId: (row) => row.uuid,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -611,52 +637,54 @@ export default function DealsListPage() {
                     {isLoading ? (
                         <DealsTableSkeleton />
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow key={headerGroup.id}>
-                                        {headerGroup.headers.map((header) => (
-                                            <TableHead key={header.id}>
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                          header.column.columnDef.header,
-                                                          header.getContext(),
-                                                      )}
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableHeader>
-                            <TableBody>
-                                {table.getRowModel().rows?.length ? (
-                                    table.getRowModel().rows.map((row) => (
-                                        <TableRow
-                                            key={row.id}
-                                            data-state={row.getIsSelected() && 'selected'}
-                                        >
-                                            {row.getVisibleCells().map((cell) => (
-                                                <TableCell key={cell.id}>
-                                                    {flexRender(
-                                                        cell.column.columnDef.cell,
-                                                        cell.getContext(),
-                                                    )}
-                                                </TableCell>
+                        <div key={dataSignature}>
+                            <Table>
+                                <TableHeader>
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        <TableRow key={headerGroup.id}>
+                                            {headerGroup.headers.map((header) => (
+                                                <TableHead key={header.id}>
+                                                    {header.isPlaceholder
+                                                        ? null
+                                                        : flexRender(
+                                                              header.column.columnDef.header,
+                                                              header.getContext(),
+                                                          )}
+                                                </TableHead>
                                             ))}
                                         </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={columns.length}
-                                            className="h-24 text-center"
-                                        >
-                                            No deals found.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                    ))}
+                                </TableHeader>
+                                <TableBody>
+                                    {table.getRowModel().rows?.length ? (
+                                        table.getRowModel().rows.map((row) => (
+                                            <TableRow
+                                                key={row.original.uuid}
+                                                data-state={row.getIsSelected() && 'selected'}
+                                            >
+                                                {row.getVisibleCells().map((cell) => (
+                                                    <TableCell key={cell.id}>
+                                                        {flexRender(
+                                                            cell.column.columnDef.cell,
+                                                            cell.getContext(),
+                                                        )}
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={columns.length}
+                                                className="h-24 text-center"
+                                            >
+                                                No deals found.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     )}
                 </CardContent>
             </Card>
@@ -762,28 +790,13 @@ export default function DealsListPage() {
 export function initialize() {
     const root = document.getElementById('deals-list-root');
     if (root) {
-        import('react-dom/client').then(({ createRoot }) => {
-            const reactRoot = createRoot(root);
-            Promise.all([import('@tanstack/react-query'), import('nuqs/adapters/react')]).then(
-                ([{ QueryClient, QueryClientProvider }, { NuqsAdapter }]) => {
-                    const queryClient = new QueryClient({
-                        defaultOptions: {
-                            queries: {
-                                retry: 1,
-                                refetchOnWindowFocus: false,
-                            },
-                        },
-                    });
-
-                    reactRoot.render(
-                        <QueryClientProvider client={queryClient}>
-                            <NuqsAdapter>
-                                <DealsListPage />
-                            </NuqsAdapter>
-                        </QueryClientProvider>,
-                    );
-                },
-            );
-        });
+        const reactRoot = createRoot(root);
+        reactRoot.render(
+            <QueryClientProvider client={queryClient}>
+                <NuqsAdapter>
+                    <DealsListPage />
+                </NuqsAdapter>
+            </QueryClientProvider>,
+        );
     }
 }

@@ -1,18 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../lib/queryClient';
 import { DealsList } from '@/components/deals';
 import { Toaster } from '@/components/ui/sonner';
-
-// Create a new QueryClient instance for this page
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            staleTime: 30 * 1000, // 30 seconds
-            retry: 1,
-        },
-    },
-});
 
 function FreshDealsPage() {
     // Extract search query from URL if present

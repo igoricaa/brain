@@ -358,7 +358,7 @@ export default function LibraryFileTable({
                             <TableCell>
                                 {file.source ? (
                                     <Badge variant="outline" className="text-xs">
-                                        {file.source}
+                                        {typeof file.source === 'string' ? file.source : (file.source as any)?.name || 'Unknown'}
                                     </Badge>
                                 ) : (
                                     <span className="text-gray-400 text-sm">No source</span>

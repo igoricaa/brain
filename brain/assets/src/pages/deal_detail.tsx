@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { queryClient } from '../lib/queryClient';
 import { z } from 'zod';
 import { http } from '@/lib/http';
 import {
@@ -1199,18 +1200,6 @@ function DealDetailApp({ uuid }: { uuid: string }) {
     );
 }
 
-// Create query client instance
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            retry: false,
-            refetchOnWindowFocus: false,
-        },
-        mutations: {
-            retry: false,
-        },
-    },
-});
 
 export function initialize() {
     if (window.__SINGLE_ENTRY_MODE__ === false) return; // respect single-entry flag if overridden

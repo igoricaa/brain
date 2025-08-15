@@ -1,22 +1,13 @@
 import { useEffect, useRef, useState, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../lib/queryClient';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DealsTable } from '@/components/deals';
 import { useSearchDeals } from '@/hooks/useDeals';
 import { useDebounce } from '@/hooks/useDebounce';
-
-// Create a new QueryClient instance for this page
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            staleTime: 30 * 1000, // 30 seconds
-            retry: 1,
-        },
-    },
-});
 
 function ReviewedDealsPage() {
     // Extract search query from URL if present

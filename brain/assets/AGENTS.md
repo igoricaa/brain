@@ -100,6 +100,70 @@ This folder hosts the hybrid frontend for brain using React 19 and Vite 7.1.1.
       This ensures classes used in Django templates are generated without a Tailwind config file.
 - Preflight: enabled (default). If conflicting with legacy CSS, consider scoping or disabling selectively.
 
+## React Query + TanStack Table Integration
+
+### Best Practices for Table Updates with Cached Data
+
+**Issue**: TanStack Table uses reference equality to detect data changes. When React Query returns cached data, it may use the same reference, preventing table updates.
+
+**Solution Pattern**:
+
+#### 1. Force New Array References
+```typescript
+// Always create new array reference to ensure table updates
+const tableData = data?.results ? [...data.results] : [];
+```
+
+#### 2. Data Signature Key for Cache Updates
+When using `placeholderData: keepPreviousData`, force table re-renders with a unique key:
+
+```typescript
+// Create unique signature based on query state and data content
+const dataSignature = `${searchQuery}-${status}-${page}-${tableData[0]?.uuid || 'empty'}-${tableData.length}`;
+
+// Wrap table in keyed div to force remount when cached data changes
+<div key={dataSignature}>
+    <Table>
+        {/* table content */}
+    </Table>
+</div>
+```
+
+**Why This Works**:
+- React Query caches responses, but cached objects have same references
+- TanStack Table won't update if data reference hasn't changed
+- The `dataSignature` key forces complete table remount when switching between cached datasets
+- Includes first item UUID and count to detect actual data differences
+
+#### 3. React Compiler Considerations
+With React Compiler enabled (infer mode):
+- **Don't use** manual `useMemo`, `useCallback`, or `React.memo`
+- Compiler automatically optimizes rendering and memoization
+- Focus on data flow and let the compiler handle optimization
+
+#### 4. Additional Best Practices
+```typescript
+// Always provide getRowId for proper row tracking
+const table = useReactTable({
+    data: tableData,
+    columns,
+    getRowId: (row) => row.uuid,  // Use stable UUID
+    getCoreRowModel: getCoreRowModel(),
+    // ... rest of config
+});
+
+// Use stable keys in table rendering
+<TableRow key={row.original.uuid}>  // Not row.id
+```
+
+**Why This Works**:
+- **Reference Updates**: Array spreading creates new reference when cached data changes
+- **Row Identification**: `getRowId` ensures table tracks rows by UUID instead of array index
+- **React Compiler Optimization**: Automatically handles memoization without manual intervention
+- **Simple & Clean**: No manual performance optimizations needed
+
+**Note**: React Compiler is enabled in infer mode - DO NOT use manual useMemo/useCallback.
+
 ## React Forms (API mode)
 
 - Component: `src/components/forms/FormRenderer.tsx` (react-hook-form + zod, API submit via TanStack Query + Axios).

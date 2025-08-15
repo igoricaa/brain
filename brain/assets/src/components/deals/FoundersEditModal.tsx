@@ -33,7 +33,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Plus, Trash2, Calendar, Mail, ExternalLink, Briefcase } from 'lucide-react';
+import { User, Plus, Trash2, Calendar, Mail, ExternalLink, Briefcase, Loader2 } from 'lucide-react';
 import { getNames, getCode } from 'country-list';
 import type { Founder } from '@/hooks/useCompanyData';
 
@@ -78,15 +78,13 @@ function FounderCard({
     founder: Founder;
     onDelete: (founderId: string) => void;
 }) {
-    const founderData = founder?.founder || {};
-
     return (
         <Card className="relative">
             <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between text-base">
                     <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-500" />
-                        <span>{founderData.name || 'Unnamed Founder'}</span>
+                        <span>{founder.name || 'Unnamed Founder'}</span>
                         {founder.title && (
                             <Badge variant="secondary" className="text-xs">
                                 {founder.title}
@@ -104,14 +102,14 @@ function FounderCard({
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-                {founderData.email && (
+                {founder.email && (
                     <div className="flex items-center gap-2">
                         <Mail className="h-3 w-3 text-gray-400" />
                         <a
-                            href={`mailto:${founderData.email}`}
+                            href={`mailto:${founder.email}`}
                             className="text-blue-600 hover:underline"
                         >
-                            {founderData.email}
+                            {founder.email}
                         </a>
                     </div>
                 )}
@@ -123,11 +121,11 @@ function FounderCard({
                     </div>
                 )}
 
-                {founderData.linkedin_url && (
+                {founder.linkedin_url && (
                     <div className="flex items-center gap-2">
                         <ExternalLink className="h-3 w-3 text-gray-400" />
                         <a
-                            href={founderData.linkedin_url}
+                            href={founder.linkedin_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline"
@@ -149,10 +147,10 @@ function FounderCard({
                     </div>
                 )}
 
-                {founderData.bio && (
+                {founder.bio && (
                     <div className="mt-2">
                         <div className="font-medium mb-1">Bio:</div>
-                        <p className="text-gray-700 text-xs">{founderData.bio}</p>
+                        <p className="text-gray-700 text-xs">{founder.bio}</p>
                     </div>
                 )}
             </CardContent>
@@ -374,14 +372,13 @@ export function FoundersEditModal({
         }
     }, [isOpen]);
 
-    // Add founder mutation
+    // Add founder mutation with true optimistic updates
     const addFounderMutation = useMutation({
         mutationFn: async (data: FounderFormData) => {
-            // Transform data for API - fields at root level per API schema
-            const apiData = {
-                company: companyUuid,
+            // Step 1: Create founder without company
+            const founderData = {
                 name: data.name,
-                country: data.country, // Required field
+                country: data.country,
                 email: data.email || undefined,
                 bio: data.bio || undefined,
                 linkedin_url: data.linkedin_url || undefined,
@@ -389,19 +386,82 @@ export function FoundersEditModal({
                 age_at_founding: data.age_at_founding ? Number(data.age_at_founding) : undefined,
                 past_significant_employments: data.past_significant_employments || undefined,
             };
-
-            const response = await http.post('/companies/founders/', apiData);
-            return response.data;
+            
+            const newFounder = await http.post('/companies/founders/', founderData);
+            
+            // Step 2: Get fresh company data and merge
+            const companyResponse = await http.get(`/companies/companies/${companyUuid}/`);
+            const serverFounders = companyResponse.data.founders || [];
+            const serverFounderUuids = serverFounders.map((f: any) => typeof f === 'string' ? f : f.uuid);
+            const finalFounders = [...new Set([...serverFounderUuids, newFounder.data.uuid])];
+            
+            // Step 3: Update company with merged founders
+            await http.patch(`/companies/companies/${companyUuid}/`, {
+                founders: finalFounders
+            });
+            
+            // Return both the new founder and updated data
+            return { 
+                newFounder: newFounder.data, 
+                finalFounders,
+                companyData: companyResponse.data 
+            };
         },
-        onSuccess: () => {
-            // Force complete cache clear and refetch
-            queryClient.removeQueries({ queryKey: ['company-founders', companyUuid] });
-            queryClient.invalidateQueries({ queryKey: ['company-founders', companyUuid] });
-            queryClient.refetchQueries({ queryKey: ['company-founders', companyUuid] });
+        onMutate: async (newData) => {
+            // Cancel any in-flight queries to prevent overwrites
+            await queryClient.cancelQueries({ queryKey: ['company-founders', companyUuid] });
+            await queryClient.cancelQueries({ queryKey: ['company', companyUuid] });
+            
+            // Snapshot previous values for rollback
+            const previousFounders = queryClient.getQueryData(['company-founders', companyUuid]);
+            const previousCompany = queryClient.getQueryData(['company', companyUuid]);
+            
+            // Create temporary founder with optimistic data
+            const tempId = `temp-${Date.now()}`;
+            const tempFounder: Founder = {
+                uuid: tempId,
+                name: newData.name,
+                email: newData.email || null,
+                bio: newData.bio || null,
+                linkedin_url: newData.linkedin_url || null,
+                title: newData.title || null,
+                age_at_founding: newData.age_at_founding ? Number(newData.age_at_founding) : null,
+                past_significant_employments: newData.past_significant_employments || null,
+                start_date: null,
+                end_date: null,
+            };
+            
+            // Optimistically update the founders list
+            queryClient.setQueryData(['company-founders', companyUuid], (old: Founder[] | undefined) => 
+                [...(old || []), tempFounder]
+            );
+            
+            // Return context for rollback
+            return { previousFounders, previousCompany, tempId };
+        },
+        onSuccess: (data, variables, context) => {
+            // Replace temporary founder with real one
+            queryClient.setQueryData(['company-founders', companyUuid], (old: Founder[] | undefined) => 
+                old?.map(f => f.uuid === context?.tempId ? data.newFounder : f) || [data.newFounder]
+            );
+            
+            // Update company cache with fresh data
+            if (data.companyData) {
+                queryClient.setQueryData(['company', companyUuid], data.companyData);
+            }
+            
             toast.success('Founder added successfully');
             setShowAddForm(false);
         },
-        onError: (error) => {
+        onError: (error, variables, context) => {
+            // Rollback to previous state
+            if (context?.previousFounders !== undefined) {
+                queryClient.setQueryData(['company-founders', companyUuid], context.previousFounders);
+            }
+            if (context?.previousCompany !== undefined) {
+                queryClient.setQueryData(['company', companyUuid], context.previousCompany);
+            }
+            
             const { formError } = normalizeDrfErrors(error);
             toast.error(formError || 'Failed to add founder');
         },
@@ -492,6 +552,19 @@ export function FoundersEditModal({
                                             isSubmitting={addFounderMutation.isPending}
                                             onCancel={() => setShowAddForm(false)}
                                         />
+
+                                        {/* Optimistic loading indicator */}
+                                        {addFounderMutation.isPending && (
+                                            <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 animate-in slide-in-from-bottom">
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                <span>Adding founder...</span>
+                                                {addFounderMutation.variables?.name && (
+                                                    <div className="ml-auto text-xs text-gray-500">
+                                                        {addFounderMutation.variables.name}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
                             )}

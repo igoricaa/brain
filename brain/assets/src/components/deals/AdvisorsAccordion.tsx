@@ -8,15 +8,12 @@ import { ChevronDown, ChevronRight, Edit2, ExternalLink, Plus, UserCheck } from 
 // For now, using a simplified Advisor type based on the CompanyAdvisor relationship
 interface Advisor {
     uuid: string;
-    advisor?: {
-        uuid: string;
-        name: string;
-        bio?: string | null;
-        linkedin_url?: string | null;
-        website?: string | null;
-        country?: string | null;
-        location?: string | null;
-    };
+    name?: string | null;
+    bio?: string | null;
+    linkedin_url?: string | null;
+    website?: string | null;
+    country?: string | null;
+    location?: string | null;
     created_at?: string;
     updated_at?: string;
 }
@@ -56,9 +53,6 @@ function ErrorState({ error }: { error: string }) {
 }
 
 function AdvisorCard({ advisor }: { advisor: Advisor }) {
-    // Handle case where advisor.advisor might be null or undefined
-    const advisorData = advisor?.advisor || {};
-
     return (
         <div className="border rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
             <div className="flex items-start justify-between">
@@ -66,32 +60,32 @@ function AdvisorCard({ advisor }: { advisor: Advisor }) {
                     <div className="flex items-center gap-2 mb-2">
                         <UserCheck className="h-4 w-4 text-gray-400" />
                         <h4 className="font-medium text-gray-900">
-                            {advisorData.name || 'Unnamed Advisor'}
+                            {advisor.name || 'Unnamed Advisor'}
                         </h4>
                     </div>
 
                     <div className="space-y-2 text-sm text-gray-600">
-                        {advisorData.location && (
+                        {advisor.location && (
                             <div className="flex items-center gap-2">
                                 <span className="font-medium">Location:</span>
-                                <span>{advisorData.location}</span>
+                                <span>{advisor.location}</span>
                             </div>
                         )}
 
-                        {advisorData.bio && (
+                        {advisor.bio && (
                             <div className="mt-3">
                                 <div className="font-medium text-gray-900 mb-1">Bio:</div>
-                                <p className="text-gray-700">{advisorData.bio}</p>
+                                <p className="text-gray-700">{advisor.bio}</p>
                             </div>
                         )}
                     </div>
                 </div>
 
                 <div className="ml-4 flex flex-col gap-2">
-                    {advisorData.linkedin_url && (
+                    {advisor.linkedin_url && (
                         <Button variant="ghost" size="sm" asChild>
                             <a
-                                href={advisorData.linkedin_url}
+                                href={advisor.linkedin_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1"
@@ -101,10 +95,10 @@ function AdvisorCard({ advisor }: { advisor: Advisor }) {
                             </a>
                         </Button>
                     )}
-                    {advisorData.website && (
+                    {advisor.website && (
                         <Button variant="ghost" size="sm" asChild>
                             <a
-                                href={advisorData.website}
+                                href={advisor.website}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1"

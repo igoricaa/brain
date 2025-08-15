@@ -32,21 +32,18 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserCheck, Plus, Trash2, ExternalLink } from 'lucide-react';
+import { UserCheck, Plus, Trash2, ExternalLink, Loader2 } from 'lucide-react';
 import { getNames, getCode } from 'country-list';
 
 // Simplified Advisor type for editing
 interface Advisor {
     uuid: string;
-    advisor?: {
-        uuid: string;
-        name: string;
-        bio?: string | null;
-        linkedin_url?: string | null;
-        website?: string | null;
-        country?: string | null;
-        location?: string | null;
-    };
+    name?: string | null;
+    bio?: string | null;
+    linkedin_url?: string | null;
+    website?: string | null;
+    country?: string | null;
+    location?: string | null;
     created_at?: string;
     updated_at?: string;
 }
@@ -77,15 +74,13 @@ function AdvisorCard({
     advisor: Advisor;
     onDelete: (advisorId: string) => void;
 }) {
-    const advisorData = advisor?.advisor || {};
-
     return (
         <Card className="relative">
             <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between text-base">
                     <div className="flex items-center gap-2">
                         <UserCheck className="h-4 w-4 text-gray-500" />
-                        <span>{advisorData.name || 'Unnamed Advisor'}</span>
+                        <span>{advisor.name || 'Unnamed Advisor'}</span>
                     </div>
                     <Button
                         variant="ghost"
@@ -98,25 +93,25 @@ function AdvisorCard({
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-                {advisorData.location && (
+                {advisor.location && (
                     <div className="flex items-center gap-2">
                         <span className="font-medium">Location:</span>
-                        <span className="text-gray-700">{advisorData.location}</span>
+                        <span className="text-gray-700">{advisor.location}</span>
                     </div>
                 )}
 
-                {advisorData.bio && (
+                {advisor.bio && (
                     <div>
                         <div className="font-medium text-gray-900 mb-1">Bio:</div>
-                        <p className="text-gray-700 text-sm leading-relaxed">{advisorData.bio}</p>
+                        <p className="text-gray-700 text-sm leading-relaxed">{advisor.bio}</p>
                     </div>
                 )}
 
                 <div className="flex gap-2 pt-2">
-                    {advisorData.linkedin_url && (
+                    {advisor.linkedin_url && (
                         <Button variant="outline" size="sm" asChild>
                             <a
-                                href={advisorData.linkedin_url}
+                                href={advisor.linkedin_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1"
@@ -126,10 +121,10 @@ function AdvisorCard({
                             </a>
                         </Button>
                     )}
-                    {advisorData.website && (
+                    {advisor.website && (
                         <Button variant="outline" size="sm" asChild>
                             <a
-                                href={advisorData.website}
+                                href={advisor.website}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1"
@@ -314,7 +309,6 @@ export function AdvisorsEditModal({
 }: AdvisorsEditModalProps) {
     const [showAddForm, setShowAddForm] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-
     const queryClient = useQueryClient();
 
     // Close add form when modal closes
@@ -327,9 +321,8 @@ export function AdvisorsEditModal({
     // Add advisor mutation
     const addAdvisorMutation = useMutation({
         mutationFn: async (data: AdvisorFormData) => {
-            // Transform data for API - fields at root level per API schema
-            const apiData = {
-                company: companyUuid,
+            // Step 1: Create advisor without company
+            const advisorData = {
                 name: data.name,
                 country: data.country, // Required field
                 bio: data.bio || undefined,
@@ -337,19 +330,81 @@ export function AdvisorsEditModal({
                 website: data.website || undefined,
                 location: data.location || undefined,
             };
-
-            const response = await http.post('/companies/advisors/', apiData);
-            return response.data;
+            
+            const newAdvisor = await http.post('/companies/advisors/', advisorData);
+            
+            // Step 2: Get fresh company data and merge
+            const companyResponse = await http.get(`/companies/companies/${companyUuid}/`);
+            const serverAdvisors = companyResponse.data.advisors || [];
+            const serverAdvisorUuids = serverAdvisors.map((a: any) => typeof a === 'string' ? a : a.uuid);
+            const finalAdvisors = [...new Set([...serverAdvisorUuids, newAdvisor.data.uuid])];
+            
+            // Step 3: Update company with merged advisors
+            await http.patch(`/companies/companies/${companyUuid}/`, {
+                advisors: finalAdvisors
+            });
+            
+            // Return both the new advisor and updated data
+            return { 
+                newAdvisor: newAdvisor.data, 
+                finalAdvisors,
+                companyData: companyResponse.data 
+            };
         },
-        onSuccess: () => {
-            // Force complete cache clear and refetch
-            queryClient.removeQueries({ queryKey: ['company-advisors', companyUuid] });
-            queryClient.invalidateQueries({ queryKey: ['company-advisors', companyUuid] });
-            queryClient.refetchQueries({ queryKey: ['company-advisors', companyUuid] });
+        onMutate: async (newData) => {
+            // Cancel any in-flight queries to prevent overwrites
+            await queryClient.cancelQueries({ queryKey: ['company-advisors', companyUuid] });
+            await queryClient.cancelQueries({ queryKey: ['company', companyUuid] });
+            
+            // Snapshot previous values for rollback
+            const previousAdvisors = queryClient.getQueryData(['company-advisors', companyUuid]);
+            const previousCompany = queryClient.getQueryData(['company', companyUuid]);
+            
+            // Create temporary advisor with optimistic data
+            const tempId = `temp-${Date.now()}`;
+            const tempAdvisor: Advisor = {
+                uuid: tempId,
+                name: newData.name,
+                bio: newData.bio || null,
+                linkedin_url: newData.linkedin_url || null,
+                website: newData.website || null,
+                country: newData.country || null,
+                location: newData.location || null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+            
+            // Optimistically update the advisors list
+            queryClient.setQueryData(['company-advisors', companyUuid], (old: Advisor[] | undefined) => 
+                [...(old || []), tempAdvisor]
+            );
+            
+            // Return context for rollback
+            return { previousAdvisors, previousCompany, tempId };
+        },
+        onSuccess: (data, variables, context) => {
+            // Replace temporary advisor with real one
+            queryClient.setQueryData(['company-advisors', companyUuid], (old: Advisor[] | undefined) => 
+                old?.map(a => a.uuid === context?.tempId ? data.newAdvisor : a) || [data.newAdvisor]
+            );
+            
+            // Update company cache with fresh data
+            if (data.companyData) {
+                queryClient.setQueryData(['company', companyUuid], data.companyData);
+            }
+            
             toast.success('Advisor added successfully');
             setShowAddForm(false);
         },
-        onError: (error) => {
+        onError: (error, variables, context) => {
+            // Rollback to previous state
+            if (context?.previousAdvisors !== undefined) {
+                queryClient.setQueryData(['company-advisors', companyUuid], context.previousAdvisors);
+            }
+            if (context?.previousCompany !== undefined) {
+                queryClient.setQueryData(['company', companyUuid], context.previousCompany);
+            }
+            
             const { formError } = normalizeDrfErrors(error);
             toast.error(formError || 'Failed to add advisor');
         },
@@ -442,6 +497,19 @@ export function AdvisorsEditModal({
                                             isSubmitting={addAdvisorMutation.isPending}
                                             onCancel={() => setShowAddForm(false)}
                                         />
+                                        
+                                        {/* Optimistic loading indicator */}
+                                        {addAdvisorMutation.isPending && (
+                                            <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 animate-in slide-in-from-bottom">
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                <span>Adding advisor...</span>
+                                                {addAdvisorMutation.variables?.name && (
+                                                    <div className="ml-auto text-xs text-gray-500">
+                                                        {addAdvisorMutation.variables.name}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
                             )}

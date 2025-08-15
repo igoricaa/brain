@@ -51,9 +51,6 @@ function ErrorState({ error }: { error: string }) {
 }
 
 function FounderCard({ founder }: { founder: Founder }) {
-    // Handle case where founder.founder might be null or undefined
-    const founderData = founder?.founder || {};
-
     return (
         <div className="border rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
             <div className="flex items-start justify-between">
@@ -61,7 +58,7 @@ function FounderCard({ founder }: { founder: Founder }) {
                     <div className="flex items-center gap-2 mb-2">
                         <User className="h-4 w-4 text-gray-400" />
                         <h4 className="font-medium text-gray-900">
-                            {founderData.name || 'Unnamed Founder'}
+                            {founder.name || 'Unnamed Founder'}
                         </h4>
                         {founder.title && (
                             <Badge variant="secondary" className="text-xs">
@@ -71,14 +68,14 @@ function FounderCard({ founder }: { founder: Founder }) {
                     </div>
 
                     <div className="space-y-2 text-sm text-gray-600">
-                        {founderData.email && (
+                        {founder.email && (
                             <div className="flex items-center gap-2">
                                 <span className="font-medium">Email:</span>
                                 <a
-                                    href={`mailto:${founderData.email}`}
+                                    href={`mailto:${founder.email}`}
                                     className="text-blue-600 hover:underline"
                                 >
-                                    {founderData.email}
+                                    {founder.email}
                                 </a>
                             </div>
                         )}
@@ -113,20 +110,20 @@ function FounderCard({ founder }: { founder: Founder }) {
                             </div>
                         )}
 
-                        {founderData.bio && (
+                        {founder.bio && (
                             <div className="mt-3">
                                 <div className="font-medium text-gray-900 mb-1">Bio:</div>
-                                <p className="text-gray-700">{founderData.bio}</p>
+                                <p className="text-gray-700">{founder.bio}</p>
                             </div>
                         )}
                     </div>
                 </div>
 
                 <div className="ml-4 flex flex-col gap-2">
-                    {founderData.linkedin_url && (
+                    {founder.linkedin_url && (
                         <Button variant="ghost" size="sm" asChild>
                             <a
-                                href={founderData.linkedin_url}
+                                href={founder.linkedin_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1"
